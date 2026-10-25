@@ -865,7 +865,8 @@
         }
         panelContent.append(grid);
       }
-          function renderShop() {
+    }
+        function renderShop() {
       const intro=document.createElement("p");
       intro.className="panel-intro";
       intro.textContent="Bestelle neue Dinge für dein Zimmer. Die Lieferzeit beträgt 20 Sekunden Spielzeit. Sobald der Postbote ankommt, wartet dein Paket an der Tür.";
@@ -1264,8 +1265,6 @@
         saveTimer=0;
         persist();
       }
-    }
-      
     }
         function setupControls() {
       window.addEventListener("keydown",event=>{
