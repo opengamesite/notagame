@@ -3,903 +3,970 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#e8e5dc">
-  <title>little elsewhere — a small mystery</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#171b23">
+  <title>Little Somewhere</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="#" aria-label="Little Elsewhere Startseite">
-      <span class="brand-mark">l.</span>
-      <span>little elsewhere</span>
-    </a>
-    <div class="top-status">
-      <span class="status-dot"></span>
-      A WORLD OF SMALL SECRETS
+  <main id="game">
+    <canvas id="world" width="480" height="270" aria-label="Spielwelt"></canvas>
+
+    <div id="hud">
+      <div id="roomIcon" class="hud-icon">⌂</div>
+      <div id="inventory"></div>
+      <button id="soundButton" aria-label="Ton ein oder ausschalten">♫</button>
+      <button id="fullscreenButton" aria-label="Vollbild">⛶</button>
     </div>
-    <button id="soundButton" class="icon-button" title="Sound umschalten" aria-label="Sound umschalten">♫</button>
-  </header>
 
-  <main>
-    <section class="heading">
-      <div>
-        <p class="eyebrow">YOUR OWN LITTLE WORLD</p>
-        <h1 id="roomTitle">Das kleine Zimmer</h1>
-        <p id="roomSubtitle">Irgendetwas fühlt sich hier anders an.</p>
-      </div>
-      <div class="chapter">
-        <span id="roomNumber">01</span>
-        <span class="chapter-line"></span>
-        <span id="roomType">UNBEKANNT</span>
-      </div>
-    </section>
-
-    <section class="game-frame" aria-label="Spielwelt">
-      <div class="scene-top">
-        <span id="sceneLabel">ORT 01 / DAS ZIMMER</span>
-        <span id="weatherLabel">14:07 · STILL</span>
-      </div>
-
-      <div class="canvas-wrap">
-        <canvas id="game" width="960" height="540"
-          aria-label="2D-Spielwelt. Ziehe die Holzfigur mit der Maus.">
-        </canvas>
-        <div id="pixelNotice" class="pixel-notice">SIGNAL GEFUNDEN</div>
-        <div id="toast" class="toast" role="status" aria-live="polite"></div>
-        <div class="scene-hint">ZIEHEN · UNTERSUCHEN · ENTDECKEN</div>
-      </div>
-
-      <div class="scene-bottom">
-        <span><span class="keycap">MOUSE</span> Figur greifen und bewegen</span>
-        <span><span class="keycap">E</span> Umgebung untersuchen</span>
-      </div>
-    </section>
-
-    <section class="game-layout">
-      <div class="main-column">
-        <article class="paper-panel">
-          <div class="panel-heading">
-            <span>01 / DEIN TAGEBUCH</span>
-            <span class="tiny-symbol">✳</span>
-          </div>
-          <p id="storyText">Du bist in einem kleinen Zimmer aufgewacht. Staub schwebt im Licht. Auf dem Tisch liegt etwas, das gestern noch nicht dort lag.</p>
-          <div id="taskLine" class="task-line">
-            <span class="task-marker"></span>
-            <span>Finde heraus, was sich im Zimmer versteckt.</span>
-          </div>
-        </article>
-
-        <article class="paper-panel inventory-panel">
-          <div class="panel-heading">
-            <span>02 / DEINE FUNDSTÜCKE</span>
-            <span id="itemCount">0 OBJEKTE</span>
-          </div>
-          <div id="inventory" class="inventory">
-            <p class="empty-inventory">Noch nichts gefunden. Sieh dich ein wenig um.</p>
-          </div>
-        </article>
-      </div>
-
-      <aside class="side-column">
-        <article class="paper-panel">
-          <div class="panel-heading">
-            <span>03 / ORTE</span>
-            <span class="tiny-symbol">↗</span>
-          </div>
-          <p class="small-copy">Jeder Ort hat etwas zu erzählen. Manche Türen zeigen sich erst, wenn du bereit bist.</p>
-          <div id="worldList" class="world-list"></div>
-        </article>
-
-        <article class="paper-panel">
-          <div class="panel-heading">
-            <span>04 / DEIN ZIMMER</span>
-          </div>
-          <p class="small-copy">Fundstücke können dein kleines Zuhause verändern.</p>
-          <div class="decorate-row">
-            <span>Zimmerpflanze</span>
-            <button id="plantButton" class="small-button">Aufstellen</button>
-          </div>
-          <div class="decorate-row">
-            <span>Kleine Lampe</span>
-            <button id="lampButton" class="small-button">Aufstellen</button>
-          </div>
-        </article>
-
-        <button id="resetButton" class="reset-button">SPIELSTAND ZURÜCKSETZEN ↺</button>
-      </aside>
-    </section>
-
-    <footer>
-      <span>LITTLE ELSEWHERE © YOUR SMALL UNIVERSE</span>
-      <span>NO RUSH. JUST EXPLORE.</span>
-    </footer>
+    <div id="fade"></div>
   </main>
-
-  <div id="dialogBackdrop" class="dialog-backdrop" hidden>
-    <section class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
-      <div class="dialog-symbol">✳</div>
-      <p class="eyebrow">A LITTLE DISCOVERY</p>
-      <h2 id="dialogTitle">Etwas gefunden</h2>
-      <p id="dialogText"></p>
-      <div class="dialog-actions">
-        <button id="dialogClose" class="primary-button">Weiter erkunden</button>
-        <button id="dialogAction" class="text-button" hidden>Untersuchen</button>
-      </div>
-    </section>
-  </div>
 
   <script>
   (() => {
     "use strict";
 
-    const canvas = document.getElementById("game");
-    const ctx = canvas.getContext("2d");
-    const $ = id => document.getElementById(id);
+    const canvas = document.querySelector("#world");
+    const ctx = canvas.getContext("2d", { alpha: false });
+    ctx.imageSmoothingEnabled = false;
 
-    const SAVE_KEY = "littleElsewhereSave_v1";
-    const W = 960, H = 540, FLOOR = 446;
+    const game = document.querySelector("#game");
+    const fade = document.querySelector("#fade");
+    const inventory = document.querySelector("#inventory");
+    const roomIcon = document.querySelector("#roomIcon");
 
-    const rooms = {
-      bedroom: {
-        title: "Das kleine Zimmer",
-        subtitle: "Irgendetwas fühlt sich hier anders an.",
-        type: "ZUHAUSE",
-        color: "#e8e5dc",
-        wall: "#eeece5",
-        floor: "#c6b49b",
-        accent: "#82977d",
-        sky: "#d7ded6",
-        description: "Du bist in einem kleinen Zimmer aufgewacht. Staub schwebt im Licht. Auf dem Tisch liegt etwas, das gestern noch nicht dort lag.",
-        task: "Finde heraus, was sich im Zimmer versteckt.",
-        exits: [{ id:"garden", label:"Der Garten", x:855, y:410 }],
-        objects: [
-          { id:"note", x:370, y:350, label:"Zettel", text:"Auf dem Zettel steht: „Der Garten hört zu, wenn es still ist.“", item:"Alter Zettel", color:"#e4d7b9" },
-          { id:"key", x:625, y:405, label:"Kleiner Schlüssel", text:"Ein winziger Schlüssel. Er fühlt sich überraschend warm an.", item:"Messingschlüssel", color:"#c6a96c" }
-        ]
-      },
-      garden: {
-        title: "Der stille Garten",
-        subtitle: "Die Blätter bewegen sich, obwohl kein Wind weht.",
-        type: "DRAUSSEN",
-        color: "#dfe3d6",
-        wall: "#dfe3d6",
-        floor: "#9ba98a",
-        accent: "#637e5b",
-        sky: "#bfcfcb",
-        description: "Zwischen den Pflanzen liegt etwas im Gras. Der Garten ist viel größer, als er von deinem Fenster aus aussah.",
-        task: "Suche zwischen den Pflanzen nach einem ungewöhnlichen Fundstück.",
-        exits: [{ id:"bedroom", label:"Zurück ins Zimmer", x:100, y:410 }],
-        objects: [
-          { id:"leaf", x:340, y:415, label:"Seltsames Blatt", text:"Auf dem Blatt sind winzige Zeichen. Sie sehen aus wie eine Karte.", item:"Geheimnisvolles Blatt", color:"#7c9b69" },
-          { id:"stone", x:690, y:420, label:"Glatter Stein", text:"Ein glatter Stein mit einer kleinen Kerbe. Er passt vielleicht irgendwo hinein.", item:"Gekerbter Stein", color:"#999c9a" }
-        ]
-      },
-      attic: {
-        title: "Der vergessene Dachboden",
-        subtitle: "Hier oben scheint die Zeit langsamer zu laufen.",
-        type: "VERBORGEN",
-        color: "#ded8cd",
-        wall: "#d8d0c3",
-        floor: "#a99a87",
-        accent: "#a17c65",
-        sky: "#c6c0b7",
-        description: "Du hast einen Ort gefunden, den lange niemand besucht hat. Zwischen den Kisten blinkt ein seltsames Licht.",
-        task: "Entdecke, was in der alten Kiste aufbewahrt wird.",
-        exits: [{ id:"bedroom", label:"Zurück ins Zimmer", x:100, y:410 }],
-        objects: [
-          { id:"star", x:480, y:375, label:"Glasstern", text:"Ein kleiner Glasstern. Wenn du ihn bewegst, scheint darin eine winzige Welt zu leuchten.", item:"Glasstern", color:"#92b8c7" },
-          { id:"box", x:690, y:395, label:"Alte Kiste", text:"Die Kiste ist leer. Aber unter ihr findest du eingeritzte Zeichen.", item:"Kistenzeichen", color:"#a17c65" }
-        ]
-      },
-      secret: {
-        title: "Wo die Pixel schlafen",
-        subtitle: "Du solltest diesen Ort eigentlich nicht sehen können.",
-        type: "GEHEIM",
-        color: "#d9d0ed",
-        wall: "#d5c8ed",
-        floor: "#8878a6",
-        accent: "#8c70b6",
-        sky: "#b9a8dc",
-        description: "Die Welt hat ihre Form verändert. Alles wirkt plötzlich kantiger. Irgendwo in diesem Raum wartet eine Antwort.",
-        task: "Untersuche das leuchtende Zeichen.",
-        exits: [{ id:"attic", label:"Zurück zum Dachboden", x:100, y:410 }],
-        objects: [
-          { id:"fragment", x:515, y:370, label:"Pixel-Fragment", text:"Ein Fragment aus einer anderen Version der Welt. Du spürst, dass es etwas verändert hat.", item:"Pixel-Fragment", color:"#f0cf73" }
-        ]
-      }
-    };
+    const W = 480;
+    const H = 270;
+    const FLOOR = 226;
+    const GRAVITY = 0.17;
+    const FRICTION = 0.985;
 
-    const itemDescriptions = {
-      "Alter Zettel": "Ein Zettel mit einer Botschaft aus der Welt.",
-      "Messingschlüssel": "Ein kleiner Schlüssel. Er könnte eine verborgene Tür öffnen.",
-      "Geheimnisvolles Blatt": "Ein Blatt mit seltsamen Zeichen.",
-      "Gekerbter Stein": "Ein Stein mit einer Kerbe. Er fühlt sich wie ein Teil eines Rätsels an.",
-      "Glasstern": "Ein Glasstern, in dem etwas zu leben scheint.",
-      "Kistenzeichen": "Ein Zeichen, das du noch nicht ganz verstehst.",
-      "Pixel-Fragment": "Ein kleines Stück einer anderen Welt."
-    };
-
-    let state = loadSave();
-    let room = rooms[state.room] ? state.room : "bedroom";
-    let inventory = new Set(state.inventory || []);
-    let found = new Set(state.found || []);
-    let unlocked = new Set(["bedroom", ...(state.unlocked || [])]);
-    let placed = new Set(state.placed || []);
-    let pixelMode = false;
-    let soundOn = false;
+    let room = "bedroom";
+    let soundOn = true;
     let audio = null;
-    let dragging = false;
-    let pointerOffset = { x:0, y:0 };
+    let started = false;
     let lastTime = 0;
-    let toastTimer;
-    let inspectCooldown = 0;
+    let worldTime = 0;
+    let transition = false;
+    let pointer = null;
+    let dragged = null;
+    let dragOffset = { x: 0, y: 0 };
+    let selectedDecoration = null;
 
-    const puppet = {
-      x: 180, y: FLOOR - 84, vx: 0, vy: 0,
-      w: 36, h: 84, grounded: true,
-      angle: 0, armSwing: 0
+    const collected = new Set();
+    const decorations = {};
+    const roomVisits = new Set(["bedroom"]);
+
+    const colors = {
+      ink: "#24252f",
+      outline: "#353340",
+      wood: "#b98254",
+      woodLight: "#d9aa76",
+      woodDark: "#795039",
+      joint: "#5d4035",
+      cream: "#f2dfb7",
+      green: "#738b66",
+      darkGreen: "#405c49",
+      blue: "#748cae",
+      gold: "#e4b76c"
     };
 
-    function loadSave() {
-      try { return JSON.parse(localStorage.getItem(SAVE_KEY)) || {}; }
-      catch { return {}; }
-    }
+    const scenes = {
+      bedroom: { icon: "⌂", sky: "#d9c8ad" },
+      garden: { icon: "♧", sky: "#b9d0b0" },
+      attic: { icon: "⌂", sky: "#aaa4b3" },
+      secret: { icon: "✦", sky: "#a8b9c9" }
+    };
 
-    function save() {
-      try {
-        localStorage.setItem(SAVE_KEY, JSON.stringify({
-          room, inventory:[...inventory], found:[...found],
-          unlocked:[...unlocked], placed:[...placed]
-        }));
-      } catch {}
-    }
+    const objects = {
+      bedroom: [
+        { id: "star", x: 104, y: 99, type: "star" },
+        { id: "leaf", x: 366, y: 194, type: "leaf" },
+        { id: "key", x: 300, y: 215, type: "key" }
+      ],
+      garden: [
+        { id: "flower", x: 112, y: 215, type: "flower" },
+        { id: "mushroom", x: 352, y: 215, type: "mushroom" },
+        { id: "feather", x: 270, y: 214, type: "feather" }
+      ],
+      attic: [
+        { id: "moon", x: 385, y: 91, type: "moon" },
+        { id: "gem", x: 154, y: 213, type: "gem" }
+      ],
+      secret: [
+        { id: "crystal", x: 236, y: 187, type: "crystal" },
+        { id: "star2", x: 340, y: 122, type: "star" }
+      ]
+    };
 
-    function say(text) {
-      $("message").textContent = text;
-    }
+    const figure = {
+      x: 235, y: 171,
+      vx: 0, vy: 0,
+      angle: 0,
+      grounded: false,
+      parts: [],
+      grabbed: null,
+      prevX: 235,
+      prevY: 171
+    };
 
-    function toast(text) {
-      const el = $("toast");
-      el.textContent = text;
-      el.classList.add("visible");
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(() => el.classList.remove("visible"), 2600);
-    }
-
-    function initAudio() {
-      if (!audio) {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContext) return;
-        audio = new AudioContext();
-      }
-      if (audio.state === "suspended") audio.resume();
-    }
-
-    function tone(freq=440, duration=.07, type="sine", volume=.025) {
-      if (!soundOn) return;
-      initAudio();
-      if (!audio) return;
-      const osc = audio.createOscillator();
-      const gain = audio.createGain();
-      osc.type = type;
-      osc.frequency.setValueAtTime(freq, audio.currentTime);
-      gain.gain.setValueAtTime(volume, audio.currentTime);
-      gain.gain.exponentialRampToValueAtTime(.001, audio.currentTime + duration);
-      osc.connect(gain);
-      gain.connect(audio.destination);
-      osc.start();
-      osc.stop(audio.currentTime + duration);
-    }
-
-    $("soundButton").addEventListener("click", () => {
-      soundOn = !soundOn;
-      $("soundButton").classList.toggle("active", soundOn);
-      $("soundButton").textContent = soundOn ? "♫ ON" : "♫";
-      if (soundOn) {
-        initAudio();
-        tone(520,.1);
-        setTimeout(() => tone(680,.12), 100);
-      }
-      toast(soundOn ? "Die kleinen Geräusche sind zurück." : "Die Welt wird wieder still.");
-    });
-
-    function drawBackground(r) {
-      ctx.fillStyle = r.wall;
-      ctx.fillRect(0,0,W,H);
-
-      // subtle paper grain
-      ctx.globalAlpha = .06;
-      ctx.fillStyle = "#777";
-      for (let i=0; i<75; i++) {
-        const x = (i*137+19)%W, y=(i*83+31)%H;
-        ctx.fillRect(x,y,1+(i%3),1);
-      }
-      ctx.globalAlpha = 1;
-
-      if (room === "bedroom") {
-        ctx.fillStyle = r.sky;
-        ctx.fillRect(86,68,190,160);
-        ctx.strokeStyle = "#a5aaa0";
-        ctx.lineWidth = 8;
-        ctx.strokeRect(86,68,190,160);
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.moveTo(181,70); ctx.lineTo(181,226);
-        ctx.moveTo(88,148); ctx.lineTo(274,148);
-        ctx.stroke();
-        ctx.fillStyle = "rgba(255,255,230,.35)";
-        ctx.beginPath();
-        ctx.moveTo(95,155); ctx.lineTo(266,155); ctx.lineTo(360,FLOOR); ctx.lineTo(220,FLOOR);
-        ctx.fill();
-
-        // bed
-        ctx.fillStyle="#8e887f";
-        ctx.fillRect(80,356,235,68);
-        ctx.fillStyle="#f4f0e7";
-        ctx.fillRect(91,345,105,38);
-        ctx.fillStyle="#b5a18d";
-        ctx.fillRect(80,418,15,28);
-        ctx.fillRect(294,418,15,28);
-
-        // desk
-        ctx.fillStyle="#9b8169";
-        ctx.fillRect(575,345,190,14);
-        ctx.fillRect(591,359,12,87);
-        ctx.fillRect(737,359,12,87);
-        ctx.fillStyle="#e0d5bc";
-        ctx.fillRect(603,329,32,16);
-        ctx.fillStyle="#82977d";
-        ctx.fillRect(667,310,8,35);
-        ctx.beginPath();
-        ctx.arc(671,304,17,0,Math.PI*2);
-        ctx.fillStyle="#82977d"; ctx.fill();
-
-        if (placed.has("plant")) {
-          ctx.fillStyle="#b78e70";
-          ctx.fillRect(790,407,25,25);
-          ctx.fillStyle="#738b67";
-          ctx.beginPath(); ctx.ellipse(798,395,10,19,-.4,0,Math.PI*2); ctx.fill();
-          ctx.beginPath(); ctx.ellipse(811,390,9,16,.5,0,Math.PI*2); ctx.fill();
-        }
-        if (placed.has("lamp")) {
-          ctx.fillStyle="#c3a66e";
-          ctx.fillRect(522,323,5,30);
-          ctx.fillStyle="#dfc994";
-          ctx.beginPath(); ctx.moveTo(505,324); ctx.lineTo(544,324); ctx.lineTo(535,302); ctx.lineTo(514,302); ctx.closePath(); ctx.fill();
-          ctx.fillStyle="rgba(255,221,140,.15)";
-          ctx.beginPath(); ctx.moveTo(510,324); ctx.lineTo(550,324); ctx.lineTo(590,FLOOR); ctx.lineTo(470,FLOOR); ctx.fill();
-        }
-      }
-
-      if (room === "garden") {
-        ctx.fillStyle="#b5c8bc";
-        ctx.fillRect(0,0,W,FLOOR);
-        // clouds
-        ctx.fillStyle="rgba(255,255,255,.55)";
-        [[130,90],[470,120],[760,72]].forEach(([x,y]) => {
-          ctx.beginPath();
-          ctx.arc(x,y,22,0,Math.PI*2);
-          ctx.arc(x+24,y-8,28,0,Math.PI*2);
-          ctx.arc(x+51,y,19,0,Math.PI*2);
-          ctx.fill();
-        });
-        // distant trees
-        for (let i=0;i<8;i++) {
-          const x=i*140-20;
-          ctx.fillStyle=i%2?"#8ca58b":"#78977d";
-          ctx.beginPath(); ctx.arc(x+40,290,65,0,Math.PI*2); ctx.fill();
-          ctx.fillStyle="#857863"; ctx.fillRect(x+34,290,12,156);
-        }
-        // path
-        ctx.fillStyle="#c7bca3";
-        ctx.beginPath(); ctx.moveTo(355,FLOOR); ctx.lineTo(420,345); ctx.lineTo(560,345); ctx.lineTo(640,FLOOR); ctx.fill();
-        for(let i=0;i<22;i++){
-          const x=(i*67+23)%W, y=390+(i*17)%45;
-          ctx.fillStyle=i%2?"#637f61":"#78956e";
-          ctx.beginPath(); ctx.ellipse(x,y,5,12,-.5,0,Math.PI*2); ctx.fill();
-        }
-        // flowers
-        for(let i=0;i<7;i++){
-          const x=100+i*116, y=365+(i%3)*18;
-          ctx.strokeStyle="#526b4e"; ctx.lineWidth=2;
-          ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x-3,y+45); ctx.stroke();
-          ctx.fillStyle=i%2?"#d7c6d8":"#e8dca9";
-          for(let j=0;j<5;j++){
-            const a=j*Math.PI*2/5;
-            ctx.beginPath(); ctx.arc(x+Math.cos(a)*6,y+Math.sin(a)*6,4,0,Math.PI*2); ctx.fill();
-          }
-        }
-      }
-
-      if (room === "attic") {
-        ctx.fillStyle="#c7bcae";
-        ctx.beginPath(); ctx.moveTo(0,240); ctx.lineTo(480,45); ctx.lineTo(960,240); ctx.lineTo(960,FLOOR); ctx.lineTo(0,FLOOR); ctx.fill();
-        ctx.strokeStyle="#a09282"; ctx.lineWidth=4;
-        ctx.beginPath(); ctx.moveTo(0,240); ctx.lineTo(480,45); ctx.lineTo(960,240); ctx.stroke();
-        for(let i=0;i<7;i++){
-          ctx.strokeStyle="rgba(90,72,54,.13)";
-          ctx.beginPath(); ctx.moveTo(i*160,240); ctx.lineTo(i*160,FLOOR); ctx.stroke();
-        }
-        // boxes
-        [[100,365,100,80],[730,340,120,105],[595,390,85,55]].forEach(([x,y,w,h],i)=>{
-          ctx.fillStyle=i%2?"#a68d73":"#b39a7e";
-          ctx.fillRect(x,y,w,h);
-          ctx.strokeStyle="#826d57"; ctx.lineWidth=2;
-          ctx.strokeRect(x,y,w,h);
-          ctx.beginPath(); ctx.moveTo(x,y+h*.3); ctx.lineTo(x+w,y+h*.3); ctx.stroke();
-        });
-        ctx.fillStyle="#8a7b68";
-        ctx.fillRect(220,230,65,8);
-        ctx.fillRect(231,238,8,80);
-        ctx.fillRect(267,238,8,80);
-      }
-
-      if (room === "secret") {
-        ctx.fillStyle="#c9b7e8";
-        ctx.fillRect(0,0,W,FLOOR);
-        ctx.globalAlpha=.25;
-        for(let i=0;i<26;i++){
-          ctx.fillStyle=i%2?"#fff":"#8e71bd";
-          ctx.fillRect((i*83)%W,(i*57)%FLOOR,18+(i%3)*8,10+(i%4)*6);
-        }
-        ctx.globalAlpha=1;
-        // glowing portal
-        const glow=ctx.createRadialGradient(480,250,10,480,250,180);
-        glow.addColorStop(0,"rgba(255,255,255,.85)");
-        glow.addColorStop(1,"rgba(181,143,235,0)");
-        ctx.fillStyle=glow;
-        ctx.fillRect(280,70,400,360);
-        ctx.fillStyle="#79639f";
-        ctx.fillRect(420,170,120,230);
-        ctx.fillStyle="#eadcfe";
-        ctx.fillRect(440,190,80,210);
-        for(let i=0;i<14;i++){
-          ctx.fillStyle=i%2?"#fff0a8":"#a38bd3";
-          ctx.fillRect((i*71+90)%W,100+(i*47)%280,5,5);
-        }
-      }
-
-      // floor and baseboard
-      ctx.fillStyle=r.floor;
-      ctx.fillRect(0,FLOOR,W,H-FLOOR);
-      ctx.fillStyle="rgba(255,255,255,.16)";
-      for(let x=0;x<W;x+=80) ctx.fillRect(x,FLOOR+8,1,H-FLOOR);
-      ctx.fillStyle="rgba(40,30,20,.15)";
-      ctx.fillRect(0,FLOOR,W,4);
-
-      // exits
-      const exits = r.exits || [];
-      exits.forEach(exit=>{
-        if(exit.id==="garden" && room==="bedroom"){
-          ctx.fillStyle="#9a816b";
-          ctx.fillRect(830,260,80,186);
-          ctx.fillStyle="#d7c8ad";
-          ctx.fillRect(840,270,60,176);
-          ctx.fillStyle="#78967d";
-          ctx.fillRect(849,279,42,156);
-          ctx.fillStyle="#e3d8bd";
-          ctx.beginPath(); ctx.arc(887,360,4,0,Math.PI*2); ctx.fill();
-        } else if(exit.id==="bedroom" && room==="garden"){
-          ctx.fillStyle="#6f8a6e";
-          ctx.fillRect(30,280,90,166);
-          ctx.fillStyle="#c2cdb8";
-          ctx.fillRect(40,290,70,156);
-        } else if(room==="attic" || room==="secret"){
-          ctx.fillStyle="#8e7d6b";
-          ctx.fillRect(20,280,80,166);
-          ctx.fillStyle="#d4c9b7";
-          ctx.fillRect(30,290,60,156);
-        }
-      });
-    }
-
-    function drawObject(obj, time) {
-      const bob = Math.sin(time/480 + obj.x)*2;
-      const x=obj.x, y=obj.y+bob;
-      if(found.has(obj.id)) {
-        ctx.fillStyle="rgba(50,50,45,.08)";
-        ctx.beginPath(); ctx.ellipse(x,y+8,13,4,0,0,Math.PI*2); ctx.fill();
-        return;
-      }
-      if(obj.id==="key") {
-        ctx.strokeStyle=obj.color; ctx.lineWidth=5;
-        ctx.beginPath(); ctx.arc(x,y-5,8,0,Math.PI*2); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(x,y+3); ctx.lineTo(x,y+20); ctx.lineTo(x+8,y+20); ctx.stroke();
-      } else if(obj.id==="note") {
-        ctx.fillStyle=obj.color; ctx.save(); ctx.translate(x,y); ctx.rotate(-.09);
-        ctx.fillRect(-14,-11,28,23);
-        ctx.strokeStyle="#9b8c73"; ctx.lineWidth=1;
-        ctx.beginPath(); ctx.moveTo(-8,-3); ctx.lineTo(8,-3); ctx.moveTo(-8,3); ctx.lineTo(5,3); ctx.stroke();
-        ctx.restore();
-      } else if(obj.id==="leaf") {
-        ctx.fillStyle=obj.color; ctx.beginPath();
-        ctx.ellipse(x,y,9,17,-.6,0,Math.PI*2); ctx.fill();
-        ctx.strokeStyle="#456449"; ctx.beginPath(); ctx.moveTo(x-8,y+12); ctx.lineTo(x+6,y-11); ctx.stroke();
-      } else if(obj.id==="stone") {
-        ctx.fillStyle=obj.color; ctx.beginPath();
-        ctx.ellipse(x,y+5,15,10,-.1,0,Math.PI*2); ctx.fill();
-        ctx.fillStyle="#747a77"; ctx.fillRect(x-3,y,6,3);
-      } else if(obj.id==="star" || obj.id==="fragment") {
-        ctx.save(); ctx.translate(x,y);
-        ctx.rotate(time/1500);
-        ctx.fillStyle=obj.color;
-        ctx.beginPath();
-        for(let i=0;i<10;i++){
-          const a=-Math.PI/2+i*Math.PI/5;
-          const rad=i%2?7:16;
-          const px=Math.cos(a)*rad, py=Math.sin(a)*rad;
-          if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
-        }
-        ctx.closePath(); ctx.fill(); ctx.restore();
-      } else {
-        ctx.fillStyle=obj.color;
-        ctx.fillRect(x-12,y-12,24,24);
-        ctx.strokeStyle="#61584e"; ctx.strokeRect(x-12,y-12,24,24);
-      }
-      ctx.fillStyle="#34332e";
-      ctx.font="11px Courier New";
-      ctx.textAlign="center";
-      ctx.fillText(obj.label,x,y+32);
-    }
-
-    function drawPuppet(time) {
-      const x=puppet.x, y=puppet.y;
-      const bob=puppet.grounded && !dragging ? Math.sin(time/150)*1.5 : 0;
-      const torsoX=x, headY=y+13+bob, bodyY=y+38+bob;
-      ctx.save();
-      ctx.translate(x,y);
-      ctx.rotate(puppet.angle);
-
-      // shadow
-      ctx.fillStyle="rgba(30,25,20,.16)";
-      ctx.beginPath();
-      ctx.ellipse(0,puppet.h+3,dragging?19:13,4,0,0,Math.PI*2);
-      ctx.fill();
-
-      // wooden joints, limbs
-      const wood="#bd956b", light="#dfbd91", dark="#806044";
-      ctx.lineCap="round"; ctx.lineJoin="round";
-
-      function limb(x1,y1,x2,y2,width=7) {
-        ctx.strokeStyle=dark; ctx.lineWidth=width+2;
-        ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
-        ctx.strokeStyle=wood; ctx.lineWidth=width;
-        ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
-        ctx.fillStyle=light;
-        ctx.beginPath(); ctx.arc(x2,y2,width*.55,0,Math.PI*2); ctx.fill();
-      }
-
-      // legs
-      const walk=puppet.grounded && !dragging ? Math.sin(time/110)*5 : 0;
-      limb(-4,49+bob,-7+walk,65+bob,7);
-      limb(-7+walk,65+bob,-11+walk,79+bob,6);
-      limb(4,49+bob,7-walk,65+bob,7);
-      limb(7-walk,65+bob,12-walk,79+bob,6);
-      // feet
-      ctx.fillStyle=dark;
-      ctx.fillRect(-18+walk,77+bob,12,5);
-      ctx.fillRect(7-walk,77+bob,12,5);
-
-      // arms
-      const swing=dragging ? -10 : Math.sin(time/160)*5;
-      limb(-7,28+bob,-14+swing,41+bob,6);
-      limb(-14+swing,41+bob,-16+swing,50+bob,5);
-      limb(7,28+bob,14-swing,41+bob,6);
-      limb(14-swing,41+bob,16-swing,50+bob,5);
-
-      // torso
-      ctx.fillStyle=wood;
-      ctx.beginPath();
-      ctx.roundRect(-9,25+bob,18,27,5);
-      ctx.fill();
-      ctx.strokeStyle=dark; ctx.lineWidth=1.5;
-      ctx.stroke();
-
-      // neck and head
-      ctx.fillStyle=dark; ctx.fillRect(-3,19+bob,6,8);
-      ctx.fillStyle=light;
-      ctx.beginPath(); ctx.ellipse(0,12+bob,11,12,0,0,Math.PI*2); ctx.fill();
-      ctx.strokeStyle=dark; ctx.lineWidth=1.5; ctx.stroke();
-      // wooden grain
-      ctx.strokeStyle="rgba(100,65,38,.4)";
-      ctx.lineWidth=1;
-      ctx.beginPath(); ctx.arc(0,12+bob,6,.2,1.8); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(-4,8+bob); ctx.lineTo(1,7+bob); ctx.stroke();
-
-      // joint circles
-      ctx.fillStyle=light;
-      [[-4,28],[4,28],[-4,49],[4,49]].forEach(([jx,jy])=>{
-        ctx.beginPath(); ctx.arc(jx,jy+bob,3.5,0,Math.PI*2); ctx.fill();
-        ctx.strokeStyle=dark; ctx.stroke();
-      });
-      ctx.restore();
-    }
-
-    function draw(time) {
-      const r=rooms[room];
-      ctx.clearRect(0,0,W,H);
-      drawBackground(r);
-      (r.objects||[]).forEach(obj=>drawObject(obj,time));
-      drawPuppet(time);
-
-      if(pixelMode) {
-        // Rare pixel effect: palette blocks + scanline texture.
-        ctx.save();
-        ctx.globalAlpha=.13;
-        ctx.fillStyle="#3f275f";
-        for(let y=0;y<H;y+=8) ctx.fillRect(0,y,W,2);
-        ctx.globalAlpha=.25;
-        for(let x=0;x<W;x+=16) {
-          ctx.fillStyle=(x/16)%2?"#fff":"#7c58ae";
-          ctx.fillRect(x,0,8,H);
-        }
-        ctx.restore();
-      }
-    }
-
-    function frame(time) {
-      const dt=Math.min((time-lastTime)/1000 || 0, .035);
-      lastTime=time;
-      if(!dragging) {
-        puppet.vy += 980*dt;
-        puppet.y += puppet.vy*dt;
-        puppet.x += puppet.vx*dt;
-        puppet.vx *= Math.pow(.02,dt);
-        if(puppet.y+puppet.h>=FLOOR) {
-          puppet.y=FLOOR-puppet.h;
-          if(puppet.vy>120) tone(130,.06,"triangle",.018);
-          puppet.vy=0;
-          puppet.grounded=true;
-          puppet.angle*=.8;
-        } else {
-          puppet.grounded=false;
-        }
-        puppet.x=Math.max(18,Math.min(W-18,puppet.x));
-        puppet.y=Math.max(0,puppet.y);
-      }
-      draw(time);
-      requestAnimationFrame(frame);
-    }
-
-    function canvasPoint(event) {
-      const rect=canvas.getBoundingClientRect();
+    function makePart(name, x, y, length, angle, parent, width = 5) {
       return {
-        x:(event.clientX-rect.left)*W/rect.width,
-        y:(event.clientY-rect.top)*H/rect.height
+        name, x, y, px: x, py: y, length, angle,
+        parent, width, vx: 0, vy: 0
       };
     }
 
-    function nearPuppet(p) {
-      return p.x>=puppet.x-25 && p.x<=puppet.x+25 &&
-             p.y>=puppet.y-10 && p.y<=puppet.y+puppet.h+12;
+    function resetFigure() {
+      figure.x = 235;
+      figure.y = 172;
+      figure.vx = 0;
+      figure.vy = 0;
+      figure.angle = 0;
+      figure.grounded = false;
+      figure.grabbed = null;
+
+      figure.parts = [
+        makePart("head", 0, -20, 8, 0, "body", 7),
+        makePart("leftArm", -7, -9, 13, -0.65, "body", 4),
+        makePart("leftForearm", -15, 0, 12, -0.25, "leftArm", 3),
+        makePart("rightArm", 7, -9, 13, 0.65, "body", 4),
+        makePart("rightForearm", 15, 0, 12, 0.25, "rightArm", 3),
+        makePart("leftLeg", -4, 9, 15, -0.1, "body", 5),
+        makePart("leftFoot", -5, 24, 8, -0.2, "leftLeg", 4),
+        makePart("rightLeg", 4, 9, 15, 0.1, "body", 5),
+        makePart("rightFoot", 5, 24, 8, 0.2, "rightLeg", 4)
+      ];
     }
 
-    canvas.addEventListener("pointerdown", e=>{
-      const p=canvasPoint(e);
-      if(nearPuppet(p)) {
-        dragging=true;
-        canvas.setPointerCapture(e.pointerId);
-        pointerOffset.x=p.x-puppet.x;
-        pointerOffset.y=p.y-puppet.y;
-        puppet.vx=0; puppet.vy=0;
-        tone(340,.04);
-        canvas.style.cursor="grabbing";
+    resetFigure();
+
+    function rand(n) {
+      return Math.abs(Math.sin(n * 127.1 + 311.7) * 43758.5453) % 1;
+    }
+
+    function rect(x, y, w, h, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
+    }
+
+    function pixel(x, y, color, size = 2) {
+      rect(x, y, size, size, color);
+    }
+
+    function line(x1, y1, x2, y2, color, width = 2) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.beginPath();
+      ctx.moveTo(Math.round(x1), Math.round(y1));
+      ctx.lineTo(Math.round(x2), Math.round(y2));
+      ctx.stroke();
+    }
+
+    function outlineBox(x, y, w, h, fill, border = colors.outline) {
+      rect(x - 2, y - 2, w + 4, h + 4, border);
+      rect(x, y, w, h, fill);
+    }
+
+    function drawWindow(x, y, w, h, sky, night = false) {
+      outlineBox(x, y, w, h, "#715b4f");
+      rect(x + 3, y + 3, w - 6, h - 6, sky);
+      const mid = x + Math.floor(w / 2);
+      rect(mid - 1, y + 2, 2, h - 4, "#715b4f");
+      rect(x + 2, y + Math.floor(h / 2), w - 4, 2, "#715b4f");
+
+      if (night) {
+        pixel(x + 10, y + 9, "#fff0bd", 4);
+        pixel(x + w - 14, y + 17, "#d8e6ed", 2);
+      } else {
+        rect(x + 8, y + 8, 7, 3, "#f7e5b5");
+        pixel(x + w - 15, y + 10, "#f7e5b5", 4);
+      }
+    }
+
+    function drawPlant(x, y, scale = 1) {
+      rect(x - 8 * scale, y, 16 * scale, 9 * scale, "#a96f55");
+      rect(x - 6 * scale, y + 2 * scale, 12 * scale, 5 * scale, "#c98e68");
+      rect(x - 1 * scale, y - 19 * scale, 2 * scale, 20 * scale, "#537454");
+      rect(x - 10 * scale, y - 15 * scale, 10 * scale, 5 * scale, "#6d966a");
+      rect(x + 1 * scale, y - 12 * scale, 9 * scale, 5 * scale, "#7eaa76");
+      rect(x - 6 * scale, y - 24 * scale, 9 * scale, 7 * scale, "#77976a");
+      pixel(x - 5 * scale, y - 22 * scale, "#a4c18b", 3 * scale);
+    }
+
+    function drawBedroom() {
+      rect(0, 0, W, H, "#d7c5ac");
+      rect(0, 0, W, 145, "#d9c8b0");
+
+      for (let y = 0; y < 145; y += 16) {
+        rect(0, y, W, 1, "#cdb99e");
+      }
+
+      rect(0, 145, W, 81, "#b58e70");
+      for (let x = 0; x < W; x += 32) {
+        rect(x, 145, 1, 81, "#a77f64");
+        for (let y = 151; y < 226; y += 24) {
+          rect(x + 12, y, 2, 1, "#9d755e");
+        }
+      }
+
+      drawWindow(46, 30, 72, 59, "#a9c5c9");
+      rect(50, 67, 64, 17, "#d3d5b1");
+      pixel(62, 39, "#f6dfab", 7);
+      pixel(83, 53, "#dbe7dd", 3);
+
+      rect(41, 90, 83, 4, "#806653");
+      rect(41, 94, 3, 12, "#806653");
+      rect(120, 94, 3, 12, "#806653");
+      rect(52, 87, 15, 4, "#d4bba0");
+
+      // Bed
+      rect(158, 158, 144, 54, "#78594b");
+      rect(153, 150, 150, 17, "#87654e");
+      rect(160, 164, 137, 41, "#e6d6bb");
+      rect(162, 165, 133, 10, "#f2e5cf");
+      rect(166, 166, 35, 16, "#7c8ba0");
+      rect(169, 167, 29, 10, "#94a6b9");
+      rect(207, 164, 87, 40, "#d9c9aa");
+      rect(208, 179, 85, 4, "#c7b28e");
+      rect(165, 203, 7, 18, "#70503f");
+      rect(287, 203, 7, 18, "#70503f");
+
+      // Bedside table
+      rect(317, 172, 46, 36, "#8c6248");
+      rect(313, 168, 54, 6, "#a77a58");
+      rect(322, 181, 35, 10, "#6f4d3d");
+      rect(338, 185, 3, 3, "#d4b77d");
+      rect(322, 208, 4, 15, "#71503d");
+      rect(355, 208, 4, 15, "#71503d");
+      drawPlant(340, 166, 0.65);
+
+      // Rug
+      rect(143, 209, 175, 17, "#8c8b79");
+      rect(150, 211, 160, 12, "#b9b39b");
+      for (let x = 157; x < 307; x += 12) {
+        rect(x, 215, 5, 2, "#9b9b83");
+      }
+
+      // Door and exit
+      outlineBox(416, 74, 39, 73, "#8a654c");
+      rect(420, 78, 31, 65, "#b88961");
+      rect(425, 83, 21, 23, "#9e744f");
+      rect(425, 111, 21, 27, "#9e744f");
+      pixel(443, 112, "#e6c57d", 3);
+      rect(408, 145, 55, 4, "#765842");
+
+      rect(0, 225, W, 45, "#795e4b");
+      rect(0, 226, W, 2, "#d3b48d");
+    }
+
+    function drawGarden() {
+      rect(0, 0, W, H, "#b8cfb1");
+      rect(0, 0, W, 172, "#b8cfb1");
+      rect(0, 172, W, 54, "#77956a");
+
+      // Distant hills
+      rect(0, 133, 90, 40, "#8da981");
+      rect(0, 147, 140, 26, "#93ae83");
+      rect(280, 132, 90, 41, "#91ad83");
+      rect(340, 145, 140, 28, "#86a478");
+
+      pixel(52, 34, "#fff0c2", 14);
+      pixel(55, 37, "#fff5d8", 8);
+
+      for (let x = 0; x < W; x += 18) {
+        rect(x, 173, 2, 53, "#68885f");
+        pixel(x + 5, 184 + rand(x) * 25, "#9dbb7e", 2);
+      }
+
+      // Cottage
+      rect(155, 86, 150, 92, "#dfcba6");
+      rect(146, 78, 168, 12, "#745648");
+      rect(159, 67, 142, 15, "#8c6250");
+      rect(171, 56, 118, 14, "#9b6c53");
+      rect(186, 47, 89, 12, "#ac7957");
+      rect(195, 91, 70, 87, "#e5d4b5");
+      rect(208, 103, 19, 30, "#91b7b4");
+      rect(211, 106, 13, 24, "#b8d6cb");
+      rect(238, 103, 19, 30, "#91b7b4");
+      rect(241, 106, 13, 24, "#b8d6cb");
+
+      // Cottage door
+      rect(265, 125, 26, 53, "#91654b");
+      rect(269, 129, 18, 45, "#b07f58");
+      pixel(282, 153, "#ead09a", 3);
+
+      // Fence
+      for (let x = 12; x < 125; x += 20) {
+        rect(x, 151, 5, 30, "#bba07b");
+        rect(x - 2, 153, 9, 4, "#d8bb90");
+      }
+      rect(10, 159, 120, 4, "#d8bb90");
+      rect(10, 170, 120, 4, "#d8bb90");
+
+      drawPlant(65, 214, 1.2);
+      drawPlant(382, 209, 1.1);
+      drawPlant(427, 218, 0.9);
+
+      // Path
+      rect(204, 179, 68, 47, "#bda78a");
+      rect(215, 180, 48, 46, "#c9b493");
+      pixel(223, 191, "#d8c6a2", 3);
+      pixel(248, 210, "#a99378", 3);
+
+      rect(0, 225, W, 45, "#68815b");
+      rect(0, 225, W, 3, "#9fb989");
+    }
+
+    function drawAttic() {
+      rect(0, 0, W, H, "#aaa4b4");
+      rect(0, 0, W, 151, "#bcb3c1");
+
+      // Sloped roof
+      for (let x = 0; x < W; x += 16) {
+        let top = 5 + Math.abs(x - 240) * 0.36;
+        rect(x, top, 16, 3, "#847b90");
+        rect(x, top + 4, 2, 35, "#a198ad");
+      }
+
+      rect(0, 151, W, 75, "#8d7f8e");
+      for (let x = 0; x < W; x += 28) {
+        rect(x, 151, 2, 75, "#796d7d");
+        rect(x + 12, 170, 4, 2, "#a493a0");
+      }
+
+      // Round window
+      outlineBox(202, 37, 76, 73, "#71677e");
+      rect(209, 44, 62, 59, "#6f8da5");
+      rect(216, 51, 48, 45, "#8caec0");
+      pixel(225, 61, "#d9e2dc", 6);
+      pixel(247, 76, "#e9dfb7", 4);
+      rect(238, 44, 3, 59, "#71677e");
+      rect(209, 72, 62, 3, "#71677e");
+
+      // Old boxes
+      rect(48, 163, 63, 47, "#8a654e");
+      rect(44, 158, 71, 8, "#a47c5b");
+      rect(55, 170, 48, 4, "#b28a67");
+      rect(79, 169, 3, 40, "#674d40");
+
+      rect(347, 170, 78, 40, "#96714f");
+      rect(343, 164, 86, 8, "#b28a60");
+      rect(380, 172, 3, 36, "#6d5140");
+      rect(352, 184, 68, 3, "#b48c61");
+
+      // Dust and cobweb
+      line(0, 16, 29, 40, "#e1d8e5", 1);
+      line(0, 16, 31, 17, "#e1d8e5", 1);
+      line(4, 17, 14, 38, "#e1d8e5", 1);
+
+      for (let i = 0; i < 18; i++) {
+        pixel(rand(i) * W, 30 + rand(i + 10) * 160, "#d8cfdf", 1);
+      }
+
+      rect(0, 225, W, 45, "#6e5c69");
+      rect(0, 225, W, 3, "#b7a3b6");
+    }
+
+    function drawSecret() {
+      rect(0, 0, W, H, "#7d91a4");
+      rect(0, 0, W, 225, "#9fb2c0");
+
+      // Underground stone chamber
+      for (let y = 0; y < 225; y += 20) {
+        for (let x = 0; x < W; x += 32) {
+          const shift = (Math.floor(y / 20) % 2) * 16;
+          rect(x + shift, y, 29, 17, y % 40 === 0 ? "#93a8b6" : "#a9bbc5");
+          rect(x + shift, y + 17, 29, 2, "#7f94a4");
+        }
+      }
+
+      // Glowing portal
+      rect(180, 58, 120, 142, "#667b96");
+      rect(188, 64, 104, 130, "#819bb0");
+      rect(196, 70, 88, 116, "#b2c6cf");
+      rect(204, 76, 72, 102, "#d5d7c6");
+      rect(212, 82, 56, 90, "#a4c5ca");
+      rect(220, 89, 40, 75, "#dce0cf");
+      rect(229, 99, 22, 57, "#e8e4cb");
+      pixel(232, 105, "#fff4d1", 10);
+
+      // Floating stones
+      rect(46, 184, 52, 9, "#7d92a3");
+      rect(51, 193, 43, 7, "#8da3b1");
+      rect(362, 160, 54, 10, "#7d92a3");
+      rect(368, 170, 43, 7, "#8da3b1");
+
+      for (let i = 0; i < 15; i++) {
+        pixel(25 + rand(i) * 430, 20 + rand(i + 20) * 190, "#e1e8d9", 2);
+      }
+
+      rect(0, 225, W, 45, "#687e90");
+      rect(0, 225, W, 3, "#c5d1d0");
+    }
+
+    function drawBackground() {
+      if (room === "bedroom") drawBedroom();
+      if (room === "garden") drawGarden();
+      if (room === "attic") drawAttic();
+      if (room === "secret") drawSecret();
+
+      drawRoomDecorations();
+      drawObjects();
+      drawExits();
+    }
+
+    function drawRoomDecorations() {
+      const list = decorations[room] || [];
+
+      for (const item of list) {
+        if (item.type === "plant") drawPlant(item.x, item.y, 0.8);
+        if (item.type === "lamp") {
+          rect(item.x - 2, item.y - 14, 4, 15, "#725646");
+          rect(item.x - 8, item.y - 18, 16, 6, "#e5c987");
+          rect(item.x - 6, item.y - 16, 12, 2, "#fff0c4");
+        }
+        if (item.type === "picture") {
+          outlineBox(item.x - 10, item.y - 9, 20, 18, "#e3cfa8");
+          rect(item.x - 7, item.y - 6, 14, 12, "#96ada0");
+          pixel(item.x - 3, item.y - 2, "#d9e4bb", 5);
+        }
+      }
+    }
+
+    function drawExits() {
+      if (room === "bedroom") {
+        rect(460, 101, 20, 57, "#c7a77f");
+        rect(463, 105, 17, 49, "#e2cba5");
+      }
+
+      if (room === "garden") {
+        rect(0, 104, 17, 67, "#d8c39b");
+        rect(2, 108, 12, 59, "#b6c5a0");
+        rect(459, 104, 21, 67, "#d8c39b");
+        rect(462, 108, 18, 59, "#b6c5a0");
+      }
+
+      if (room === "attic") {
+        rect(0, 104, 18, 68, "#c0b2bd");
+        rect(3, 108, 15, 60, "#9b8b9d");
+      }
+
+      if (room === "secret") {
+        rect(0, 104, 16, 68, "#9eb3c1");
+        rect(3, 108, 13, 60, "#d5d7c6");
+      }
+    }
+
+    function drawItem(type, x, y, scale = 1) {
+      ctx.save();
+      ctx.translate(Math.round(x), Math.round(y));
+      ctx.scale(scale, scale);
+
+      if (type === "star" || type === "star2") {
+        pixel(-2, -8, "#f7df9b", 4);
+        rect(-5, -4, 10, 4, "#f7df9b");
+        rect(-3, 0, 6, 4, "#f7df9b");
+        pixel(-1, 4, "#f7df9b", 2);
+        pixel(-8, -2, "#f7df9b", 2);
+        pixel(6, -2, "#f7df9b", 2);
+      }
+
+      if (type === "leaf") {
+        rect(-2, -6, 4, 10, "#577c57");
+        rect(-6, -4, 5, 4, "#85a46d");
+        rect(1, -7, 5, 5, "#85a46d");
+        pixel(-3, -7, "#a8c18a", 3);
+        pixel(0, 2, "#d4b48c", 2);
+      }
+
+      if (type === "key") {
+        rect(-7, -2, 10, 4, "#d8bd77");
+        rect(-8, -4, 4, 8, "#f0d997");
+        rect(1, -2, 3, 8, "#d8bd77");
+        rect(4, 4, 4, 2, "#d8bd77");
+        pixel(-7, -3, "#fff0b8", 2);
+      }
+
+      if (type === "flower") {
+        rect(-1, 0, 2, 9, "#56845d");
+        rect(-6, -5, 4, 4, "#e4a9ad");
+        rect(2, -5, 4, 4, "#e4a9ad");
+        rect(-2, -9, 4, 4, "#e4a9ad");
+        rect(-2, -1, 4, 4, "#e4a9ad");
+        pixel(-1, -4, "#f5d78a", 3);
+      }
+
+      if (type === "mushroom") {
+        rect(-3, -1, 6, 9, "#e8d8b9");
+        rect(-8, -7, 16, 7, "#bd6f67");
+        rect(-5, -10, 10, 4, "#d58a7a");
+        pixel(-4, -6, "#f5e0bc", 2);
+        pixel(3, -4, "#f5e0bc", 2);
+      }
+
+      if (type === "feather") {
+        rect(-1, -8, 3, 16, "#e6e5d4");
+        rect(-5, -5, 4, 5, "#c8d4cb");
+        rect(2, -2, 5, 4, "#c8d4cb");
+        rect(-4, 2, 4, 4, "#c8d4cb");
+      }
+
+      if (type === "moon") {
+        rect(-5, -7, 9, 3, "#f0dfb1");
+        rect(-7, -4, 11, 9, "#f0dfb1");
+        rect(-4, -7, 3, 3, "#a9a5b3");
+        rect(-2, -3, 6, 7, "#a9a5b3");
+        pixel(1, -1, "#f9edcb", 2);
+      }
+
+      if (type === "gem" || type === "crystal") {
+        rect(-4, -8, 8, 4, "#93c8cb");
+        rect(-6, -4, 12, 8, "#7aaebd");
+        rect(-3, 4, 6, 5, "#6d96b2");
+        pixel(-2, -5, "#d3efdf", 3);
+      }
+
+      ctx.restore();
+    }
+
+    function drawObjects() {
+      for (const item of objects[room] || []) {
+        if (collected.has(item.id)) continue;
+        const bob = Math.sin(worldTime * 0.002 + item.x) * 1.5;
+        drawItem(item.type, item.x, item.y + bob, 1);
+      }
+    }
+
+    function partWorld(part) {
+      return {
+        x: figure.x + part.x,
+        y: figure.y + part.y
+      };
+    }
+
+    function drawFigure() {
+      const fx = figure.x;
+      const fy = figure.y;
+
+      // Ground shadow
+      const shadowY = room === "secret" ? 225 : FLOOR;
+      const shadowScale = Math.max(0.3, 1 - Math.max(0, shadowY - fy) / 85);
+      ctx.globalAlpha = 0.22 * shadowScale;
+      rect(fx - 14 * shadowScale, shadowY - 2, 28 * shadowScale, 3, "#272a31");
+      ctx.globalAlpha = 1;
+
+      ctx.save();
+      ctx.translate(Math.round(fx), Math.round(fy));
+      ctx.rotate(figure.angle);
+
+      // Body
+      line(0, -14, 0, 10, colors.outline, 8);
+      line(0, -14, 0, 10, colors.wood, 5);
+      line(-1, -13, -1, 7, colors.woodLight, 1);
+
+      // Body crossbar
+      line(-8, -9, 8, -9, colors.outline, 6);
+      line(-8, -9, 8, -9, colors.wood, 3);
+
+      // Legs and arms
+      for (const p of figure.parts) {
+        if (p.name === "head") continue;
+
+        const x1 = p.x;
+        const y1 = p.y;
+        const x2 = x1 + Math.cos(p.angle) * p.length;
+        const y2 = y1 + Math.sin(p.angle) * p.length;
+
+        line(x1, y1, x2, y2, colors.outline, p.width + 2);
+        line(x1, y1, x2, y2, colors.woodDark, p.width);
+        line(x1, y1, x2, y2 - 1, colors.woodLight, Math.max(1, p.width - 2));
+
+        rect(x1 - 2, y1 - 2, 4, 4, colors.joint);
+        rect(x1 - 1, y1 - 1, 2, 2, colors.woodLight);
+
+        if (p.name.endsWith("Foot")) {
+          line(x2, y2, x2 + 5, y2 + 1, colors.outline, 5);
+          line(x2, y2, x2 + 5, y2 + 1, colors.wood, 3);
+        }
+      }
+
+      // Neck
+      line(0, -14, 0, -20, colors.outline, 5);
+      line(0, -14, 0, -20, colors.wood, 3);
+
+      // Wooden head
+      rect(-6, -29, 12, 12, colors.outline);
+      rect(-5, -28, 10, 10, colors.wood);
+      rect(-4, -27, 8, 8, colors.woodLight);
+      rect(-4, -26, 2, 2, colors.woodDark);
+      rect(2, -26, 2, 2, colors.woodDark);
+      rect(-2, -22, 4, 1, colors.woodDark);
+
+      ctx.restore();
+
+      // Joint interaction indicator
+      if (pointer && dragged) {
+        ctx.globalAlpha = 0.4;
+        rect(pointer.x - 2, pointer.y - 2, 4, 4, "#fff0c4");
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    function updateFigure(dt) {
+      const step = Math.min(dt / 16.67, 2.5);
+
+      if (!figure.grabbed) {
+        figure.vy += GRAVITY * step;
+        figure.vy = Math.min(figure.vy, 5.5);
+        figure.x += figure.vx * step;
+        figure.y += figure.vy * step;
+        figure.vx *= Math.pow(FRICTION, step);
+        figure.angle *= Math.pow(0.985, step);
+
+        const ground = room === "secret" ? 220 : FLOOR;
+        if (figure.y + 24 >= ground) {
+          figure.y = ground - 24;
+          figure.vy *= -0.12;
+          if (Math.abs(figure.vy) < 0.5) figure.vy = 0;
+          figure.grounded = true;
+        } else {
+          figure.grounded = false;
+        }
+
+        if (figure.x < 18) {
+          figure.x = 18;
+          figure.vx *= -0.3;
+        }
+        if (figure.x > W - 18) {
+          figure.x = W - 18;
+          figure.vx *= -0.3;
+        }
+      }
+
+      // Gentle articulated movement
+      for (const p of figure.parts) {
+        if (figure.grabbed === p.name) continue;
+        p.angle += Math.sin(worldTime * 0.002 + p.length) * 0.0008 * step;
+        p.angle = Math.max(-1.5, Math.min(1.5, p.angle));
+      }
+    }
+
+    function collectNearFigure() {
+      for (const item of objects[room] || []) {
+        if (collected.has(item.id)) continue;
+        const dx = item.x - figure.x;
+        const dy = item.y - figure.y;
+        if (Math.hypot(dx, dy) < 24) {
+          collected.add(item.id);
+          playTone(660, 0.11, "sine", 0.045);
+          setTimeout(() => playTone(880, 0.14, "triangle", 0.035), 75);
+          updateInventory();
+        }
+      }
+    }
+
+    function updateInventory() {
+      inventory.innerHTML = "";
+      const icons = {
+        star: "✦", leaf: "♧", key: "⚿", flower: "✿",
+        mushroom: "●", feather: "⌁", moon: "☾", gem: "◆",
+        crystal: "◇", star2: "✦"
+      };
+
+      for (const id of collected) {
+        const el = document.createElement("div");
+        el.className = "item-icon";
+        el.textContent = icons[id] || "✦";
+        inventory.appendChild(el);
+      }
+    }
+
+    function playTone(freq, duration = 0.12, type = "sine", volume = 0.035) {
+      if (!soundOn) return;
+      try {
+        if (!audio) {
+          audio = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audio.state === "suspended") audio.resume();
+
+        const osc = audio.createOscillator();
+        const gain = audio.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audio.currentTime);
+        gain.gain.setValueAtTime(volume, audio.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audio.destination);
+        osc.start();
+        osc.stop(audio.currentTime + duration);
+      } catch (_) {}
+    }
+
+    function soundPickup() {
+      playTone(540, 0.1, "triangle", 0.04);
+    }
+
+    function soundDoor() {
+      playTone(340, 0.13, "sine", 0.035);
+      setTimeout(() => playTone(494, 0.14, "triangle", 0.03), 65);
+    }
+
+    function soundDrop() {
+      playTone(220, 0.16, "triangle", 0.04);
+    }
+
+    function soundSecret() {
+      playTone(330, 0.15, "sine", 0.035);
+      setTimeout(() => playTone(494, 0.16, "sine", 0.035), 100);
+      setTimeout(() => playTone(660, 0.22, "triangle", 0.03), 200);
+    }
+
+    function changeRoom(next) {
+      if (transition || next === room) return;
+      transition = true;
+      soundDoor();
+      fade.classList.add("active");
+
+      setTimeout(() => {
+        room = next;
+        roomVisits.add(room);
+        roomIcon.textContent = scenes[room].icon;
+        figure.x = next === "garden" ? 34 : next === "bedroom" ? 445 : 235;
+        figure.y = 172;
+        figure.vx = 0;
+        figure.vy = 0;
+        figure.angle = 0;
+        figure.grabbed = null;
+        pointer = null;
+        dragged = null;
+
+        if (room === "secret") soundSecret();
+
+        setTimeout(() => {
+          fade.classList.remove("active");
+          transition = false;
+        }, 90);
+      }, 180);
+    }
+
+    function tryExit(x, y) {
+      if (transition) return true;
+
+      if (room === "bedroom" && x > 430 && y > 72 && y < 165) {
+        changeRoom("garden");
+        return true;
+      }
+
+      if (room === "garden" && x < 22) {
+        changeRoom("bedroom");
+        return true;
+      }
+
+      if (room === "garden" && x > W - 22) {
+        changeRoom("attic");
+        return true;
+      }
+
+      if (room === "attic" && x < 22) {
+        changeRoom("garden");
+        return true;
+      }
+
+      if (room === "secret" && x < 22) {
+        changeRoom("attic");
+        return true;
+      }
+
+      return false;
+    }
+
+    function pointerPosition(e) {
+      const r = canvas.getBoundingClientRect();
+      return {
+        x: (e.clientX - r.left) * W / r.width,
+        y: (e.clientY - r.top) * H / r.height
+      };
+    }
+
+    function hitFigure(p) {
+      if (Math.hypot(p.x - figure.x, p.y - (figure.y - 20)) < 15) return "head";
+
+      for (const part of figure.parts) {
+        const wx = figure.x + part.x;
+        const wy = figure.y + part.y;
+        if (Math.hypot(p.x - wx, p.y - wy) < 10) return part.name;
+        const ex = wx + Math.cos(part.angle) * part.length;
+        const ey = wy + Math.sin(part.angle) * part.length;
+        if (Math.hypot(p.x - ex, p.y - ey) < 9) return part.name;
+      }
+
+      if (Math.hypot(p.x - figure.x, p.y - figure.y) < 23) return "body";
+      return null;
+    }
+
+    function hitObject(p) {
+      for (const item of objects[room] || []) {
+        if (collected.has(item.id)) continue;
+        if (Math.hypot(p.x - item.x, p.y - item.y) < 13) return item;
+      }
+      return null;
+    }
+
+    function startGame() {
+      started = true;
+      if (!audio && soundOn) {
+        try {
+          audio = new (window.AudioContext || window.webkitAudioContext)();
+          audio.resume();
+        } catch (_) {}
+      }
+    }
+
+    canvas.addEventListener("pointerdown", async e => {
+      e.preventDefault();
+      startGame();
+      canvas.setPointerCapture(e.pointerId);
+
+      pointer = pointerPosition(e);
+
+      if (!document.fullscreenElement && !e.shiftKey) {
+        // Fullscreen is requested only after the player's first interaction.
+        try {
+          await game.requestFullscreen();
+        } catch (_) {}
+      }
+
+      if (tryExit(pointer.x, pointer.y)) return;
+
+      const item = hitObject(pointer);
+      if (item) {
+        collected.add(item.id);
+        soundPickup();
+        updateInventory();
         return;
       }
-      inspectAt(p);
-    });
 
-    canvas.addEventListener("pointermove", e=>{
-      const p=canvasPoint(e);
-      if(dragging) {
-        puppet.x=p.x-pointerOffset.x;
-        puppet.y=p.y-pointerOffset.y;
-        puppet.x=Math.max(18,Math.min(W-18,puppet.x));
-        puppet.y=Math.max(0,Math.min(H-puppet.h,puppet.y));
-        puppet.grounded=puppet.y+puppet.h>=FLOOR-2;
-      } else {
-        canvas.style.cursor=nearPuppet(p)?"grab":"default";
+      const part = hitFigure(pointer);
+      if (part) {
+        dragged = part;
+        figure.grabbed = part;
+        dragOffset.x = pointer.x - figure.x;
+        dragOffset.y = pointer.y - figure.y;
+        figure.prevX = figure.x;
+        figure.prevY = figure.y;
+        playTone(340, 0.08, "sine", 0.025);
       }
     });
 
-    function releasePuppet() {
-      if(!dragging) return;
-      dragging=false;
-      puppet.vy=Math.max(0,puppet.vy);
-      puppet.grounded=puppet.y+puppet.h>=FLOOR-2;
-      if(puppet.grounded) puppet.y=FLOOR-puppet.h;
-      canvas.style.cursor="default";
-      tone(220,.05,"triangle");
-    }
-    canvas.addEventListener("pointerup",releasePuppet);
-    canvas.addEventListener("pointercancel",releasePuppet);
+    canvas.addEventListener("pointermove", e => {
+      if (!pointer) return;
+      const p = pointerPosition(e);
+      pointer = p;
 
-    function inspectAt(p) {
-      const r=rooms[room];
-      for(const obj of r.objects) {
-        if(found.has(obj.id)) continue;
-        if(Math.abs(obj.x-p.x)<34 && Math.abs(obj.y-p.y)<36) {
-          collect(obj); return;
+      if (dragged) {
+        const oldX = figure.x;
+        const oldY = figure.y;
+
+        figure.x = p.x - dragOffset.x;
+        figure.y = p.y - dragOffset.y;
+        figure.vx = (figure.x - oldX) * 0.65;
+        figure.vy = (figure.y - oldY) * 0.65;
+
+        if (dragged !== "body" && dragged !== "head") {
+          const part = figure.parts.find(p => p.name === dragged);
+          if (part) {
+            part.angle = Math.atan2(p.y - figure.y - part.y, p.x - figure.x - part.x);
+          }
         }
-      }
-      for(const exit of r.exits) {
-        if(Math.abs(exit.x-p.x)<80 && Math.abs(exit.y-p.y)<110) {
-          goTo(exit.id); return;
-        }
-      }
-      say("Hier ist gerade nichts. Vielleicht entdeckst du später etwas Neues.");
-    }
 
-    function collect(obj) {
-      if(found.has(obj.id)) return;
-      found.add(obj.id);
-      if(obj.item) inventory.add(obj.item);
-      say(obj.text);
-      toast("Gefunden: "+(obj.item || obj.label));
-      tone(540,.09);
-      setTimeout(()=>tone(720,.1),90);
-
-      if(obj.id==="key") {
-        unlocked.add("attic");
-        say(obj.text+" Irgendwo im Haus könnte es noch einen verborgenen Ort geben.");
-      }
-      if(obj.id==="leaf" && inventory.has("Messingschlüssel")) {
-        unlocked.add("attic");
-      }
-      if(obj.id==="stone" && inventory.has("Geheimnisvolles Blatt")) {
-        unlocked.add("attic");
-      }
-      if(obj.id==="star") {
-        activatePixelSecret();
-      }
-      if(obj.id==="box") {
-        if(inventory.has("Messingschlüssel") || inventory.has("Gekerbter Stein")) {
-          unlocked.add("secret");
-          say(obj.text+" Das Zeichen beginnt zu leuchten. Etwas hat sich geöffnet.");
-          activatePixelSecret();
-        }
-      }
-      if(obj.id==="fragment") {
-        pixelMode=false;
-        $("pixelNotice").classList.remove("visible");
-        say(obj.text+" Die Welt kehrt langsam zu ihrer ursprünglichen Form zurück.");
-      }
-      updateUI();
-      save();
-    }
-
-    function activatePixelSecret() {
-      pixelMode=true;
-      $("pixelNotice").classList.add("visible");
-      tone(330,.15,"square",.015);
-      setTimeout(()=>tone(494,.15,"square",.015),120);
-      setTimeout(()=>tone(660,.22,"square",.015),240);
-      toast("Ein seltsames Signal verändert die Welt …");
-      setTimeout(()=>{
-        $("pixelNotice").classList.remove("visible");
-      },2600);
-    }
-
-    function goTo(id) {
-      if(!rooms[id]) return;
-      if(!unlocked.has(id)) {
-        if(id==="attic" && inventory.has("Messingschlüssel")) {
-          unlocked.add("attic");
-        } else if(id==="secret" && (inventory.has("Kistenzeichen") || inventory.has("Glasstern"))) {
-          unlocked.add("secret");
-        } else {
-          say("Dieser Ort ist noch verschlossen. Vielleicht fehlt dir etwas.");
-          toast("Noch nicht zugänglich.");
-          tone(150,.12,"triangle");
-          return;
-        }
-      }
-      room=id;
-      const r=rooms[room];
-      puppet.x=id==="garden" ? 140 : id==="bedroom" ? 780 : 150;
-      puppet.y=FLOOR-puppet.h;
-      puppet.vx=puppet.vy=0;
-      pixelMode=id==="secret";
-      if(pixelMode) activatePixelSecret();
-      say(r.description);
-      updateUI();
-      save();
-      tone(420,.08);
-    }
-
-    function updateUI() {
-      const r=rooms[room];
-      $("roomTitle").textContent=r.title;
-      $("roomSubtitle").textContent=r.subtitle;
-      $("roomType").textContent=r.type;
-      $("roomNumber").textContent=String([...unlocked].indexOf(room)+1).padStart(2,"0");
-      $("sceneLabel").textContent="ORT "+$("roomNumber").textContent+" / "+r.title.toUpperCase();
-      $("storyText").textContent=r.description;
-      $("taskLine").lastElementChild.textContent=r.task;
-      $("itemCount").textContent=inventory.size+" OBJEKTE";
-      $("weatherLabel").textContent=room==="garden"?"14:07 · LEICHTER WIND":room==="secret"?"??:?? · SIGNAL":"14:07 · STILL";
-
-      const inv=$("inventory");
-      inv.innerHTML="";
-      if(inventory.size===0) {
-        inv.innerHTML='<p class="empty-inventory">Noch nichts gefunden. Sieh dich ein wenig um.</p>';
-      } else {
-        [...inventory].forEach(item=>{
-          const el=document.createElement("button");
-          el.className="inventory-item";
-          el.textContent=item;
-          el.title=itemDescriptions[item]||item;
-          el.addEventListener("click",()=>say(itemDescriptions[item]||item));
-          inv.appendChild(el);
-        });
-      }
-
-      const list=$("worldList");
-      list.innerHTML="";
-      const worldItems=[
-        ["bedroom","Das Zimmer"],
-        ["garden","Der Garten"],
-        ["attic","Der Dachboden"],
-        ["secret","Der Pixelraum"]
-      ];
-      worldItems.forEach(([id,label])=>{
-        const b=document.createElement("button");
-        b.className="world-item"+(room===id?" current":"");
-        const accessible=unlocked.has(id);
-        b.innerHTML='<span class="world-dot"></span><span>'+label+'</span><span class="world-state">'+(accessible?(room===id?"HIER":"OFFEN"):"???")+'</span>';
-        b.disabled=!accessible;
-        b.addEventListener("click",()=>goTo(id));
-        list.appendChild(b);
-      });
-
-      $("plantButton").disabled=!inventory.has("Geheimnisvolles Blatt")||placed.has("plant");
-      $("plantButton").textContent=placed.has("plant")?"Aufgestellt":inventory.has("Geheimnisvolles Blatt")?"Aufstellen":"Fundstück nötig";
-      $("lampButton").disabled=!inventory.has("Glasstern")||placed.has("lamp");
-      $("lampButton").textContent=placed.has("lamp")?"Aufgestellt":inventory.has("Glasstern")?"Aufstellen":"Fundstück nötig";
-      $("plantButton").classList.toggle("done",placed.has("plant"));
-      $("lampButton").classList.toggle("done",placed.has("lamp"));
-      $("plantButton").title="Benötigt: Geheimnisvolles Blatt";
-      $("lampButton").title="Benötigt: Glasstern";
-    }
-
-    $("plantButton").addEventListener("click",()=>{
-      if(inventory.has("Geheimnisvolles Blatt") && room==="bedroom") {
-        placed.add("plant"); updateUI(); save(); say("Das Blatt hat einen Platz am Fenster bekommen."); tone(560,.1);
-      } else if(room!=="bedroom") {
-        say("Dekorieren kannst du nur in deinem Zimmer.");
-      }
-    });
-    $("lampButton").addEventListener("click",()=>{
-      if(inventory.has("Glasstern") && room==="bedroom") {
-        placed.add("lamp"); updateUI(); save(); say("Der Glasstern leuchtet jetzt auf deinem Tisch."); tone(660,.12);
-      } else if(room!=="bedroom") {
-        say("Dekorieren kannst du nur in deinem Zimmer.");
+        figure.x = Math.max(12, Math.min(W - 12, figure.x));
+        figure.y = Math.max(15, Math.min(H - 10, figure.y));
       }
     });
 
-    // E: inspect nearby objects or enter a nearby exit.
-    window.addEventListener("keydown",e=>{
-      if(e.key.toLowerCase()==="e") {
-        const r=rooms[room];
-        const obj=r.objects.find(o=>!found.has(o.id)&&Math.abs(o.x-puppet.x)<85&&Math.abs(o.y-(puppet.y+puppet.h/2))<95);
-        if(obj) collect(obj);
-        else {
-          const exit=r.exits.find(o=>Math.abs(o.x-puppet.x)<100);
-          if(exit) goTo(exit.id);
-          else say("Nichts in unmittelbarer Nähe. Schau dich weiter um.");
-        }
+    function releasePointer() {
+      if (dragged) {
+        figure.grabbed = null;
+        dragged = null;
+        soundDrop();
+      }
+      pointer = null;
+    }
+
+    canvas.addEventListener("pointerup", releasePointer);
+    canvas.addEventListener("pointercancel", releasePointer);
+    canvas.addEventListener("lostpointercapture", releasePointer);
+
+    canvas.addEventListener("dblclick", e => {
+      e.preventDefault();
+      const p = pointerPosition(e);
+      const item = hitObject(p);
+      if (item) {
+        collected.add(item.id);
+        updateInventory();
+        soundPickup();
       }
     });
 
-    $("resetButton").addEventListener("click",()=>{
-      if(!confirm("Möchtest du deinen gesamten Spielstand wirklich zurücksetzen?")) return;
-      localStorage.removeItem(SAVE_KEY);
-      location.reload();
+    window.addEventListener("keydown", e => {
+      if (e.code === "ArrowLeft" || e.code === "ArrowRight" ||
+          e.code === "ArrowUp" || e.code === "ArrowDown" || e.code === "Space") {
+        e.preventDefault();
+      }
+
+      if (e.code === "ArrowLeft") figure.vx -= 1.1;
+      if (e.code === "ArrowRight") figure.vx += 1.1;
+      if (e.code === "ArrowUp") figure.vy -= 2.1;
+      if (e.code === "Space") figure.vy -= 2.8;
+
+      if (e.code === "KeyE") {
+        if (room === "bedroom") changeRoom("garden");
+        else if (room === "garden") changeRoom("attic");
+        else if (room === "attic") changeRoom("secret");
+        else changeRoom("bedroom");
+      }
+
+      if (e.code === "Escape" && dragged) releasePointer();
     });
 
-    updateUI();
-    requestAnimationFrame(frame);
+    document.querySelector("#soundButton").addEventListener("click", e => {
+      e.stopPropagation();
+      soundOn = !soundOn;
+      document.querySelector("#soundButton").classList.toggle("muted", !soundOn);
+      if (soundOn) playTone(720, 0.1, "sine", 0.03);
+    });
+
+    document.querySelector("#fullscreenButton").addEventListener("click", async e => {
+      e.stopPropagation();
+      try {
+        if (!document.fullscreenElement) await game.requestFullscreen();
+        else await document.exitFullscreen();
+      } catch (_) {}
+    });
+
+    function render(now = 0) {
+      const dt = lastTime ? now - lastTime : 16.67;
+      lastTime = now;
+      worldTime += Math.min(dt, 40);
+
+      updateFigure(dt);
+      collectNearFigure();
+
+      ctx.imageSmoothingEnabled = false;
+      drawBackground();
+      drawFigure();
+
+      requestAnimationFrame(render);
+    }
+
+    document.addEventListener("fullscreenchange", () => {
+      game.classList.toggle("is-fullscreen", !!document.fullscreenElement);
+    });
+
+    roomIcon.textContent = scenes[room].icon;
+    updateInventory();
+    requestAnimationFrame(render);
   })();
   </script>
 </body>
