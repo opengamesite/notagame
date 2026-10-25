@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -128,9 +127,11 @@
     let keys = new Set();
     let activePanel = null;
     let dragging = false;
+    let carrying = null;
     let dragOffset = {x:0,y:0};
     let lastTime = performance.now();
     let gameTime = 0;
+    let saveTimer = 0;
     let faucetTimer = 0;
     let soundOn = true;
     let audio = null;
@@ -212,17 +213,14 @@
     }
 
     function drawRoom() {
-      // Wand
       rect(0,0,W,H,"#e7d7c1");
       rect(0,0,W,78,"#d4bda2");
 
-      // Wandpaneele
       for (let x=0; x<W; x+=80) {
         rect(x,78,2,365,"#d9c6ae");
         rect(x+5,82,1,350,"#eee2d1");
       }
 
-      // Wandabschluss und Boden
       rect(0,438,W,12,"#9c6b4c");
       rect(0,450,W,90,"#986c4d");
       for (let y=452; y<H; y+=22) {
@@ -233,7 +231,6 @@
       }
       rect(0,536,W,4,"#64432f");
 
-      // Fenster
       rect(352,110,198,132,"#7a5038");
       rect(360,118,182,116,"#c0e5ec");
       rect(364,122,174,108,"#a4d7e3");
@@ -242,26 +239,24 @@
       rect(410,132,16,8,"#fff1c4");
       rect(374,167,160,63,"#82b4a1");
       rect(374,190,160,40,"#6b9a77");
-      // Häuser draußen
+
       rect(388,176,24,35,"#b7a5a0");
       rect(393,182,6,8,"#f2dca8");
       rect(431,166,28,45,"#c7b6a5");
       rect(437,174,7,10,"#e9d6aa");
       rect(479,184,40,27,"#c4a58a");
       rect(486,190,7,8,"#f6dfa5");
-      // Fensterrahmen
+
       rect(445,118,6,116,"#f0e0ca");
       rect(360,170,182,6,"#f0e0ca");
       rect(344,106,214,8,"#a47b5a");
       rect(344,106,8,140,"#a47b5a");
       rect(550,106,8,140,"#a47b5a");
-      // Vorhänge
       rect(338,108,17,138,"#b67e69");
       rect(547,108,17,138,"#b67e69");
       rect(340,108,10,138,"#c68f7b");
       rect(550,108,10,138,"#c68f7b");
 
-      // Wandbilder
       rect(294,150,39,52,"#8d6248");
       rect(299,155,29,42,"#f2e5ce");
       rect(304,160,19,18,"#6e9a91");
@@ -272,7 +267,6 @@
       rect(709,147,8,8,"#f5d58d");
       rect(715,158,12,18,"#6c917d");
 
-      // Teppich
       rect(290,458,270,66,"#587b91");
       rect(300,465,250,52,"#7196a5");
       for(let x=310;x<545;x+=18) rect(x,470,5,42,"#87a9b2");
@@ -281,20 +275,16 @@
     }
 
     function drawBed() {
-      // Bettgestell
       rect(45,340,236,93,"#744a35");
       rect(53,333,220,18,"#a77a55");
       rect(53,352,220,67,"#c7b9a2");
       rect(53,352,220,13,"#e4d8c4");
-      // Kopfteil
       rect(45,315,18,119,"#85573b");
       rect(49,321,10,102,"#a47753");
-      // Kissen
       rect(67,355,57,30,"#e6e0d1");
       rect(72,359,47,22,"#f4ecde");
       rect(129,355,57,30,"#e6e0d1");
       rect(134,359,47,22,"#f4ecde");
-      // Decke
       rect(64,383,204,43,"#5b7e9a");
       rect(64,383,204,8,"#7f9eb3");
       rect(82,391,5,28,"#7896ac");
@@ -303,7 +293,6 @@
       rect(169,391,5,28,"#7896ac");
       rect(198,391,5,28,"#7896ac");
       rect(227,391,5,28,"#7896ac");
-      // Füße
       rect(57,427,18,12,"#65412e");
       rect(250,427,18,12,"#65412e");
     }
@@ -314,7 +303,6 @@
       rect(81,175,49,149,"#c29469");
       rect(133,175,48,149,"#b6875c");
       rect(128,175,5,149,"#805638");
-      // Türen
       rect(87,183,35,127,"#d1a477");
       rect(139,183,35,127,"#c99a6b");
       for(let y=194;y<305;y+=17) {
@@ -325,7 +313,6 @@
       rect(141,236,4,12,"#f1d08a");
       rect(80,172,101,5,"#e0b88a");
       rect(80,326,101,5,"#744b32");
-      // top decoration
       rect(80,151,34,13,"#d8c7ac");
       rect(84,145,26,8,"#e8ddc8");
       rect(91,138,12,7,"#d9b66e");
@@ -341,16 +328,13 @@
       rect(566,375,52,40,"#a06d46");
       rect(565,393,54,3,"#754a32");
       rect(590,387,5,5,"#e3c38c");
-      // Bücher
       rect(693,312,11,16,"#b64c48");
       rect(705,307,10,21,"#e0bd77");
       rect(716,314,11,14,"#527b8b");
       rect(693,312,11,3,"#d47a69");
-      // Tasse
       rect(683,315,13,13,"#e9e1d2");
       rect(696,318,5,7,"#e9e1d2");
       rect(686,318,7,7,"#7e9b91");
-      // Lampenfuß
       rect(552,306,30,5,"#464b54");
       rect(566,288,5,19,"#464b54");
       rect(551,279,34,12,"#e6c777");
@@ -358,7 +342,6 @@
     }
 
     function drawComputer() {
-      // Monitor
       rect(600,257,72,53,"#353b44");
       rect(605,262,62,41,"#111d28");
       rect(608,265,56,35,"#304c59");
@@ -369,10 +352,8 @@
       rect(610,291,35,2,"#b7d4ba");
       rect(633,310,7,10,"#474b52");
       rect(619,319,35,4,"#474b52");
-      // Keyboard
       rect(594,322,69,7,"#41464c");
       for(let x=598;x<659;x+=8) rect(x,324,5,2,"#8c9297");
-      // Mouse
       rect(667,321,10,8,"#d2d0c9");
       rect(671,322,2,3,"#85878a");
     }
@@ -389,9 +370,7 @@
       rect(832,286,20,6,"#a5afb0");
       rect(848,286,5,12,"#a5afb0");
       rect(842,299,11,5,"#a5afb0");
-      // Abfluss
       rect(827,330,10,3,"#718684");
-      // Handtuch
       rect(870,343,14,29,"#e8d3b8");
       rect(873,347,8,20,"#d0b89b");
     }
@@ -463,11 +442,9 @@
     }
 
     function drawDecor() {
-      // Heizkörper
       rect(374,250,157,36,"#d9d1c4");
       rect(378,254,149,27,"#f1e9dc");
       for(let x=385;x<524;x+=12) rect(x,257,5,20,"#d2c7b5");
-      // Wandregal
       rect(700,214,125,7,"#9b6d4b");
       rect(707,196,22,17,"#8eac9b");
       rect(710,191,16,7,"#6c967e");
@@ -475,22 +452,17 @@
       rect(740,185,10,6,"#dfbd83");
       rect(762,199,19,14,"#6f879a");
       rect(765,194,13,5,"#a5bbc9");
-      // Pflanzen
       drawPlant(517,439,.85);
       drawPlant(754,439,.7);
-      // Kabel
       line(641,330,641,346,"#20272d",2);
       line(641,346,673,346,"#20272d",2);
-      // kleiner Mülleimer
       rect(488,414,28,26,"#6c8790");
       rect(485,410,34,5,"#8ca2a5");
       rect(494,419,3,17,"#4d6873");
       rect(503,419,3,17,"#4d6873");
-      // Steckdose
       rect(742,270,20,17,"#f5eadd");
       rect(748,275,3,5,"#80776e");
       rect(755,275,3,5,"#80776e");
-      // wall clock
       rect(606,127,43,43,"#805b41");
       rect(610,131,35,35,"#f0e3ca");
       rect(626,137,2,12,"#55483d");
@@ -547,25 +519,20 @@
     function drawPostman() {
       if(!save.orders.some(o=>o.status==="arrived")) return;
       const x=902, y=FLOOR-77;
-      // Schatten
       rect(x-18,FLOOR-4,37,4,"#684b3b");
-      // Beine
       rect(x-10,y+49,8,24,"#344d68");
       rect(x+3,y+49,8,24,"#344d68");
       rect(x-13,y+70,13,5,"#493d35");
       rect(x+1,y+70,13,5,"#493d35");
-      // Uniform
       rect(x-15,y+20,30,31,"#527b9e");
       rect(x-15,y+20,30,6,"#3f6689");
       rect(x-2,y+22,4,25,"#e1d6bd");
       rect(x-10,y+29,7,7,"#e1d6bd");
-      // Kopf
       rect(x-11,y+2,22,19,"#e6b991");
       rect(x-13,y-3,26,8,"#4d7293");
       rect(x-9,y-9,18,8,"#4d7293");
       rect(x-5,y+10,3,3,"#49362c");
       rect(x+4,y+10,3,3,"#49362c");
-      // Paket
       rect(x-30,y+31,17,18,"#bd8b59");
       rect(x-28,y+31,13,3,"#e0b77c");
       rect(x-22,y+31,3,18,"#e0b77c");
@@ -583,11 +550,9 @@
       const hipY=y+52+lift;
       const headY=y+7+lift;
 
-      // Schatten
       rect(centerX-18,FLOOR-3,36,3,"#805d46");
       rect(centerX-12,FLOOR-5,24,2,"#8b6b52");
 
-      // Legs: joints linked together
       const leftHip={x:centerX-5,y:hipY};
       const rightHip={x:centerX+5,y:hipY};
       const leftKnee={x:centerX-7-swing*.4,y:y+65+lift};
@@ -600,6 +565,7 @@
         line(a.x,a.y,b.x,b.y,color,width);
         rect(a.x-width/2,a.y-width/2,width,width,light);
       }
+
       function joint(p,r=4) {
         rect(p.x-r-1,p.y-r-1,(r+1)*2,(r+1)*2,edge);
         rect(p.x-r,p.y-r,r*2,r*2,wood);
@@ -613,19 +579,26 @@
       joint(leftHip,4); joint(leftKnee,4); joint(leftFoot,3);
       joint(rightHip,4); joint(rightKnee,4); joint(rightFoot,3);
 
-      // Füße
       rect(leftFoot.x-5,leftFoot.y-1,10,5,edge);
       rect(leftFoot.x-4,leftFoot.y,8,3,wood);
       rect(rightFoot.x-5,rightFoot.y-1,10,5,edge);
       rect(rightFoot.x-4,rightFoot.y,8,3,wood);
 
-      // Arme, mit Schulter-, Ellenbogen- und Handgelenken
       const leftShoulder={x:centerX-10,y:shoulderY};
       const rightShoulder={x:centerX+10,y:shoulderY};
-      const leftElbow={x:centerX-15-swing*.55,y:y+43+lift};
-      const rightElbow={x:centerX+15+swing*.55,y:y+43+lift};
-      const leftHand={x:centerX-14-swing,y:y+54+lift};
-      const rightHand={x:centerX+14+swing,y:y+54+lift};
+      const holding = carrying !== null;
+      const leftElbow=holding
+        ? {x:centerX-13,y:y+39+lift}
+        : {x:centerX-15-swing*.55,y:y+43+lift};
+      const rightElbow=holding
+        ? {x:centerX+13,y:y+39+lift}
+        : {x:centerX+15+swing*.55,y:y+43+lift};
+      const leftHand=holding
+        ? {x:centerX-7,y:y+36+lift}
+        : {x:centerX-14-swing,y:y+54+lift};
+      const rightHand=holding
+        ? {x:centerX+7,y:y+36+lift}
+        : {x:centerX+14+swing,y:y+54+lift};
 
       segment(leftShoulder,leftElbow,6,wood);
       segment(leftElbow,leftHand,5,wood);
@@ -635,14 +608,12 @@
       joint(leftElbow,3); joint(rightElbow,3);
       joint(leftHand,3); joint(rightHand,3);
 
-      // Torso: zusammenhängender Körper
       rect(centerX-11,shoulderY-3,22,24,edge);
       rect(centerX-8,shoulderY,16,18,wood);
       rect(centerX-6,shoulderY+2,4,13,light);
       rect(centerX-5,hipY-1,10,5,edge);
       rect(centerX-4,hipY,8,3,wood);
 
-      // Kleidung sitzt auf dem Torso
       const clothes=save.equipped.clothes;
       if(clothes==="scarf") {
         rect(centerX-10,shoulderY-2,20,6,"#4d995f");
@@ -658,11 +629,9 @@
         }
       }
 
-      // Hals
       rect(centerX-4,shoulderY-7,8,7,edge);
       rect(centerX-3,shoulderY-6,6,6,wood);
 
-      // Kopf: ein geschlossener, symmetrischer Block
       const headX=centerX-11;
       rect(headX,headY,22,23,edge);
       rect(headX+2,headY+2,18,19,skin);
@@ -671,12 +640,10 @@
       rect(headX+10,headY+5,7,11,"#c99a64");
       rect(headX+5,headY+17,12,2,edge);
 
-      // Gesicht
       rect(centerX-6,headY+10,3,3,"#43362c");
       rect(centerX+4,headY+10,3,3,"#43362c");
       rect(centerX-2,headY+16,5,2,"#8c5944");
 
-      // Cosmetics
       if(save.equipped.head==="cap") {
         rect(centerX-13,headY+1,26,5,"#3977bd");
         rect(centerX-10,headY-5,20,7,"#3977bd");
@@ -696,6 +663,22 @@
         rect(centerX-1,headY+11,2,2,"#29323c");
         rect(centerX-7,headY+10,4,2,"#9fc9d6");
         rect(centerX+3,headY+10,4,2,"#9fc9d6");
+      }
+    }
+
+    function drawCarriedBucket() {
+      const cx=player.x+player.w/2+player.facing*13;
+      const y=player.y+34;
+      rect(cx-14,y,28,4,"#9b9b9a");
+      rect(cx-13,y+4,26,19,"#b7c2c2");
+      rect(cx-10,y+5,20,15,"#879d9f");
+      rect(cx-9,y+8,18,9,save.bucketWater>0?"#58bddd":"#b1dce3");
+      rect(cx-14,y+20,28,5,"#899a9b");
+      line(cx-10,y+3,cx-7,y-4,"#7b8587",2);
+      line(cx-7,y-4,cx+7,y-4,"#7b8587",2);
+      line(cx+7,y-4,cx+10,y+3,"#7b8587",2);
+      if(save.bucketWater>0) {
+        rect(cx-9,y+8,18,Math.min(9,save.bucketWater*9),"#58bddd");
       }
     }
 
@@ -732,12 +715,12 @@
       drawDoor();
       drawPlacedItems();
       drawFaucetWater();
-      drawBucket();
+      if(carrying !== "bucket") drawBucket();
       drawPostman();
       drawPlayer();
+      if(carrying === "bucket") drawCarriedBucket();
       drawObjectLabels();
 
-      // leichter Rand
       ctx.strokeStyle="#6e5745";
       ctx.lineWidth=4;
       ctx.strokeRect(2,2,W-4,H-4);
@@ -748,16 +731,26 @@
       const py=player.y+player.h/2;
       let best=null, bestDistance=Infinity;
 
+      const targets = {
+        wardrobe:{x:190,y:330},
+        computer:{x:636,y:325},
+        bed:{x:285,y:405},
+        sink:{x:790,y:355},
+        faucet:{x:842,y:310},
+        bucket:{x:bucket.x+bucket.w/2,y:bucket.y+bucket.h/2},
+        door:{x:875,y:390}
+      };
+
       for(const obj of objects) {
-        let ox=obj.x+obj.w/2, oy=obj.y+obj.h/2;
-        if(obj.id==="wardrobe") { ox=130; oy=270; }
-        if(obj.id==="computer") { ox=636; oy=292; }
-        if(obj.id==="faucet") { ox=842; oy=300; }
-        if(obj.id==="door") { ox=900; oy=370; }
-        if(obj.id==="sink") { ox=830; oy=355; }
-        if(obj.id==="bucket") { ox=bucket.x+bucket.w/2; oy=bucket.y+bucket.h/2; }
-        const d=Math.hypot(px-ox,py-oy);
-        if(d<72 && d<bestDistance) {best=obj;bestDistance=d;}
+        if(carrying === "bucket" && obj.id === "bucket") continue;
+        const target=targets[obj.id] || {x:obj.x+obj.w/2,y:obj.y+obj.h/2};
+        const dx=Math.max(0,Math.abs(px-target.x)-18);
+        const dy=Math.max(0,Math.abs(py-target.y)-24);
+        const d=Math.hypot(dx,dy);
+        if(d<96 && d<bestDistance) {
+          best=obj;
+          bestDistance=d;
+        }
       }
       return best;
     }
@@ -864,28 +857,16 @@
               save.unlocked.push(item.id);
               save.equipped[cat.slot]=item.id;
               persist();
-              playTone(720,.1,"triangle");
+              playTone(740,.1,"triangle");
               renderPanel();
             }
-          },owned&&equipped);
-          const swatch=document.createElement("span");
-          swatch.className="swatch";
-          swatch.style.background=item.color;
-          card.prepend(swatch);
+          });
           grid.append(card);
         }
         panelContent.append(grid);
       }
-
-      const reset=makeButton("Alle Cosmetics ablegen",()=>{
-        save.equipped={head:null,face:null,clothes:null};
-        persist();
-        renderPanel();
-      },"secondary-button");
-      panelContent.append(reset);
     }
-
-    function renderShop() {
+        function renderShop() {
       const intro=document.createElement("p");
       intro.className="panel-intro";
       intro.textContent="Bestelle neue Dinge für dein Zimmer. Die Lieferzeit beträgt 20 Sekunden Spielzeit. Sobald der Postbote ankommt, wartet dein Paket an der Tür.";
@@ -898,15 +879,21 @@
 
       const grid=document.createElement("div");
       grid.className="item-grid";
+
       for(const item of shopItems) {
         const alreadyOwned=save.inventory.includes(item.id)||save.placed.some(p=>p.id===item.id);
-        const card=makeCard(item.name,item.desc,alreadyOwned?"Bereits vorhanden":`${item.price} Münzen`,
-          alreadyOwned?"Schon gekauft":`Bestellen · ${item.price} ¢`,()=>{
+        const card=makeCard(
+          item.name,
+          item.desc,
+          alreadyOwned?"Bereits vorhanden":`${item.price} Münzen`,
+          alreadyOwned?"Schon gekauft":`Bestellen · ${item.price} ¢`,
+          ()=>{
             if(save.money<item.price) {
               showHint("Du hast nicht genug Münzen für diese Bestellung.");
               playTone(180,.1);
               return;
             }
+
             save.money-=item.price;
             save.orders.push({
               id:item.id+"-"+Date.now()+"-"+Math.floor(Math.random()*1000),
@@ -914,19 +901,26 @@
               status:"ordered",
               remaining:20
             });
+
             persist();
             playTone(494,.08,"triangle");
             showHint(`${item.name} bestellt. Der Postbote kommt bald.`);
             renderPanel();
-          },alreadyOwned);
+          },
+          alreadyOwned
+        );
+
         grid.append(card);
       }
+
       panelContent.append(grid);
 
       const title=document.createElement("h2");
       title.textContent="Deine Bestellungen";
       panelContent.append(title);
+
       const orders=save.orders.filter(o=>o.status==="ordered"||o.status==="arrived");
+
       if(!orders.length) {
         const empty=document.createElement("p");
         empty.className="empty-state";
@@ -935,13 +929,19 @@
       } else {
         for(const order of orders) {
           const item=shopItems.find(i=>i.id===order.itemId);
-          const status=order.status==="arrived"?"Paket wartet an der Tür":`Unterwegs · ${Math.ceil(order.remaining)} Sekunden`;
+          const status=order.status==="arrived"
+            ?"Paket wartet an der Tür"
+            :`Unterwegs · ${Math.ceil(order.remaining)} Sekunden`;
+
           const row=document.createElement("div");
           row.className="order-row";
+
           const label=document.createElement("span");
           label.textContent=item?item.name:"Bestellung";
+
           const state=document.createElement("small");
           state.textContent=status;
+
           row.append(label,state);
           panelContent.append(row);
         }
@@ -950,13 +950,16 @@
 
     function renderDoor() {
       const orders=save.orders.filter(o=>o.status==="arrived");
+
       if(orders.length) {
         const intro=document.createElement("p");
         intro.className="panel-intro";
         intro.textContent="Ding-dong! Der Postbote hat deine Lieferung gebracht.";
         panelContent.append(intro);
+
         for(const order of orders) {
           const item=shopItems.find(i=>i.id===order.itemId);
+
           panelContent.append(makeCard(
             item?item.name:"Paket",
             "Dein Paket ist angekommen.",
@@ -964,8 +967,15 @@
             "Paket annehmen",
             ()=>{
               order.status="received";
-              if(!save.received.includes(order.itemId)) save.received.push(order.itemId);
-              if(!save.inventory.includes(order.itemId)) save.inventory.push(order.itemId);
+
+              if(!save.received.includes(order.itemId)) {
+                save.received.push(order.itemId);
+              }
+
+              if(!save.inventory.includes(order.itemId)) {
+                save.inventory.push(order.itemId);
+              }
+
               persist();
               playTone(720,.12,"triangle");
               showHint("Paket angenommen! Du kannst den Gegenstand jetzt platzieren.");
@@ -978,7 +988,9 @@
         intro.className="panel-intro";
         intro.textContent="Im Moment steht niemand vor der Tür.";
         panelContent.append(intro);
+
         const waiting=save.orders.filter(o=>o.status==="ordered");
+
         if(waiting.length) {
           const note=document.createElement("div");
           note.className="notice";
@@ -990,6 +1002,7 @@
       const inventoryTitle=document.createElement("h2");
       inventoryTitle.textContent="Gegenstände im Inventar";
       panelContent.append(inventoryTitle);
+
       if(!save.inventory.length) {
         const empty=document.createElement("p");
         empty.className="empty-state";
@@ -999,7 +1012,9 @@
         for(const id of save.inventory) {
           const item=shopItems.find(i=>i.id===id);
           if(!item) continue;
+
           const alreadyPlaced=save.placed.some(p=>p.id===id);
+
           panelContent.append(makeCard(
             item.name,
             item.desc,
@@ -1010,13 +1025,17 @@
                 showHint("Dieser Gegenstand steht bereits in deinem Zimmer.");
                 return;
               }
+
               const spot=findPlacement(id);
+
               if(!spot) {
                 showHint("Gerade ist kein Platz frei. Entferne zuerst etwas Deko.");
                 return;
               }
+
               save.placed.push({id,x:spot.x,y:spot.y});
               save.inventory=save.inventory.filter(i=>i!==id);
+
               persist();
               renderPanel();
               showHint(`${item.name} wurde im Zimmer platziert.`);
@@ -1036,6 +1055,7 @@
         {x:320,y:438},
         {x:450,y:438}
       ];
+
       const occupied=save.placed.map(p=>`${p.x},${p.y}`);
       return spots.find(p=>!occupied.includes(`${p.x},${p.y}`)) || null;
     }
@@ -1045,17 +1065,26 @@
       intro.className="panel-intro";
       intro.textContent="Der Wasserhahn läuft in das Waschbecken. Stelle den Eimer darunter, um Wasser aufzufangen.";
       panelContent.append(intro);
-      const toggle=makeButton(save.faucetOn?"Wasserhahn ausschalten":"Wasserhahn einschalten",()=>{
-        save.faucetOn=!save.faucetOn;
-        persist();
-        playTone(save.faucetOn?540:300,.07,"triangle");
-        renderPanel();
-      });
+
+      const toggle=makeButton(
+        save.faucetOn?"Wasserhahn ausschalten":"Wasserhahn einschalten",
+        ()=>{
+          save.faucetOn=!save.faucetOn;
+          persist();
+          playTone(save.faucetOn?540:300,.07,"triangle");
+          renderPanel();
+        }
+      );
+
       panelContent.append(toggle);
+
       const status=document.createElement("div");
       status.className="notice";
-      status.textContent=save.faucetOn?"Der Wasserhahn läuft. Achte darauf, dass der Eimer daruntersteht.":"Der Wasserhahn ist ausgeschaltet.";
+      status.textContent=save.faucetOn
+        ?"Der Wasserhahn läuft. Achte darauf, dass der Eimer daruntersteht."
+        :"Der Wasserhahn ist ausgeschaltet.";
       panelContent.append(status);
+
       const amount=document.createElement("p");
       amount.className="empty-state";
       amount.textContent=`Wasser im Eimer: ${Math.round(save.bucketWater*100)} %`;
@@ -1067,6 +1096,7 @@
       intro.className="panel-intro";
       intro.textContent="Der Eimer kann Wasser auffangen, wenn du ihn unter den laufenden Wasserhahn stellst.";
       panelContent.append(intro);
+
       const move=makeButton("Eimer unter den Wasserhahn stellen",()=>{
         bucket.x=814;
         bucket.y=FLOOR-34;
@@ -1074,11 +1104,14 @@
         showHint("Eimer verschoben. Der Wasserstrahl trifft ihn nur, wenn er korrekt steht.");
         renderPanel();
       });
+
       panelContent.append(move);
+
       const status=document.createElement("div");
       status.className="notice";
       status.textContent=`Füllstand: ${Math.round(save.bucketWater*100)} %`;
       panelContent.append(status);
+
       panelContent.append(makeButton("Eimer zurückstellen",()=>{
         bucket.x=575;
         bucket.y=FLOOR-34;
@@ -1087,199 +1120,266 @@
     }
 
     function interact() {
-      const obj=getNearby();
-      if(!obj) {
-        showHint("Hier gibt es gerade nichts zum Benutzen.");
+      // Mit E einen getragenen Gegenstand wieder abstellen.
+      if(carrying==="bucket") {
+        bucket.x=Math.max(
+          8,
+          Math.min(
+            W-bucket.w-8,
+            player.x+player.w/2-bucket.w/2+player.facing*25
+          )
+        );
+
+        bucket.y=FLOOR-bucket.h;
+        carrying=null;
+
+        persist();
+        playTone(330,.06,"triangle");
+        showHint("Eimer abgestellt.");
         return;
       }
+
+      const obj=getNearby();
+      if(!obj) return;
+
       switch(obj.id) {
-        case "wardrobe": openPanel("wardrobe"); break;
-        case "computer": openPanel("computer"); break;
-        case "door": openPanel("door"); break;
-        case "sink": openPanel("sink"); break;
+        case "wardrobe":
+          openPanel("wardrobe");
+          break;
+
+        case "computer":
+          openPanel("computer");
+          break;
+
+        case "door":
+          openPanel("door");
+          break;
+
+        case "sink":
+          openPanel("sink");
+          break;
+
         case "faucet":
           save.faucetOn=!save.faucetOn;
           persist();
-          showHint(save.faucetOn?"Wasserhahn eingeschaltet.":"Wasserhahn ausgeschaltet.");
+          showHint(save.faucetOn
+            ?"Wasserhahn eingeschaltet."
+            :"Wasserhahn ausgeschaltet.");
           playTone(save.faucetOn?540:300,.07,"triangle");
           break;
-        case "bucket": openPanel("bucket"); break;
+
+        case "bucket":
+          carrying="bucket";
+          bucket.x=player.x+player.w/2-bucket.w/2+player.facing*18;
+          bucket.y=player.y+34;
+          playTone(520,.07,"triangle");
+          showHint("Eimer aufgenommen.");
+          break;
+
         case "bed":
-          showHint("Ein gemütliches Bett. Vielleicht später kannst du hier schlafen.");
+          showHint("Ein gemütliches Bett. Vielleicht kannst du hier später schlafen.");
           playTone(340,.07,"triangle");
           break;
       }
     }
 
-    function collidesWithFurniture(nextX) {
-      const bodyLeft=nextX+4;
-      const bodyRight=nextX+player.w-4;
-      const bodyTop=player.y+22;
-      const bodyBottom=player.y+player.h;
-
-      // Bett, Schrank, Tisch und Waschbecken blockieren den Laufweg.
-      const solids=[
-        {x:45,y:315,w:236,h:124},
-        {x:69,y:164,w:125,h:171},
-        {x:541,y:328,w:204,h:111},
-        {x:769,y:323,w:123,h:116}
-      ];
-      for(const s of solids) {
-        const horizontal=bodyRight>s.x && bodyLeft<s.x+s.w;
-        const vertical=bodyBottom>s.y+12 && bodyTop<s.y+s.h;
-        if(horizontal && vertical) {
-          const currentCenter=player.x+player.w/2;
-          const objectCenter=s.x+s.w/2;
-          return currentCenter<objectCenter ? s.x-player.w-3 : s.x+s.w+3;
-        }
-      }
-      return null;
-    }
-
     function update(dt) {
       gameTime+=dt;
+      saveTimer+=dt;
 
       if(!dragging && !activePanel) {
         const left=keys.has("a")||keys.has("arrowleft");
         const right=keys.has("d")||keys.has("arrowright");
         const speed=185;
-        player.vx=left?-speed:right?speed:0;
-        if(player.vx) {
-          player.facing=player.vx>0?1:-1;
-          player.walk+=dt*10;
-        }
 
-        const nextX=player.x+player.vx*dt;
-        const blocked=collidesWithFurniture(nextX);
-        player.x=blocked===null?nextX:blocked;
+        player.vx=left?-speed:right?speed:0;
+
+        if(left) player.facing=-1;
+        if(right) player.facing=1;
+
+        player.x+=player.vx*dt;
         player.x=Math.max(8,Math.min(W-player.w-8,player.x));
 
-        player.vy+=580*dt;
+        if(player.vx!==0) player.walk+=dt*12;
+
+        if(keys.has("w")||keys.has("arrowup")||keys.has(" ")) {
+          if(player.grounded) {
+            player.vy=-365;
+            player.grounded=false;
+            playTone(280,.05,"triangle");
+          }
+        }
+
+        player.vy+=900*dt;
         player.y+=player.vy*dt;
+
         if(player.y+player.h>=FLOOR) {
           player.y=FLOOR-player.h;
           player.vy=0;
           player.grounded=true;
-        } else {
-          player.grounded=false;
         }
+
+        // Der Weg vor den Möbeln bleibt frei.
+        // Beim Tragen bleibt der Eimer vor den Händen.
+        if(carrying==="bucket") {
+          bucket.x=player.x+player.w/2-bucket.w/2+player.facing*18;
+          bucket.y=player.y+34;
+        }
+      } else {
+        player.vx=0;
       }
 
-      // Wasser kann nur im Becken-/Eimerbereich aufgefangen werden.
       if(save.faucetOn) {
-        faucetTimer+=dt;
-        const under=bucket.x<858 && bucket.x+bucket.w>842 &&
-                     bucket.y+bucket.h>=FLOOR-40;
-        if(under) {
-          save.bucketWater=Math.min(1,save.bucketWater+dt*.035);
+        const under=bucket.x+bucket.w>805 &&
+                    bucket.x<855 &&
+                    bucket.y+bucket.h>315 &&
+                    bucket.y<405;
+
+        if(under && save.bucketWater<1) {
+          faucetTimer+=dt;
+
+          if(faucetTimer>=1) {
+            save.bucketWater=Math.min(1,save.bucketWater+.05);
+            faucetTimer=0;
+            persist();
+          }
         }
       } else {
         faucetTimer=0;
       }
 
-      // Lieferzeit läuft in Spielzeit; pausiert, wenn das Spiel geschlossen ist.
-      let changed=false;
       for(const order of save.orders) {
         if(order.status==="ordered") {
           order.remaining-=dt;
+
           if(order.remaining<=0) {
             order.remaining=0;
             order.status="arrived";
-            changed=true;
-            playTone(660,.15,"triangle");
-            showHint("Ding-dong! Der Postbote ist da. Schau an der Tür nach.");
+            playTone(740,.15,"triangle");
+            showHint("Ding-dong! Eine Lieferung ist angekommen.");
           }
         }
       }
-      if(changed || Math.floor(gameTime)%3===0) persist();
+
+      if(saveTimer>=1) {
+        saveTimer=0;
+        persist();
+      }
+    }
+        function setupControls() {
+      window.addEventListener("keydown",event=>{
+        const key=event.key.toLowerCase();
+
+        if(["arrowleft","arrowright","arrowup"," "].includes(key)) {
+          event.preventDefault();
+        }
+
+        if(key==="escape") {
+          if(!panel.classList.contains("hidden")) closePanel();
+          else if(carrying) interact();
+          return;
+        }
+
+        if(key==="e") {
+          if(!panel.classList.contains("hidden")) return;
+          interact();
+          return;
+        }
+
+        if(!panel.classList.contains("hidden")) return;
+
+        keys.add(key);
+      });
+
+      window.addEventListener("keyup",event=>{
+        keys.delete(event.key.toLowerCase());
+      });
+
+      window.addEventListener("blur",()=>{
+        keys.clear();
+      });
+
+      $("closePanel").addEventListener("click",closePanel);
+
+      $("soundButton").addEventListener("click",()=>{
+        soundOn=!soundOn;
+        $("soundButton").textContent=soundOn?"♫":"♪";
+        if(soundOn) playTone(540,.08,"triangle");
+        showHint(soundOn?"Sound eingeschaltet.":"Sound ausgeschaltet.");
+      });
+
+      // Maus- und Touch-Dragging bleibt als zusätzliche Bedienung erhalten.
+      canvas.addEventListener("pointerdown",event=>{
+        if(!panel.classList.contains("hidden")) return;
+
+        const rect=canvas.getBoundingClientRect();
+        const scaleX=W/rect.width;
+        const scaleY=H/rect.height;
+        const x=(event.clientX-rect.left)*scaleX;
+        const y=(event.clientY-rect.top)*scaleY;
+
+        if(x>=player.x-5 && x<=player.x+player.w+5 &&
+           y>=player.y-5 && y<=player.y+player.h+5) {
+          dragging=true;
+          dragOffset.x=x-player.x;
+          dragOffset.y=y-player.y;
+          player.dragging=true;
+          canvas.setPointerCapture(event.pointerId);
+        }
+      });
+
+      canvas.addEventListener("pointermove",event=>{
+        if(!dragging) return;
+
+        const rect=canvas.getBoundingClientRect();
+        const scaleX=W/rect.width;
+        const scaleY=H/rect.height;
+        const x=(event.clientX-rect.left)*scaleX;
+        const y=(event.clientY-rect.top)*scaleY;
+
+        player.x=Math.max(8,Math.min(W-player.w-8,x-dragOffset.x));
+        player.y=Math.max(0,Math.min(FLOOR-player.h,y-dragOffset.y));
+        player.grounded=player.y+player.h>=FLOOR;
+      });
+
+      function stopDragging() {
+        if(!dragging) return;
+        dragging=false;
+        player.dragging=false;
+
+        if(player.y+player.h>=FLOOR) {
+          player.y=FLOOR-player.h;
+          player.grounded=true;
+        }
+      }
+
+      canvas.addEventListener("pointerup",stopDragging);
+      canvas.addEventListener("pointercancel",stopDragging);
+      canvas.addEventListener("lostpointercapture",stopDragging);
     }
 
-    function screenToWorld(event) {
-      const rect=canvas.getBoundingClientRect();
-      const scale=Math.min(rect.width/W,rect.height/H);
-      const drawnW=W*scale, drawnH=H*scale;
-      const offsetX=(rect.width-drawnW)/2;
-      const offsetY=(rect.height-drawnH)/2;
-      return {
-        x:(event.clientX-rect.left-offsetX)/scale,
-        y:(event.clientY-rect.top-offsetY)/scale
-      };
-    }
-
-    canvas.addEventListener("pointerdown",event=>{
-      if(activePanel) return;
-      const p=screenToWorld(event);
-      const px=player.x, py=player.y;
-      if(p.x>=px-8 && p.x<=px+player.w+8 && p.y>=py-8 && p.y<=py+player.h+8) {
-        dragging=true;
-        player.dragging=true;
-        dragOffset={x:p.x-player.x,y:p.y-player.y};
-        canvas.setPointerCapture(event.pointerId);
-        playTone(330,.04,"triangle");
-      }
-    });
-
-    canvas.addEventListener("pointermove",event=>{
-      if(!dragging) return;
-      const p=screenToWorld(event);
-      player.x=Math.max(8,Math.min(W-player.w-8,p.x-dragOffset.x));
-      player.y=Math.max(12,Math.min(FLOOR-player.h,p.y-dragOffset.y));
-      player.vx=0;
-      player.vy=0;
-      player.grounded=player.y+player.h>=FLOOR;
-    });
-
-    function stopDragging() {
-      if(!dragging) return;
-      dragging=false;
-      player.dragging=false;
-      player.vy=0;
-      player.grounded=player.y+player.h>=FLOOR;
-      if(!player.grounded) playTone(220,.06,"triangle");
-    }
-    canvas.addEventListener("pointerup",stopDragging);
-    canvas.addEventListener("pointercancel",stopDragging);
-    window.addEventListener("pointerup",stopDragging);
-
-    window.addEventListener("keydown",event=>{
-      const key=event.key.toLowerCase();
-      if(["arrowleft","arrowright","arrowup"," "].includes(key)) event.preventDefault();
-      if(key==="escape") {
-        if(activePanel) closePanel();
-        return;
-      }
-      if(activePanel) return;
-      keys.add(key);
-      if((key==="w"||key==="arrowup"||key===" ") && player.grounded && !dragging) {
-        player.vy=-290;
-        player.grounded=false;
-        playTone(340,.06,"triangle");
-      }
-      if(key==="e"&&!event.repeat) interact();
-    });
-
-    window.addEventListener("keyup",event=>keys.delete(event.key.toLowerCase()));
-    window.addEventListener("blur",()=>keys.clear());
-    $("closePanel").addEventListener("click",closePanel);
-    $("soundButton").addEventListener("click",()=>{
-      soundOn=!soundOn;
-      $("soundButton").textContent=soundOn?"♫":"×";
-      showHint(soundOn?"Sound eingeschaltet.":"Sound ausgeschaltet.");
-      if(soundOn) playTone(494,.07,"triangle");
-    });
-
-    function loop(now) {
-      const dt=Math.min(.04,Math.max(0,(now-lastTime)/1000));
+    function frame(now) {
+      const dt=Math.min((now-lastTime)/1000,.04);
       lastTime=now;
-      update(dt);
+
+      if(panel.classList.contains("hidden")) {
+        update(dt);
+      }
+
       draw();
-      requestAnimationFrame(loop);
+      requestAnimationFrame(frame);
     }
 
-    $("money").textContent=save.money;
-    persist();
-    showHint("Willkommen! Geh zum Schrank oder Computer und drücke E.");
-    requestAnimationFrame(loop);
+    function init() {
+      persist();
+      setupControls();
+
+      // Kein Tutorialfenster beim Spielstart.
+      panel.classList.add("hidden");
+      requestAnimationFrame(frame);
+    }
+
+    init();
   })();
   </script>
 </body>
