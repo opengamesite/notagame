@@ -3,1070 +3,565 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pizzeria – Mein Zimmer Pixel Adventure</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>La Piccola — Mein Zimmer</title>
 <style>
-:root{--yellow:#ffd84d;--dark:#24221f;--cream:#fff7e3;--muted:#766d5c}
+:root{--ink:#34271f;--cream:#fff0d2;--red:#a94132;--green:#476b43;--gold:#e5b95d;--wood:#9c6741}
 *{box-sizing:border-box}
-body{margin:0;background:#f2ead8;color:var(--dark);font-family:system-ui,-apple-system,Segoe UI,sans-serif}
-header{height:64px;background:#fffdf7;border-bottom:3px solid var(--dark);display:flex;align-items:center;justify-content:space-between;padding:0 22px;gap:12px}
-.brand{font-size:18px;font-weight:900;letter-spacing:-.5px}
-.brand span{background:var(--yellow);padding:5px 8px;border:2px solid var(--dark);box-shadow:3px 3px 0 var(--dark)}
-.stats{display:flex;gap:8px;align-items:center;font-size:13px;font-weight:800}
-.pill{padding:7px 10px;background:white;border:2px solid var(--dark);border-radius:8px}
-main{max-width:1200px;margin:18px auto;padding:0 14px}
-.game-shell{background:#fffdf7;border:3px solid var(--dark);box-shadow:7px 7px 0 var(--dark);overflow:hidden}
-.game-top{padding:12px 15px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;border-bottom:2px solid var(--dark)}
-.game-top h1{font-size:18px;margin:0}
-.game-top p{font-size:12px;color:var(--muted);margin:3px 0 0}
-button{font:inherit;cursor:pointer;border:2px solid var(--dark);background:var(--yellow);padding:8px 12px;font-weight:850;border-radius:7px;box-shadow:3px 3px 0 var(--dark)}
-button:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--dark)}
-canvas{display:block;width:100%;height:auto;background:#b9dfdf;image-rendering:pixelated;touch-action:manipulation}
-.hud{display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:10px;padding:12px}
-.panel{border:2px solid var(--dark);border-radius:8px;padding:10px;background:#fff}
-.panel h2{font-size:12px;text-transform:uppercase;letter-spacing:.7px;margin:0 0 6px}
-.panel p{font-size:13px;margin:3px 0;line-height:1.45}
-#taskText{font-weight:800}
-#orderText{font-weight:750}
-#ingredientText{color:#655d4e}
-.help{padding:10px 14px;border-top:2px solid var(--dark);background:#fff9e9;font-size:12px;line-height:1.6}
-kbd{display:inline-block;min-width:23px;text-align:center;background:white;border:1px solid #7c7568;border-bottom-width:3px;border-radius:4px;padding:0 5px;font-weight:900}
-.mobile-controls{display:none;gap:8px;padding:12px;justify-content:center;flex-wrap:wrap}
-.mobile-controls button{min-width:62px}
-footer{font-size:11px;color:#766d5c;text-align:center;padding:15px}
-@media(max-width:700px){
- header{padding:0 10px}.brand{font-size:14px}.stats{gap:4px;font-size:11px}.pill{padding:5px}
- .hud{grid-template-columns:1fr}.game-top h1{font-size:16px}
- .mobile-controls{display:flex}
-}
+body{margin:0;background:#ead8b8;color:var(--ink);font-family:monospace;overflow-x:hidden}
+header{height:58px;background:#fff0d2;border-bottom:4px solid var(--ink);display:flex;align-items:center;justify-content:space-between;padding:0 16px;box-shadow:0 4px #c8ad84}
+.brand{font-weight:1000;font-size:16px;letter-spacing:1px}
+.brand span{background:var(--red);color:#fff0d2;padding:7px 9px;box-shadow:3px 3px var(--ink)}
+.stats{display:flex;gap:8px;font-weight:bold;font-size:13px}
+.pill{background:#fff9e9;border:2px solid var(--ink);padding:7px 10px;box-shadow:2px 2px var(--ink)}
+main{max-width:1250px;margin:18px auto;padding:0 12px}
+.frame{border:4px solid var(--ink);background:#fff0d2;box-shadow:7px 7px 0 #b49a72}
+.top{height:12px;background:repeating-linear-gradient(135deg,#a94132 0 12px,#f5e3c3 12px 24px);border-bottom:3px solid var(--ink)}
+canvas{display:block;width:100%;height:auto;image-rendering:pixelated;image-rendering:crisp-edges;background:#c4d9c2;touch-action:manipulation}
+.bottom{height:15px;background:repeating-linear-gradient(135deg,#f4e5c6 0 12px,#476b43 12px 24px);border-top:3px solid var(--ink)}
+.hud{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:10px;background:#f7e7c8;border-top:3px solid var(--ink)}
+.panel{min-height:57px;background:#fff6e3;border:2px solid var(--ink);box-shadow:3px 3px #d0b78f;padding:8px 10px}
+.panel .label{font-size:10px;color:#82684d;margin-bottom:5px;letter-spacing:1px}
+.panel .value{font-size:12px;font-weight:bold;line-height:1.5}
+button{font:inherit;cursor:pointer;background:#fff0d2;color:var(--ink);border:2px solid var(--ink);box-shadow:3px 3px var(--ink);padding:8px;font-weight:bold}
+button:active{transform:translate(2px,2px);box-shadow:1px 1px var(--ink)}
+.controls{display:none;justify-content:center;gap:8px;padding:12px;background:#f7e7c8}
+.controls button{min-width:54px}
+.sound{background:var(--green);color:white}
+@media(max-width:650px){header{padding:0 8px}.brand{font-size:11px}.stats{font-size:11px;gap:4px}.pill{padding:5px}.hud{grid-template-columns:1fr 1fr}.controls{display:flex}main{padding:0 6px;margin:10px auto}}
 </style>
 </head>
 <body>
 <header>
-  <div class="brand"><span>MEIN ZIMMER</span> / PIXEL ADVENTURE</div>
+  <div class="brand"><span>LA PICCOLA</span> ✦</div>
   <div class="stats">
-    <div class="pill">🍕 Pizzeria</div>
-    <div class="pill">💰 <span id="money">120</span></div>
+    <div class="pill">☼ <span id="clock">18:30</span></div>
+    <div class="pill">◆ <span id="money">120</span></div>
+    <button class="sound" id="soundBtn" title="Sound">♫ ON</button>
   </div>
 </header>
 
 <main>
-<div class="game-shell">
-  <div class="game-top">
-    <div>
-      <h1>La Piccola Pizzeria</h1>
-      <p>Deine Schicht beginnt. Bereite Bestellungen zu und verdiene Trinkgeld.</p>
-    </div>
-    <button id="resetJob" type="button">Schicht neu starten</button>
-  </div>
-
-  <canvas id="game" width="960" height="540" aria-label="2D-Pixelspiel: Pizzeria"></canvas>
-
-  <div class="mobile-controls">
-    <button data-key="a">◀ Links</button>
-    <button data-key="w">▲ Springen</button>
-    <button data-key="d">Rechts ▶</button>
-    <button id="mobileInteract">E · Aktion</button>
-  </div>
-
+<div class="frame">
+  <div class="top"></div>
+  <canvas id="game" width="960" height="540"></canvas>
+  <div class="bottom"></div>
   <div class="hud">
-    <section class="panel">
-      <h2>Aktuelle Bestellung</h2>
-      <p id="orderText">Eine Pizza wartet auf dich.</p>
-      <p id="orderStatus">Geh zum Teigtisch und drücke E.</p>
-    </section>
-    <section class="panel">
-      <h2>Deine Aufgabe</h2>
-      <p id="taskText">Bewege dich zur Arbeitsfläche.</p>
-      <p id="taskProgress">Fortschritt: 0 %</p>
-    </section>
-    <section class="panel">
-      <h2>Zutaten & Schicht</h2>
-      <p id="ingredientText">Freigeschaltet: Tomate, Käse</p>
-      <p id="shiftText">Ausgelieferte Pizzen: 0</p>
-    </section>
+    <div class="panel"><div class="label">ORDINE</div><div class="value" id="orderText">✦</div></div>
+    <div class="panel"><div class="label">AL LAVORO</div><div class="value" id="taskText">…</div></div>
+    <div class="panel"><div class="label">CUCINA</div><div class="value" id="ingredientText">✦</div></div>
   </div>
-
-  <div class="help">
-    <b>Steuerung:</b> <kbd>A</kbd> <kbd>D</kbd> laufen · <kbd>W</kbd> oder <kbd>Leertaste</kbd> springen · <kbd>E</kbd> arbeiten/interagieren.
-    <br>Arbeitsablauf: Teig ausrollen → Tomatensoße verteilen → Zutaten belegen → Pizza in den Ofen schieben → Pizza herausnehmen → am Tresen abliefern.
+  <div class="controls">
+    <button data-key="a">◀</button>
+    <button data-key="w">▲</button>
+    <button data-key="d">▶</button>
+    <button id="mobileE">E ✦</button>
   </div>
 </div>
 </main>
-<footer>Dein Pizzeria-Job gehört zum Mein Zimmer Pixel Adventure.</footer>
 
 <script>
-(() => {
+(()=>{
 "use strict";
-
-/* -------------------------------------------------------
-   GEMEINSAMER SPIELSTAND
-   Derselbe Schlüssel wie in index.html:
-   mein-zimmer-save-v1
-------------------------------------------------------- */
-const STORAGE_KEY = "mein-zimmer-save-v1";
-const JOB_KEY = "pizzajob-save-v1";
-
-const defaultMainSave = {
-  money:120,
-  unlocked:[],
-  equipped:{head:null,face:null,clothes:null},
-  inventory:[],
-  placed:[],
-  orders:[],
-  received:[],
-  faucetOn:false,
-  bucketWater:0
-};
-
-function readMainSave(){
-  try {
-    const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-    const saved = raw && typeof raw === "object" ? raw : {};
-    return {
-      ...defaultMainSave,
-      ...saved,
-      unlocked:Array.isArray(saved.unlocked) ? saved.unlocked : [],
-      equipped:{
-        ...defaultMainSave.equipped,
-        ...(saved.equipped || {})
-      }
-    };
-  } catch(error) {
-    console.warn("Hauptspielstand konnte nicht gelesen werden.",error);
-    return {...defaultMainSave,equipped:{...defaultMainSave.equipped}};
-  }
+const STORAGE_KEY="mein-zimmer-save-v1";
+const JOB_KEY="pizzajob-save-v1";
+const $=id=>document.getElementById(id);
+const canvas=$("game"),ctx=canvas.getContext("2d");
+ctx.imageSmoothingEnabled=false;
+const W=960,H=540,FLOOR=444,WORLD=1720;
+const defaults={money:120,unlocked:[],equipped:{head:null,face:null,clothes:null},inventory:[],placed:[],orders:[],received:[],faucetOn:false,bucketWater:0};
+function readMain(){
+ try{
+  const s=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null")||{};
+  return {...defaults,...s,equipped:{...defaults.equipped,...(s.equipped||{})}};
+ }catch{return {...defaults,equipped:{...defaults.equipped}}}
 }
+function saveMain(s){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(s))}catch{}}
+function money(){return Math.floor(Number(readMain().money)||0)}
+function addMoney(n){const s=readMain();s.money=Math.max(0,Number(s.money)||0)+n;saveMain(s);$("money").textContent=money()}
+function cosmetics(){return readMain().equipped||{}}
+let job;
+try{job=JSON.parse(localStorage.getItem(JOB_KEY)||"null")}catch{job=null}
+job={delivered:0,tips:0,unlockedIngredients:["Tomate","Käse"],...(job||{})};
+if(!Array.isArray(job.unlockedIngredients))job.unlockedIngredients=["Tomate","Käse"];
+function saveJob(){try{localStorage.setItem(JOB_KEY,JSON.stringify(job))}catch{}}
 
-function writeMainSave(save){
-  try {
-    localStorage.setItem(STORAGE_KEY,JSON.stringify(save));
-  } catch(error) {
-    console.warn("Hauptspielstand konnte nicht gespeichert werden.",error);
-  }
-}
-
-function addMoney(amount){
-  // Immer den aktuellen Hauptspielstand erneut lesen,
-  // damit andere Spielbereiche nicht überschrieben werden.
-  const save = readMainSave();
-  save.money = Math.max(0,Number(save.money)||0) + amount;
-  writeMainSave(save);
-  updateMoney();
-}
-
-function updateMoney(){
-  const save = readMainSave();
-  document.getElementById("money").textContent =
-    Math.floor(Number(save.money)||0);
-}
-
-function getCosmetics(){
-  const save = readMainSave();
-  return save.equipped || {head:null,face:null,clothes:null};
-}
-
-/* -------------------------------------------------------
-   SPIELSTAND DER PIZZERIA
-   Separat gespeichert, damit keine Daten des Hauptspiels
-   wie Möbel, Inventar oder Cosmetics überschrieben werden.
-------------------------------------------------------- */
-function loadJobSave(){
-  const fallback = {
-    delivered:0,
-    unlockedIngredients:["Tomate","Käse"],
-    tips:0
-  };
-  try {
-    const saved = JSON.parse(localStorage.getItem(JOB_KEY) || "null");
-    if(!saved || typeof saved !== "object") return fallback;
-    return {
-      ...fallback,
-      ...saved,
-      delivered:Math.max(0,Number(saved.delivered)||0),
-      tips:Math.max(0,Number(saved.tips)||0),
-      unlockedIngredients:Array.isArray(saved.unlockedIngredients)
-        ? saved.unlockedIngredients
-        : fallback.unlockedIngredients
-    };
-  } catch {
-    return fallback;
-  }
-}
-
-let jobSave = loadJobSave();
-
-function saveJob(){
-  try {
-    localStorage.setItem(JOB_KEY,JSON.stringify(jobSave));
-  } catch(error) {
-    console.warn("Pizzeria-Spielstand konnte nicht gespeichert werden.",error);
-  }
-}
-
-/* -------------------------------------------------------
-   CANVAS UND SPIELWELT
-------------------------------------------------------- */
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-ctx.imageSmoothingEnabled = false;
-
-const W = canvas.width;
-const H = canvas.height;
-const FLOOR = 444;
-const WORLD_WIDTH = 1720;
-
-const keys = {};
-let gameTime = 0;
-let cameraX = 0;
-let lastTime = 0;
-let actionCooldown = 0;
-let messageTimer = 0;
-let message = "";
-let shake = 0;
-
-const player = {
-  x:90,y:FLOOR-72,w:28,h:72,
-  vx:0,vy:0,facing:1,grounded:true,
-  walk:0,anim:0
-};
-
-const stations = [
-  {id:"dough",x:250,label:"TEIGTISCH",color:"#d2a36b"},
-  {id:"sauce",x:470,label:"SOSSE",color:"#d94e40"},
-  {id:"toppings",x:700,label:"ZUTATEN",color:"#7aa85b"},
-  {id:"oven",x:1000,label:"STEINOFEN",color:"#ce6e40"},
-  {id:"counter",x:1370,label:"AUSGABE",color:"#d2a36b"}
+const ingredients=[
+ {name:"Tomate",color:"#c94732"},
+ {name:"Käse",color:"#f5cd56"},
+ {name:"Basilikum",color:"#416f3e"},
+ {name:"Pilze",color:"#e6d3b3"},
+ {name:"Salami",color:"#a52f27"},
+ {name:"Oliven",color:"#343c2b"}
 ];
-
-const ingredientPool = [
-  {name:"Tomate",color:"#df4438"},
-  {name:"Käse",color:"#ffd64c"},
-  {name:"Basilikum",color:"#428b4d"},
-  {name:"Pilze",color:"#d8c6a8"},
-  {name:"Salami",color:"#b84738"},
-  {name:"Oliven",color:"#443c35"}
+const stations=[
+ {id:"dough",x:250,label:"TEIG"},
+ {id:"sauce",x:470,label:"SALSA"},
+ {id:"toppings",x:700,label:"INGREDIENTI"},
+ {id:"oven",x:1000,label:"FORNO"},
+ {id:"counter",x:1370,label:"CIAO!"}
 ];
+const player={x:90,y:FLOOR-72,w:28,h:72,vx:0,vy:0,facing:1,grounded:true,walk:0,anim:0};
+const keys={};
+let gameTime=0,lastTime=0,cameraX=0;
+let actionCooldown=0,message="",messageTimer=0;
+let order,currentStage,currentTask=null,taskElapsed=0,taskDuration=0;
+let ovenTimer=0,ovenReady=false,carriedPizza=false,toppingsAdded=[];
+let particles=[],soundOn=true,audio=null,ambienceTimer=0,stepTimer=0;
+let customerBob=0,deliveryAnimation=0;
+let introTime=0;
 
-let order = null;
-let currentStage = "dough";
-let currentTask = null;
-let ovenTimer = 0;
-let ovenReady = false;
-let carriedPizza = false;
-let toppingsAdded = [];
-let taskDuration = 0;
-let taskElapsed = 0;
-let deliveredThisOrder = false;
-let particles = [];
-let customerMood = 0;
-let customerBob = 0;
-
-function randomOrder(){
-  const unlocked = ingredientPool.filter(item =>
-    jobSave.unlockedIngredients.includes(item.name)
-  );
-  const extras = unlocked.filter(item =>
-    item.name !== "Tomate" && item.name !== "Käse"
-  );
-  const chosen = [];
-  if(extras.length){
-    const count = Math.random() < .55 ? 1 : Math.min(2,extras.length);
-    const shuffled = [...extras].sort(() => Math.random()-.5);
-    chosen.push(...shuffled.slice(0,count).map(item=>item.name));
-  }
-  return {
-    base:["Tomate","Käse"],
-    toppings:chosen,
-    name:chosen.length ? "Pizza "+chosen.join(" & ") : "Margherita",
-    reward:20 + chosen.length*5,
-    tip:5 + Math.floor(Math.random()*11)
-  };
+function audioContext(){
+ if(!audio){const A=window.AudioContext||window.webkitAudioContext;if(A)audio=new A()}
+ if(audio?.state==="suspended")audio.resume();
+ return audio;
 }
-
+function tone(freq=440,duration=.1,type="square",volume=.035,slide=0){
+ if(!soundOn)return;
+ const a=audioContext();if(!a)return;
+ const o=a.createOscillator(),g=a.createGain();
+ o.type=type;o.frequency.setValueAtTime(freq,a.currentTime);
+ if(slide)o.frequency.linearRampToValueAtTime(Math.max(30,freq+slide),a.currentTime+duration);
+ g.gain.setValueAtTime(volume,a.currentTime);
+ g.gain.exponentialRampToValueAtTime(.001,a.currentTime+duration);
+ o.connect(g);g.connect(a.destination);o.start();o.stop(a.currentTime+duration);
+}
+function noise(duration=.1,volume=.025,filterFreq=900){
+ if(!soundOn)return;
+ const a=audioContext();if(!a)return;
+ const length=Math.floor(a.sampleRate*duration);
+ const buffer=a.createBuffer(1,length,a.sampleRate);
+ const data=buffer.getChannelData(0);
+ for(let i=0;i<length;i++)data[i]=(Math.random()*2-1)*(1-i/length);
+ const source=a.createBufferSource(),filter=a.createBiquadFilter(),gain=a.createGain();
+ source.buffer=buffer;filter.type="lowpass";filter.frequency.value=filterFreq;
+ gain.gain.value=volume;source.connect(filter);filter.connect(gain);gain.connect(a.destination);
+ source.start();
+}
+function sound(name){
+ if(!soundOn)return;
+ if(name==="step"){tone(90,.045,"triangle",.018,-20)}
+ if(name==="jump"){tone(230,.12,"square",.035,160);tone(360,.08,"triangle",.02,80)}
+ if(name==="roll"){noise(.14,.045,650);tone(180,.13,"triangle",.025,-30)}
+ if(name==="sauce"){noise(.12,.035,1200);tone(350,.08,"triangle",.018,-90)}
+ if(name==="ingredient"){tone(600,.055,"square",.02,90);tone(830,.07,"triangle",.018,-100)}
+ if(name==="oven"){tone(130,.22,"triangle",.04,100);noise(.18,.04,500)}
+ if(name==="ding"){tone(880,.12,"sine",.045,100);tone(1175,.22,"sine",.035,0)}
+ if(name==="cash"){tone(740,.08,"square",.035,200);tone(990,.13,"square",.03,200);tone(1250,.17,"sine",.03,0)}
+ if(name==="unlock"){tone(523,.12,"triangle",.035,0);tone(659,.12,"triangle",.035,0);tone(784,.25,"triangle",.04,120)}
+ if(name==="bell"){tone(1050,.12,"sine",.03,-180);tone(780,.2,"sine",.025,-100)}
+ if(name==="thud"){tone(75,.08,"triangle",.035,-35)}
+}
+function ambient(){
+ if(!soundOn)return;
+ ambienceTimer+=1/60;
+ if(ambienceTimer>7+Math.random()*7){
+  ambienceTimer=0;
+  if(Math.random()<.55){tone(1700,.035,"sine",.006,-150)}else{tone(220,.09,"triangle",.005,20)}
+ }
+}
+function say(str,d=2.2){message=str;messageTimer=d}
+function rect(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))}
+function outline(x,y,w,h,c="#34271f",width=2){ctx.strokeStyle=c;ctx.lineWidth=width;ctx.strokeRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))}
+function line(x1,y1,x2,y2,c,width=2){ctx.strokeStyle=c;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke()}
+function txt(s,x,y,c="#34271f",size=12,align="left"){ctx.font="bold "+size+"px monospace";ctx.fillStyle=c;ctx.textAlign=align;ctx.fillText(s,x,y);ctx.textAlign="left"}
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function dist(s){return Math.abs(player.x+player.w/2-s.x)}
+function nearby(){let best=null,d=70;for(const s of stations){if(dist(s)<d){best=s;d=dist(s)}}return best}
+function burst(x,y,color,n=10){
+ for(let i=0;i<n;i++)particles.push({x,y,color,vx:(Math.random()-.5)*110,vy:-Math.random()*120-15,life:.4+Math.random()*.65,size:2+Math.random()*4});
+}
 function newOrder(){
-  order = randomOrder();
-  currentStage = "dough";
-  currentTask = null;
-  ovenTimer = 0;
-  ovenReady = false;
-  carriedPizza = false;
-  toppingsAdded = [];
-  taskElapsed = 0;
-  taskDuration = 0;
-  deliveredThisOrder = false;
-  customerMood = 0;
-  updatePanels();
-  showMessage("Neue Bestellung: "+order.name);
+ const available=ingredients.filter(i=>job.unlockedIngredients.includes(i.name));
+ const extras=available.filter(i=>i.name!=="Tomate"&&i.name!=="Käse");
+ const chosen=[];
+ if(extras.length){const shuffled=[...extras].sort(()=>Math.random()-.5);chosen.push(...shuffled.slice(0,Math.random()<.65?1:Math.min(2,extras.length)).map(i=>i.name))}
+ order={base:["Tomate","Käse"],toppings:chosen,name:chosen.length?"Pizza "+chosen.join(" & "):"Margherita",reward:20+chosen.length*5,tip:5+Math.floor(Math.random()*11)};
+ currentStage="dough";currentTask=null;taskElapsed=0;taskDuration=0;ovenTimer=0;ovenReady=false;carriedPizza=false;toppingsAdded=[];deliveryAnimation=0;
+ updateHUD();
 }
-
-/* -------------------------------------------------------
-   HILFSFUNKTIONEN
-------------------------------------------------------- */
-function rect(x,y,w,h,color){
-  ctx.fillStyle=color;
-  ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h));
+function updateHUD(){
+ $("money").textContent=money();
+ $("orderText").textContent=order?order.name+"  ·  "+order.reward+" ◆":"✦";
+ const names={dough:"Farina",sauce:"Pomodoro",toppings:"Formaggio",oven:"Forno",counter:"Pronto!"};
+ $("taskText").textContent=currentTask?"✦ "+Math.min(100,Math.floor(taskElapsed/taskDuration*100))+"%":ovenReady?"Pizza pronta!":names[currentStage]||"✦";
+ $("ingredientText").textContent=job.unlockedIngredients.map(n=>n==="Basilikum"?"Basilico":n==="Pilze"?"Funghi":n==="Salami"?"Salame":n==="Oliven"?"Olive":n).join(" · ");
 }
-function line(x1,y1,x2,y2,color,width=2){
-  ctx.strokeStyle=color;
-  ctx.lineWidth=width;
-  ctx.beginPath();
-  ctx.moveTo(x1,y1);
-  ctx.lineTo(x2,y2);
-  ctx.stroke();
+function startTask(type,duration,ingredient=null){
+ if(currentTask)return;
+ currentTask={type,ingredient};taskDuration=duration;taskElapsed=0;
+ if(type==="dough")sound("roll");
+ if(type==="sauce")sound("sauce");
+ if(type==="topping"||type==="cheese")sound("ingredient");
+ updateHUD();
 }
-function text(str,x,y,color="#28251f",size=12,align="left"){
-  ctx.fillStyle=color;
-  ctx.font="bold "+size+"px monospace";
-  ctx.textAlign=align;
-  ctx.fillText(str,x,y);
-  ctx.textAlign="left";
-}
-function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
-
-function showMessage(str){
-  message = str;
-  messageTimer = 2.8;
-}
-function playerCenter(){return player.x+player.w/2;}
-function distanceTo(station){return Math.abs(playerCenter()-station.x);}
-function nearbyStation(){
-  let best = null;
-  let bestDist = 74;
-  for(const station of stations){
-    const d = distanceTo(station);
-    if(d < bestDist){best=station;bestDist=d;}
-  }
-  return best;
-}
-
-function updatePanels(){
-  const orderText = document.getElementById("orderText");
-  const orderStatus = document.getElementById("orderStatus");
-  const taskText = document.getElementById("taskText");
-  const taskProgress = document.getElementById("taskProgress");
-  const ingredientText = document.getElementById("ingredientText");
-  const shiftText = document.getElementById("shiftText");
-
-  if(order){
-    orderText.textContent = order.name+" · "+order.reward+" Münzen + Trinkgeld";
-    orderStatus.textContent = "Bestellt: "+order.base.concat(order.toppings).join(", ");
-  }
-
-  const tasks = {
-    dough:"Teig ausrollen",
-    sauce:"Tomatensoße verteilen",
-    toppings:"Pizza belegen",
-    oven:"Pizza backen",
-    ovenReady:"Pizza aus dem Ofen holen",
-    counter:"Bestellung ausliefern"
-  };
-  const key = ovenReady ? "ovenReady" : currentStage;
-  taskText.textContent = tasks[key] || "Weiterarbeiten";
-  const pct = currentTask
-    ? Math.round(clamp(taskElapsed/taskDuration,0,1)*100)
-    : (ovenReady ? 100 : 0);
-  taskProgress.textContent = "Fortschritt: "+pct+" %";
-  ingredientText.textContent =
-    "Freigeschaltet: "+jobSave.unlockedIngredients.join(", ");
-  shiftText.textContent =
-    "Ausgelieferte Pizzen: "+jobSave.delivered+" · Trinkgeld: "+jobSave.tips;
-}
-
-/* -------------------------------------------------------
-   INTERAKTIONEN UND ANIMIERTE ARBEITSSCHRITTE
-------------------------------------------------------- */
-function interact(){
-  if(actionCooldown>0) return;
-  const station = nearbyStation();
-  if(!station){
-    showMessage("Geh näher an eine Arbeitsstation heran.");
-    return;
-  }
-  actionCooldown = .25;
-
-  if(station.id==="dough"){
-    if(currentStage!=="dough"){
-      showMessage("Der Teig ist für diese Bestellung schon vorbereitet.");
-      return;
-    }
-    startTask("dough",2.4,"Du rollst den Pizzateig aus …");
-    return;
-  }
-
-  if(station.id==="sauce"){
-    if(currentStage!=="sauce"){
-      showMessage("Hier gibt es gerade nichts zu tun.");
-      return;
-    }
-    startTask("sauce",2.0,"Du verteilst die Tomatensoße …");
-    return;
-  }
-
-  if(station.id==="toppings"){
-    if(currentStage!=="toppings"){
-      showMessage("Erst den Teig vorbereiten und die Soße verteilen.");
-      return;
-    }
-    const missing = order.toppings.filter(name=>!toppingsAdded.includes(name));
-    if(missing.length){
-      const ingredient = missing[0];
-      startTask("topping",1.5,"Du belegst die Pizza mit "+ingredient+" …",ingredient);
-    } else {
-      startTask("cheese",1.2,"Du verteilst den Käse gleichmäßig …");
-    }
-    return;
-  }
-
-  if(station.id==="oven"){
-    if(currentStage==="oven" && !ovenReady){
-      if(currentTask){
-        showMessage("Die Pizza ist noch in Arbeit.");
-        return;
-      }
-      carriedPizza = false;
-      ovenTimer = 8;
-      showMessage("Pizza im Ofen! Warte, bis sie fertig gebacken ist.");
-      updatePanels();
-      return;
-    }
-    if(currentStage==="oven" && ovenReady){
-      carriedPizza = true;
-      ovenReady = false;
-      currentStage = "counter";
-      showMessage("Fertig! Bring die Pizza zum Ausgabetresen.");
-      burst(station.x,FLOOR-70,"#ffd64c",8);
-      updatePanels();
-      return;
-    }
-    showMessage("Hier ist gerade nichts zu backen.");
-    return;
-  }
-
-  if(station.id==="counter"){
-    if(currentStage!=="counter" || !carriedPizza){
-      showMessage("Deine Pizza ist noch nicht fertig.");
-      return;
-    }
-    deliverOrder();
-  }
-}
-
-function startTask(type,duration,msg,ingredient=null){
-  if(currentTask){
-    showMessage("Du bist bereits mit einer Aufgabe beschäftigt.");
-    return;
-  }
-  currentTask = {type,ingredient};
-  taskDuration = duration;
-  taskElapsed = 0;
-  player.anim = 0;
-  showMessage(msg);
-  updatePanels();
-}
-
 function completeTask(){
-  const task = currentTask;
-  if(!task) return;
-  currentTask = null;
-  taskElapsed = 0;
-
-  if(task.type==="dough"){
-    currentStage = "sauce";
-    burst(250,FLOOR-40,"#f2d5a5",10);
-    showMessage("Teig fertig! Jetzt die Tomatensoße verteilen.");
-  } else if(task.type==="sauce"){
-    currentStage = "toppings";
-    burst(470,FLOOR-43,"#df4438",10);
-    showMessage("Soße sitzt. Jetzt die bestellten Zutaten hinzufügen.");
-  } else if(task.type==="topping"){
-    if(task.ingredient && !toppingsAdded.includes(task.ingredient)){
-      toppingsAdded.push(task.ingredient);
-    }
-    showMessage(task.ingredient+" hinzugefügt!");
-  } else if(task.type==="cheese"){
-    currentStage = "oven";
-    showMessage("Pizza belegt! Bring sie zum Ofen.");
-    burst(700,FLOOR-50,"#ffd64c",12);
-  }
-  updatePanels();
+ const t=currentTask;currentTask=null;taskElapsed=0;
+ if(t.type==="dough"){currentStage="sauce";burst(250,FLOOR-45,"#e9d2a6",9);sound("thud")}
+ else if(t.type==="sauce"){currentStage="toppings";burst(470,FLOOR-45,"#c94732",10)}
+ else if(t.type==="topping"){if(t.ingredient&&!toppingsAdded.includes(t.ingredient))toppingsAdded.push(t.ingredient);sound("ingredient")}
+ else if(t.type==="cheese"){currentStage="oven";sound("ding")}
+ updateHUD();
 }
-
-function deliverOrder(){
-  if(deliveredThisOrder) return;
-  deliveredThisOrder = true;
-  const earned = order.reward;
-  const tip = order.tip;
-  addMoney(earned+tip);
-  jobSave.delivered++;
-  jobSave.tips += tip;
-
-  // Alle paar Lieferungen wird eine neue Zutat dauerhaft freigeschaltet.
-  const unlockAt = {
-    2:"Basilikum",
-    4:"Pilze",
-    6:"Salami",
-    9:"Oliven"
-  };
-  const newIngredient = unlockAt[jobSave.delivered];
-  if(newIngredient && !jobSave.unlockedIngredients.includes(newIngredient)){
-    jobSave.unlockedIngredients.push(newIngredient);
-    showMessage("Bestellung erledigt! +"+earned+" Münzen, +"+tip+" Trinkgeld. Neu: "+newIngredient+"!");
-  } else {
-    showMessage("Bestellung erledigt! +"+earned+" Münzen und +"+tip+" Trinkgeld.");
+function interact(){
+ if(actionCooldown>0)return;
+ const s=nearby();
+ if(!s){tone(120,.05,"triangle",.01,-20);return}
+ actionCooldown=.25;
+ if(s.id==="dough"){
+  if(currentStage==="dough"&&!currentTask)startTask("dough",2.6);
+  return;
+ }
+ if(s.id==="sauce"){
+  if(currentStage==="sauce"&&!currentTask)startTask("sauce",2.1);
+  return;
+ }
+ if(s.id==="toppings"){
+  if(currentStage!=="toppings"||currentTask)return;
+  const missing=order.toppings.filter(n=>!toppingsAdded.includes(n));
+  if(missing.length)startTask("topping",1.45,missing[0]);
+  else startTask("cheese",1.5);
+  return;
+ }
+ if(s.id==="oven"){
+  if(currentStage==="oven"&&!ovenReady&&!currentTask&&ovenTimer<=0){
+   ovenTimer=7.5;sound("oven");updateHUD();return;
   }
-
-  saveJob();
-  updatePanels();
-  burst(1370,FLOOR-65,"#ffd64c",22);
-  setTimeout(()=>newOrder(),1700);
-}
-
-/* -------------------------------------------------------
-   SPIELERBEWEGUNG
-------------------------------------------------------- */
-function jump(){
-  if(player.grounded){
-    player.vy = -390;
-    player.grounded = false;
+  if(currentStage==="oven"&&ovenReady){
+   carriedPizza=true;ovenReady=false;currentStage="counter";
+   sound("ding");burst(s.x,FLOOR-80,"#f5cf63",12);updateHUD();return;
   }
+  return;
+ }
+ if(s.id==="counter"&&currentStage==="counter"&&carriedPizza){
+  deliver();return;
+ }
 }
+function deliver(){
+ const earned=order.reward,tip=order.tip;
+ addMoney(earned+tip);
+ job.delivered++;job.tips+=tip;
+ const unlocks={2:"Basilikum",4:"Pilze",6:"Salami",9:"Oliven"};
+ const unlock=unlocks[job.delivered];
+ if(unlock&&!job.unlockedIngredients.includes(unlock)){
+  job.unlockedIngredients.push(unlock);sound("unlock");
+ }else sound("cash");
+ saveJob();burst(1370,FLOOR-60,"#e5b95d",24);
+ deliveryAnimation=2.5;updateHUD();
+ setTimeout(()=>{newOrder();say("✦",1.2)},1500);
+}
+function jump(){if(player.grounded&&!currentTask){player.vy=-390;player.grounded=false;sound("jump")}}
 function update(dt){
-  gameTime += dt;
-  customerBob += dt*4;
-  if(actionCooldown>0) actionCooldown-=dt;
-  if(messageTimer>0) messageTimer-=dt;
-  if(shake>0) shake=Math.max(0,shake-dt*20);
+ gameTime+=dt;customerBob+=dt*3;
+ if(actionCooldown>0)actionCooldown-=dt;
+ if(messageTimer>0)messageTimer-=dt;
+ if(deliveryAnimation>0)deliveryAnimation-=dt;
+ ambient();
 
-  const left = keys.a || keys.arrowleft;
-  const right = keys.d || keys.arrowright;
-  const speed = currentTask ? 0 : 205;
-  player.vx = 0;
-
-  if(left){player.vx=-speed;player.facing=-1;}
-  if(right){player.vx=speed;player.facing=1;}
-  if(player.vx!==0){
-    player.x += player.vx*dt;
-    player.walk += dt*11;
-  }
-  player.x=clamp(player.x,10,WORLD_WIDTH-player.w-10);
-
-  if((keys.w||keys[" "]||keys.arrowup) && player.grounded && !currentTask){
-    jump();
-    keys.w=false;keys[" "]=false;keys.arrowup=false;
-  }
-
-  player.vy += 980*dt;
-  player.y += player.vy*dt;
-  if(player.y+player.h>=FLOOR){
-    player.y=FLOOR-player.h;
-    player.vy=0;
-    player.grounded=true;
-  }
-
-  if(currentTask){
-    taskElapsed+=dt;
-    player.anim+=dt*8;
-    if(taskElapsed>=taskDuration) completeTask();
-  }
-
-  if(currentStage==="oven" && !ovenReady && ovenTimer>0){
-    ovenTimer-=dt;
-    if(ovenTimer<=0){
-      ovenTimer=0;
-      ovenReady=true;
-      showMessage("Ding! Die Pizza ist fertig. Hol sie aus dem Ofen!");
-      burst(1000,FLOOR-100,"#ffd64c",15);
-    }
-  }
-
-  const targetCamera = clamp(player.x-W*.38,0,WORLD_WIDTH-W);
-  cameraX += (targetCamera-cameraX)*Math.min(1,dt*5);
-
-  for(const p of particles){
-    p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=220*dt;p.life-=dt;
-  }
-  particles=particles.filter(p=>p.life>0);
-
-  if(Math.floor(gameTime*2)%2===0) updatePanels();
+ const left=keys.a||keys.arrowleft,right=keys.d||keys.arrowright;
+ const speed=currentTask?0:205;
+ player.vx=0;
+ if(left){player.vx=-speed;player.facing=-1}
+ if(right){player.vx=speed;player.facing=1}
+ if(player.vx){
+  player.x+=player.vx*dt;player.walk+=dt*10;
+  stepTimer-=dt;
+  if(stepTimer<=0&&player.grounded){sound("step");stepTimer=.29}
+ }else stepTimer=0;
+ player.x=clamp(player.x,10,WORLD-player.w-10);
+ if((keys.w||keys[" "]||keys.arrowup)&&player.grounded&&!currentTask){
+  jump();keys.w=false;keys[" "]=false;keys.arrowup=false;
+ }
+ player.vy+=980*dt;player.y+=player.vy*dt;
+ if(player.y+player.h>=FLOOR){player.y=FLOOR-player.h;player.vy=0;player.grounded=true}
+ if(currentTask){taskElapsed+=dt;if(taskElapsed>=taskDuration)completeTask()}
+ if(currentStage==="oven"&&!ovenReady&&ovenTimer>0){
+  ovenTimer-=dt;
+  if(ovenTimer<=0){ovenTimer=0;ovenReady=true;sound("ding");burst(1000,FLOOR-90,"#f5cf63",18);updateHUD()}
+ }
+ cameraX+=(clamp(player.x-W*.38,0,WORLD-W)-cameraX)*Math.min(1,dt*5);
+ for(const p of particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=210*dt;p.life-=dt}
+ particles=particles.filter(p=>p.life>0);
 }
-
-function burst(x,y,color,count){
-  for(let i=0;i<count;i++){
-    particles.push({
-      x,y,color,
-      vx:(Math.random()-.5)*130,
-      vy:-Math.random()*150-20,
-      life:.45+Math.random()*.7,
-      size:3+Math.random()*4
-    });
-  }
-}
-
-/* -------------------------------------------------------
-   PIXEL-ART UMGEBUNG
-------------------------------------------------------- */
 function drawBackground(){
-  rect(0,0,W,H,"#b9dfdf");
-  // Himmel und warme Lichtfläche
-  rect(0,0,W,180,"#c7e7e2");
-  rect(0,180,W,100,"#e8e5c9");
-  // Fenster
-  for(let i=0;i<3;i++){
-    const x=90+i*310-cameraX*.35;
-    rect(x,42,154,115,"#443d36");
-    rect(x+7,49,140,101,"#8dc8cf");
-    rect(x+12,55,58,88,"#b9e0df");
-    rect(x+78,55,62,88,"#a2d4d5");
-    rect(x+73,49,5,101,"#f8f0dc");
-    rect(x+7,97,140,6,"#f8f0dc");
-    // Außenhäuser
-    rect(x+18,67,20,19,"#e5c4a0");
-    rect(x+102,72,24,22,"#e4c4a1");
-    rect(x+22,74,5,5,"#fff2c9");
-    rect(x+110,79,6,6,"#fff2c9");
-  }
-  // Wandziegel
-  for(let row=0;row<4;row++){
-    const y=185+row*28;
-    for(let x=-60;x<W+80;x+=80){
-      const offset=row%2?40:0;
-      rect(x+offset-cameraX*.2,y,76,2,"#d6c9ad");
-    }
-  }
-  // Wandbilder
-  drawPicture(325-cameraX*.25,195);
-  drawPicture(755-cameraX*.25,195);
-  // Boden
-  rect(0,FLOOR,W,H-FLOOR,"#c18a57");
-  rect(0,FLOOR,W,8,"#805638");
-  for(let y=FLOOR+10;y<H;y+=32){
-    rect(0,y,W,2,"#a66f46");
-    for(let x=-50;x<W+50;x+=80){
-      rect(x+((y-FLOOR)/32%2)*40,y,2,30,"#a66f46");
-    }
-  }
-  // Wandregal
-  rect(535-cameraX*.25,65,255,10,"#6d4933");
-  rect(535-cameraX*.25,75,255,4,"#9b6b42");
-  for(let i=0;i<5;i++){
-    const x=550+i*47-cameraX*.25;
-    rect(x,38,22,26,"#b1a080");
-    rect(x+3,42,16,18,["#bd4b3e","#e4b749","#658c58","#8b5540","#ddd0b3"][i]);
-    rect(x+5,46,12,2,"#f2e4c8");
-  }
+ rect(0,0,W,H,"#c7d9bc");
+ // Abendhimmel hinter den Fenstern
+ rect(0,0,W,170,"#a7c7c0");
+ rect(0,170,W,18,"#e8d8b5");
+ // Warmes Sonnenlicht
+ rect(630-cameraX*.08,20,130,130,"#eacb83");
+ rect(650-cameraX*.08,40,90,90,"#f2dca2");
+ // Innenwand
+ rect(0,185,W,FLOOR-185,"#f0dfbd");
+ // kleine Wandflecken und Ziegel
+ for(let row=0;row<6;row++)for(let x=-60;x<W+70;x+=72){
+  rect(x+(row%2)*36,193+row*34,69,2,"#e3cfaa");
+ }
+ // Fenster mit Fensterläden
+ for(let i=0;i<3;i++){
+  const x=70+i*315-cameraX*.24;
+  rect(x-8,36,162,135,"#49372b");
+  rect(x,44,146,119,"#fff0d2");
+  rect(x+6,50,134,107,"#8dbbb8");
+  rect(x+11,55,56,97,"#b6d7c8");
+  rect(x+79,55,55,97,"#9fc9c1");
+  rect(x+72,50,7,107,"#fff0d2");
+  rect(x+6,98,134,7,"#fff0d2");
+  rect(x-15,39,16,127,"#a94132");
+  rect(x+146,39,16,127,"#a94132");
+  for(let j=0;j<7;j++){rect(x-14,45+j*17,14,4,"#d56a4e");rect(x+147,45+j*17,14,4,"#d56a4e")}
+  rect(x-8,35,162,8,"#7a4b34");
+  rect(x-12,163,170,8,"#9c6741");
+  // Pflanzen am Fenster
+  rect(x+12,142,24,9,"#8b5839");rect(x+16,132,5,12,"#476b43");rect(x+23,128,7,15,"#547d49");
+  // Distant Italian rooftops
+  rect(x+22,72,26,27,"#d9ad7a");rect(x+18,67,34,7,"#a94132");
+  rect(x+101,78,23,22,"#e4c59b");rect(x+97,73,31,6,"#a94132");
+  rect(x+31,79,5,7,"#f9e5af");rect(x+109,84,5,7,"#f9e5af");
+ }
+ // checker tile floor
+ rect(0,FLOOR,W,H-FLOOR,"#dfc7a0");
+ for(let row=0;row<4;row++)for(let x=-60;x<W+60;x+=64){
+  if((row+Math.floor(x/64))%2===0)rect(x,FLOOR+row*25,64,25,"#c5a77d");
+ }
+ rect(0,FLOOR-8,W,12,"#744a32");
+ rect(0,FLOOR-4,W,4,"#b48252");
+ // wall shelf
+ rect(530-cameraX*.18,68,260,9,"#6e4931");
+ rect(530-cameraX*.18,77,260,4,"#b18152");
+ const jarColors=["#bd4938","#d5a649","#4b7444","#e7d6b3","#8b5138","#6d8d87"];
+ for(let i=0;i<6;i++){
+  const x=544+i*39-cameraX*.18;
+  rect(x,45,23,22,"#b7a17c");rect(x+2,48,19,17,jarColors[i]);
+  rect(x+4,50,15,4,"#e8d8b5");rect(x+7,41,9,5,"#8c6946");
+ }
+ // hanging garlic and herbs
+ for(let i=0;i<4;i++){
+  const x=815+i*17-cameraX*.18;
+  line(x,74,x,100,"#567448",2);
+  rect(x-4,95,7,11,"#e9e0c2");
+  rect(x+1,98,5,9,"#e9e0c2");
+ }
+ // cozy lamps
+ for(const x0 of [260,610,900]){
+  const x=x0-cameraX*.2;
+  line(x,0,x,54,"#694a32",3);
+  rect(x-17,48,34,8,"#694a32");
+  rect(x-21,55,42,7,"#d9a94e");
+  rect(x-16,62,32,5,"#f2d28b");
+  rect(x-7,67,14,4,"#f9e8b6");
+ }
+ drawPicture(385-cameraX*.18,205);
+ drawPicture(795-cameraX*.18,205);
+ // checkered Italian tablecloth hanging on wall
+ for(let i=0;i<8;i++)for(let j=0;j<3;j++){
+  rect(565-cameraX*.18+i*10,111+j*10,10,10,(i+j)%2?"#fff0d2":"#a94132");
+ }
 }
-
 function drawPicture(x,y){
-  rect(x,y,58,58,"#443d36");
-  rect(x+5,y+5,48,48,"#fff0d2");
-  rect(x+10,y+10,38,38,"#d9ead7");
-  rect(x+18,y+19,22,21,"#d94d3c");
-  rect(x+21,y+22,16,15,"#f2d76b");
-  rect(x+27,y+26,4,4,"#428b4d");
+ rect(x,y,57,60,"#60412f");rect(x+4,y+4,49,52,"#fff0d2");
+ rect(x+8,y+8,41,44,"#b6d0ad");
+ rect(x+12,y+12,33,36,"#f3e6c6");
+ rect(x+17,y+18,23,22,"#a94132");
+ rect(x+21,y+21,15,15,"#e9b44c");
+ rect(x+25,y+25,7,7,"#476b43");
+ rect(x+10,y+39,38,5,"#e0d1ac");
 }
-
-/* -------------------------------------------------------
-   ARBEITSSTATIONEN UND PIZZA
-------------------------------------------------------- */
-function drawStation(station){
-  const x=station.x-cameraX;
-  if(x < -120 || x > W+120) return;
-  const y=FLOOR;
-  if(station.id==="dough"){
-    // Holztisch
-    rect(x-53,y-55,106,10,"#6d4933");
-    rect(x-50,y-45,100,7,"#d2a36b");
-    rect(x-45,y-38,8,38,"#855a3b");
-    rect(x+37,y-38,8,38,"#855a3b");
-    rect(x-44,y-72,88,17,"#f3d7a5");
-    rect(x-34,y-69,68,11,"#e6c48e");
-    // Teigroller
-    rect(x-17,y-88,35,5,"#98633b");
-    rect(x-23,y-91,6,11,"#6d4933");
-    rect(x+17,y-91,6,11,"#6d4933");
-    // Rolling animation
-    if(currentTask?.type==="dough"){
-      const shift=Math.sin(taskElapsed*15)*15;
-      rect(x-17+shift,y-87,35,5,"#98633b");
-    }
-  } else if(station.id==="sauce"){
-    rect(x-50,y-54,100,9,"#6d4933");
-    rect(x-46,y-45,92,6,"#d2a36b");
-    rect(x-42,y-39,8,39,"#855a3b");
-    rect(x+34,y-39,8,39,"#855a3b");
-    // Schüssel und Soße
-    rect(x-26,y-77,52,20,"#ddd8c8");
-    rect(x-22,y-74,44,13,"#d94e40");
-    rect(x-18,y-72,36,7,"#e96b53");
-    rect(x-4,y-87,8,11,"#d94e40");
-    if(currentTask?.type==="sauce"){
-      rect(x-19+Math.sin(taskElapsed*14)*7,y-73,8,4,"#f5b3a0");
-    }
-  } else if(station.id==="toppings"){
-    rect(x-57,y-55,114,10,"#6d4933");
-    rect(x-53,y-45,106,6,"#d2a36b");
-    rect(x-48,y-39,8,39,"#855a3b");
-    rect(x+40,y-39,8,39,"#855a3b");
-    ingredientPool.forEach((item,i)=>{
-      const bx=x-42+(i%3)*30;
-      const by=y-76+Math.floor(i/3)*21;
-      rect(bx,by,24,17,"#e8ddc8");
-      rect(bx+3,by+3,18,11,item.color);
-      rect(bx+6,by+5,4,3,"#fff0cf");
-    });
-  } else if(station.id==="oven"){
-    rect(x-63,y-125,126,125,"#a95e3b");
-    rect(x-56,y-117,112,109,"#d98a52");
-    rect(x-46,y-106,92,90,"#46372e");
-    rect(x-39,y-99,78,76,"#653e2f");
-    rect(x-33,y-91,66,62,"#7e4630");
-    rect(x-26,y-82,52,45,"#f08c3e");
-    rect(x-19,y-74,38,33,"#ffc45a");
-    rect(x-13,y-66,26,22,"#ffdf76");
-    rect(x-49,y-12,98,5,"#704531");
-    rect(x-42,y-6,84,6,"#8c5236");
-    if(ovenTimer>0){
-      text(Math.ceil(ovenTimer)+"s",x,y-137,"#28251f",14,"center");
-    } else if(ovenReady){
-      text("FERTIG!",x,y-137,"#a52d20",13,"center");
-    }
-  } else if(station.id==="counter"){
-    rect(x-67,y-76,134,18,"#6d4933");
-    rect(x-61,y-58,122,58,"#d2a36b");
-    rect(x-55,y-52,110,47,"#b7804c");
-    rect(x-52,y-47,104,5,"#e5b97a");
-    // Kasse
-    rect(x+24,y-105,30,28,"#4c4b43");
-    rect(x+28,y-101,22,9,"#9dc9a5");
-    rect(x+29,y-87,20,6,"#d9d4c5");
-    // Kundin/Kunde hinter dem Tresen
-    rect(x-16,y-133,31,31,"#815339");
-    rect(x-13,y-130,25,25,"#d7aa7a");
-    rect(x-13,y-133,25,8,"#654334");
-    rect(x-21,y-100,41,26,"#577e73");
-    rect(x-25,y-98,8,25,"#577e73");
-    rect(x+18,y-98,8,25,"#577e73");
-    rect(x-8,y-118,3,3,"#302a25");
-    rect(x+5,y-118,3,3,"#302a25");
-    rect(x-3,y-109,8,2,"#9a5543");
-  }
-
-  // Stationsschild
-  rect(x-47,y-160,94,20,"#fff8e7");
-  rect(x-47,y-160,94,20,"#fff8e7");
-  ctx.strokeStyle="#443d36";ctx.lineWidth=2;
-  ctx.strokeRect(Math.round(x-47),Math.round(y-160),94,20);
-  text(station.label,x,y-147,"#28251f",10,"center");
-
-  const nearby=nearbyStation();
-  if(nearby && nearby.id===station.id){
-    rect(x-31,y-185,62,19,"#ffd84d");
-    ctx.strokeStyle="#28251f";ctx.lineWidth=2;
-    ctx.strokeRect(Math.round(x-31),Math.round(y-185),62,19);
-    text("E  AKTION",x,y-172,"#28251f",10,"center");
-  }
+function drawStation(s){
+ const x=s.x-cameraX,y=FLOOR;
+ if(x<-130||x>W+130)return;
+ if(s.id==="dough"){
+  rect(x-58,y-55,116,10,"#60412f");rect(x-53,y-45,106,6,"#bc8954");
+  rect(x-47,y-39,9,39,"#805437");rect(x+38,y-39,9,39,"#805437");
+  rect(x-46,y-75,92,25,"#f2d8a7");rect(x-41,y-71,82,17,"#e4c18c");
+  rect(x-17,y-90,34,5,"#98633b");rect(x-22,y-93,5,11,"#60412f");rect(x+17,y-93,5,11,"#60412f");
+  rect(x-13,y-67,26,6,"#e6c68e");
+  if(currentTask?.type==="dough"){let sh=Math.sin(taskElapsed*15)*14;rect(x-17+sh,y-90,34,5,"#98633b")}
+ }else if(s.id==="sauce"){
+  rect(x-54,y-55,108,10,"#60412f");rect(x-49,y-45,98,6,"#bc8954");
+  rect(x-44,y-39,8,39,"#805437");rect(x+36,y-39,8,39,"#805437");
+  rect(x-29,y-78,58,21,"#e8ddc7");rect(x-24,y-74,48,13,"#a94132");rect(x-18,y-72,36,6,"#d65a40");
+  rect(x-4,y-88,8,11,"#a94132");
+  if(currentTask?.type==="sauce"){rect(x-14+Math.sin(taskElapsed*14)*7,y-72,8,4,"#f4ad8b")}
+ }else if(s.id==="toppings"){
+  rect(x-59,y-55,118,10,"#60412f");rect(x-54,y-45,108,6,"#bc8954");
+  rect(x-49,y-39,8,39,"#805437");rect(x+41,y-39,8,39,"#805437");
+  ingredients.forEach((it,i)=>{
+   const bx=x-46+(i%3)*32,by=y-78+Math.floor(i/3)*22;
+   rect(bx,by,26,18,"#e9ddc6");rect(bx+3,by+3,20,12,it.color);
+   rect(bx+6,by+5,4,3,"#fff0d2");rect(bx+14,by+8,4,3,"#fff0d2");
+  });
+ }else if(s.id==="oven"){
+  rect(x-66,y-132,132,132,"#8f4e35");rect(x-59,y-124,118,117,"#c87c4b");
+  rect(x-49,y-113,98,97,"#49362b");rect(x-42,y-106,84,83,"#63402e");
+  rect(x-35,y-96,70,65,"#a34b2e");rect(x-29,y-89,58,51,"#df7736");
+  rect(x-22,y-81,44,37,"#f4bd58");rect(x-13,y-70,26,23,"#ffdf83");
+  rect(x-52,y-14,104,6,"#68412e");rect(x-44,y-7,88,6,"#a66d45");
+  rect(x-25,y-129,50,4,"#f3c66b");
+  if(ovenTimer>0)txt(Math.ceil(ovenTimer),x,y-143,"#fff0d2",13,"center");
+  if(ovenReady)txt("✦",x,y-143,"#ffdb6c",17,"center");
+ }else if(s.id==="counter"){
+  rect(x-72,y-78,144,20,"#60412f");rect(x-65,y-58,130,58,"#bc8954");
+  rect(x-58,y-51,116,48,"#d5a36b");rect(x-54,y-45,108,6,"#e8c28a");
+  // register
+  rect(x+25,y-105,31,28,"#493d32");rect(x+29,y-101,23,9,"#91b6a0");rect(x+30,y-87,20,6,"#d8c8a9");
+  // customer
+  const bob=Math.sin(customerBob)*2;
+  rect(x-17,y-133+bob,34,33,"#69412f");rect(x-13,y-129+bob,26,26,"#d5a778");
+  rect(x-17,y-136+bob,34,10,"#5b3829");rect(x-20,y-130+bob,7,8,"#5b3829");
+  rect(x-22,y-99+bob,44,25,"#476b43");rect(x-27,y-97+bob,8,23,"#476b43");rect(x+19,y-97+bob,8,23,"#476b43");
+  rect(x-8,y-117+bob,3,3,"#34271f");rect(x+5,y-117+bob,3,3,"#34271f");rect(x-3,y-109+bob,7,2,"#a94132");
+  // little flower pot
+  rect(x-58,y-93,13,15,"#a94132");rect(x-61,y-96,19,4,"#6f4933");
+  rect(x-55,y-105,4,10,"#476b43");rect(x-62,y-101,7,4,"#587c43");rect(x-50,y-108,7,6,"#6c8b4b");
+ }
+ // wooden sign
+ rect(x-48,y-161,96,20,"#60412f");rect(x-45,y-158,90,14,"#f5e4bf");
+ outline(x-48,y-161,96,20,"#60412f",2);
+ txt(s.label,x,y-147,"#5a3a28",9,"center");
+ if(nearby()?.id===s.id){
+  rect(x-26,y-185,52,17,"#f5d475");outline(x-26,y-185,52,17);
+  txt("E ✦",x,y-173,"#34271f",10,"center");
+ }
 }
-
-function drawPizza(){
-  if(currentStage==="dough" && !currentTask) return;
-  const station=stations.find(s=>s.id==="toppings");
-  const x=station.x-cameraX;
-  const y=FLOOR-66;
-  if(x<-100||x>W+100) return;
-
-  // Pizza verändert sich passend zum Arbeitsschritt
-  rect(x-29,y+7,58,10,"#b5793c");
-  rect(x-26,y,52,12,"#e4b75b");
-  rect(x-22,y+2,44,8,"#f2d58a");
-
-  if(["toppings","oven","counter"].includes(currentStage) ||
-     currentTask?.type==="cheese" || currentTask?.type==="topping"){
-    rect(x-20,y+3,40,6,"#d94e40");
-    if(currentStage!=="toppings" || toppingsAdded.length>0 ||
-       currentTask?.type==="cheese" || currentTask?.type==="topping"){
-      for(let i=0;i<7;i++){
-        const a=i*2.399;
-        const px=x+Math.cos(a)*(7+(i%3)*4);
-        const py=y+5+Math.sin(a)*(3+(i%2)*2);
-        rect(px,py,5,4,"#ffd64c");
-      }
-    }
-    for(let i=0;i<toppingsAdded.length;i++){
-      const ing=ingredientPool.find(v=>v.name===toppingsAdded[i]);
-      if(ing){
-        for(let j=0;j<4;j++){
-          const px=x-15+((i*13+j*11)%29);
-          const py=y+2+((i*7+j*3)%7);
-          rect(px,py,4,3,ing.color);
-        }
-      }
-    }
+function drawPicturePizza(){
+ if(currentStage==="dough"&&!currentTask)return;
+ const s=stations[2],x=s.x-cameraX,y=FLOOR-66;
+ if(x<-100||x>W+100)return;
+ rect(x-30,y+7,60,10,"#9d653a");rect(x-27,y,54,12,"#d5a04e");rect(x-23,y+2,46,8,"#f1d59a");
+ if(["toppings","oven","counter"].includes(currentStage)||currentTask?.type==="cheese"||currentTask?.type==="topping"){
+  rect(x-21,y+3,42,6,"#b84430");
+  for(let i=0;i<9;i++){
+   const a=i*2.399;
+   rect(x+Math.cos(a)*(5+(i%3)*5),y+5+Math.sin(a)*(2+(i%2)*2),5,4,"#f5ce56");
   }
-
-  if(currentTask){
-    const p=clamp(taskElapsed/taskDuration,0,1);
-    rect(x-28,y-10,56,4,"#6b5540");
-    rect(x-27,y-9,54*p,2,"#fff2bf");
-  }
+  toppingsAdded.forEach((n,i)=>{
+   const ing=ingredients.find(v=>v.name===n);
+   if(ing)for(let j=0;j<5;j++)rect(x-17+((i*13+j*9)%34),y+2+((i*7+j*3)%7),4,3,ing.color);
+  });
+ }
+ if(currentTask){const p=clamp(taskElapsed/taskDuration,0,1);rect(x-27,y-9,54,4,"#63402e");rect(x-26,y-8,52*p,2,"#ffdf83")}
 }
-
-/* -------------------------------------------------------
-   SPIELFIGUR – HOLZ-MANNEQUIN MIT HAUPTSPIEL-COSMETICS
-------------------------------------------------------- */
 function drawPlayer(){
-  const x=player.x-cameraX;
-  const y=player.y;
-  const f=player.facing;
-  const moving=Math.abs(player.vx)>.1 && player.grounded && !currentTask;
-  const swing=moving?Math.sin(player.walk)*7:0;
-  const lift=player.grounded?0:Math.sin(gameTime*12)*1.5;
-  const skin="#d5b18a",edge="#805b3c",wood="#b98552",light="#dfb47b";
-  const cx=x+player.w/2;
-  const shoulderY=y+31+lift;
-  const hipY=y+52+lift;
-  const headY=y+7+lift;
-  const cosmetics=getCosmetics();
-
-  // Schatten
-  rect(cx-20,FLOOR-3,40,4,"#8d6848");
-
-  // Beine
-  const leftLeg={x:cx-6-swing*.35,y:hipY+12};
-  const rightLeg={x:cx+6+swing*.35,y:hipY+12};
-  const leftFoot={x:cx-7-swing,y:y+70+lift};
-  const rightFoot={x:cx+7+swing,y:y+70+lift};
-  line(leftLeg.x,leftLeg.y,leftFoot.x,leftFoot.y,edge,8);
-  line(leftLeg.x,leftLeg.y,leftFoot.x,leftFoot.y,wood,5);
-  line(rightLeg.x,rightLeg.y,rightFoot.x,rightFoot.y,edge,8);
-  line(rightLeg.x,rightLeg.y,rightFoot.x,rightFoot.y,wood,5);
-  rect(leftFoot.x-5,leftFoot.y-1,10,5,edge);
-  rect(leftFoot.x-4,leftFoot.y,8,3,wood);
-  rect(rightFoot.x-5,rightFoot.y-1,10,5,edge);
-  rect(rightFoot.x-4,rightFoot.y,8,3,wood);
-
-  const holding=carriedPizza || currentStage==="counter";
-  const leftElbow=holding?{x:cx-13,y:y+39+lift}:{x:cx-15-swing*.55,y:y+43+lift};
-  const rightElbow=holding?{x:cx+13,y:y+39+lift}:{x:cx+15+swing*.55,y:y+43+lift};
-  const leftHand=holding?{x:cx-7,y:y+36+lift}:{x:cx-14-swing,y:y+54+lift};
-  const rightHand=holding?{x:cx+7,y:y+36+lift}:{x:cx+14+swing,y:y+54+lift};
-
-  line(cx-10,shoulderY,leftElbow.x,leftElbow.y,wood,6);
-  line(leftElbow.x,leftElbow.y,leftHand.x,leftHand.y,wood,5);
-  line(cx+10,shoulderY,rightElbow.x,rightElbow.y,wood,6);
-  line(rightElbow.x,rightElbow.y,rightHand.x,rightHand.y,wood,5);
-  rect(cx-12,shoulderY-4,24,25,edge);
-  rect(cx-9,shoulderY-1,18,19,wood);
-  rect(cx-7,shoulderY+2,4,13,light);
-  rect(cx-5,hipY-1,10,5,edge);
-  rect(cx-4,hipY,8,3,wood);
-
-  const clothes=cosmetics.clothes;
-  if(clothes==="scarf"){
-    rect(cx-11,shoulderY-2,22,6,"#4d995f");
-    rect(cx+3,shoulderY+1,5,15,"#4d995f");
-    rect(cx+4,shoulderY+2,2,11,"#78b27c");
-  } else if(clothes==="shirt" || clothes==="hoodie"){
-    const c=clothes==="shirt"?"#c64c48":"#3977bd";
-    rect(cx-10,shoulderY-2,20,20,c);
-    rect(cx-4,shoulderY+1,3,14,clothes==="shirt"?"#e1786b":"#6697d2");
-    if(clothes==="hoodie"){
-      rect(cx-7,shoulderY-5,14,6,"#28578b");
-      rect(cx-3,shoulderY+13,6,3,"#244f7e");
-    }
-  }
-
-  rect(cx-4,shoulderY-7,8,7,edge);
-  rect(cx-3,shoulderY-6,6,6,wood);
-
-  const headX=cx-11;
-  rect(headX,headY,22,23,edge);
-  rect(headX+2,headY+2,18,19,skin);
-  rect(headX+4,headY+4,14,15,wood);
-  rect(headX+5,headY+5,4,11,light);
-  rect(headX+10,headY+5,7,11,"#c99a64");
-  rect(headX+5,headY+17,12,2,edge);
-  rect(cx-6,headY+10,3,3,"#43362c");
-  rect(cx+4,headY+10,3,3,"#43362c");
-  rect(cx-2,headY+16,5,2,"#8c5944");
-
-  if(cosmetics.head==="cap"){
-    rect(cx-13,headY+1,26,5,"#3977bd");
-    rect(cx-10,headY-5,20,7,"#3977bd");
-    rect(cx+4,headY+4,10,3,"#285a91");
-    rect(cx-7,headY-3,9,2,"#79a9e3");
-  } else if(cosmetics.head==="crown"){
-    rect(cx-12,headY-4,24,5,"#d8a92e");
-    rect(cx-12,headY-11,5,8,"#f4c64e");
-    rect(cx-4,headY-14,6,11,"#f4c64e");
-    rect(cx+5,headY-10,6,7,"#f4c64e");
-    rect(cx-9,headY-3,18,2,"#fff0a4");
-  }
-
-  if(cosmetics.face==="glasses"){
-    rect(cx-9,headY+9,8,6,"#29323c");
-    rect(cx+1,headY+9,8,6,"#29323c");
-    rect(cx-1,headY+11,2,2,"#29323c");
-    rect(cx-7,headY+10,4,2,"#9fc9d6");
-    rect(cx+3,headY+10,4,2,"#9fc9d6");
-  }
-
-  // Getragene Pizza
-  if(carriedPizza){
-    const px=cx+f*21;
-    const py=y+35;
-    rect(px-15,py+4,30,5,"#9b5b32");
-    rect(px-14,py,28,5,"#e9c05e");
-    rect(px-10,py+1,20,3,"#d94e40");
-    rect(px-5,py+1,4,2,"#ffd64c");
-    rect(px+3,py+2,4,2,"#ffd64c");
-  }
+ const x=player.x-cameraX,y=player.y,cx=x+player.w/2;
+ const lift=player.grounded?0:Math.sin(gameTime*12)*1.5;
+ const swing=player.grounded&&!currentTask?Math.sin(player.walk)*7:0;
+ const shoulder=y+31+lift,hip=y+52+lift,head=y+7+lift;
+ const skin="#d5b18a",edge="#805b3c",wood="#b98552",light="#dfb47b";
+ const cos=cosmetics();
+ rect(cx-20,FLOOR-3,40,4,"#99754f");
+ const legs=[{x:cx-6-swing*.35,y:hip+12},{x:cx+6+swing*.35,y:hip+12}];
+ const feet=[{x:cx-7-swing,y:y+70+lift},{x:cx+7+swing,y:y+70+lift}];
+ legs.forEach((p,i)=>{line(p.x,p.y,feet[i].x,feet[i].y,edge,8);line(p.x,p.y,feet[i].x,feet[i].y,wood,5);rect(feet[i].x-5,feet[i].y-1,10,5,edge);rect(feet[i].x-4,feet[i].y,8,3,wood)});
+ const holding=carriedPizza;
+ const le=holding?{x:cx-13,y:y+39+lift}:{x:cx-15-swing*.55,y:y+43+lift};
+ const re=holding?{x:cx+13,y:y+39+lift}:{x:cx+15+swing*.55,y:y+43+lift};
+ const lh=holding?{x:cx-7,y:y+36+lift}:{x:cx-14-swing,y:y+54+lift};
+ const rh=holding?{x:cx+7,y:y+36+lift}:{x:cx+14+swing,y:y+54+lift};
+ line(cx-10,shoulder,le.x,le.y,wood,6);line(le.x,le.y,lh.x,lh.y,wood,5);
+ line(cx+10,shoulder,re.x,re.y,wood,6);line(re.x,re.y,rh.x,rh.y,wood,5);
+ rect(cx-11,shoulder-3,22,24,edge);rect(cx-8,shoulder,16,18,wood);rect(cx-6,shoulder+2,4,13,light);
+ rect(cx-5,hip-1,10,5,edge);rect(cx-4,hip,8,3,wood);
+ if(cos.clothes==="scarf"){
+  rect(cx-10,shoulder-2,20,6,"#4d995f");rect(cx+3,shoulder+1,5,15,"#4d995f");rect(cx+4,shoulder+2,2,11,"#78b27c");
+ }else if(cos.clothes==="shirt"||cos.clothes==="hoodie"){
+  const c=cos.clothes==="shirt"?"#c64c48":"#3977bd";
+  rect(cx-10,shoulder-2,20,20,c);rect(cx-4,shoulder+1,3,14,cos.clothes==="shirt"?"#e1786b":"#6697d2");
+  if(cos.clothes==="hoodie"){rect(cx-7,shoulder-5,14,6,"#28578b");rect(cx-3,shoulder+13,6,3,"#244f7e")}
+ }
+ rect(cx-4,shoulder-7,8,7,edge);rect(cx-3,shoulder-6,6,6,wood);
+ rect(cx-11,head,22,23,edge);rect(cx-9,head+2,18,19,skin);rect(cx-7,head+4,14,15,wood);
+ rect(cx-6,head+5,4,11,light);rect(cx-1,head+5,8,11,"#c99a64");
+ rect(cx-6,head+10,3,3,"#43362c");rect(cx+4,head+10,3,3,"#43362c");rect(cx-2,head+16,5,2,"#8c5944");
+ if(cos.head==="cap"){
+  rect(cx-13,head+1,26,5,"#3977bd");rect(cx-10,head-5,20,7,"#3977bd");rect(cx+4,head+4,10,3,"#285a91");rect(cx-7,head-3,9,2,"#79a9e3");
+ }else if(cos.head==="crown"){
+  rect(cx-12,head-4,24,5,"#d8a92e");rect(cx-12,head-11,5,8,"#f4c64e");rect(cx-4,head-14,6,11,"#f4c64e");rect(cx+5,head-10,6,7,"#f4c64e");rect(cx-9,head-3,18,2,"#fff0a4");
+ }
+ if(cos.face==="glasses"){
+  rect(cx-9,head+9,8,6,"#29323c");rect(cx+1,head+9,8,6,"#29323c");rect(cx-1,head+11,2,2,"#29323c");rect(cx-7,head+10,4,2,"#9fc9d6");rect(cx+3,head+10,4,2,"#9fc9d6");
+ }
+ if(carriedPizza){
+  const px=cx+player.facing*22,py=y+35;
+  rect(px-15,py+4,30,5,"#9b5b32");rect(px-14,py,28,5,"#e9c05e");rect(px-10,py+1,20,3,"#b84430");
+  rect(px-5,py+1,4,2,"#f5ce56");rect(px+3,py+2,4,2,"#f5ce56");
+ }
 }
-
-/* -------------------------------------------------------
-   EFFEKTE, AUFGABENANIMATION UND ZEICHNEN
-------------------------------------------------------- */
-function drawTaskAnimation(){
-  if(!currentTask) return;
-  const station=nearbyStation();
-  const px=player.x-cameraX+player.w/2;
-  const py=player.y-12;
-
+function drawEffects(){
+ for(const p of particles){ctx.globalAlpha=clamp(p.life,0,1);rect(p.x-cameraX,p.y,p.size,p.size,p.color)}
+ ctx.globalAlpha=1;
+ if(currentTask){
+  const cx=player.x-cameraX+player.w/2,py=player.y-12,p=clamp(taskElapsed/taskDuration,0,1);
+  rect(cx-22,py-20,44,6,"#49372b");rect(cx-20,py-18,40*p,2,"#f5ce56");
   if(currentTask.type==="dough"){
-    const rollX=px+Math.sin(taskElapsed*15)*14;
-    rect(rollX-13,py+8,26,4,"#98633b");
-    rect(rollX-17,py+6,4,8,"#6d4933");
-    rect(rollX+13,py+6,4,8,"#6d4933");
-  } else if(currentTask.type==="sauce"){
-    rect(px-7,py+5,14,12,"#d94e40");
-    rect(px-4,py+7,8,7,"#ef7862");
-    rect(px-2,py+1,4,6,"#d5b18a");
-  } else if(currentTask.type==="topping"||currentTask.type==="cheese"){
-    const ingredient=ingredientPool.find(i=>i.name===currentTask.ingredient);
-    const color=ingredient?.color || "#ffd64c";
-    const drop=taskElapsed%0.7;
-    rect(px-2,py-8+drop*15,5,5,color);
-    rect(px+8,py-12+drop*15,5,5,color);
-    rect(px-9,py-5+drop*15,5,5,color);
+   const rx=cx+Math.sin(taskElapsed*15)*14;rect(rx-13,py+8,26,4,"#98633b");rect(rx-17,py+6,4,8,"#60412f");rect(rx+13,py+6,4,8,"#60412f");
+  }else if(currentTask.type==="sauce"){
+   rect(cx-7,py+5,14,12,"#a94132");rect(cx-4,py+7,8,7,"#df7558");rect(cx-2,py+1,4,6,"#d5b18a");
+  }else{
+   const it=ingredients.find(i=>i.name===currentTask.ingredient);
+   const c=it?.color||"#f5ce56",drop=taskElapsed%0.7;
+   rect(cx-2,py-8+drop*15,5,5,c);rect(cx+8,py-12+drop*15,5,5,c);rect(cx-9,py-5+drop*15,5,5,c);
   }
-
-  // Fortschrittsbalken über dem Spieler
-  const pct=clamp(taskElapsed/taskDuration,0,1);
-  rect(px-22,py-20,44,6,"#443d36");
-  rect(px-20,py-18,40*pct,2,"#ffd84d");
+ }
 }
-
-function drawParticles(){
-  for(const p of particles){
-    ctx.globalAlpha=clamp(p.life,0,1);
-    rect(p.x-cameraX,p.y,p.size,p.size,p.color);
-  }
-  ctx.globalAlpha=1;
-}
-
 function draw(){
-  ctx.clearRect(0,0,W,H);
-  drawBackground();
-
-  for(const station of stations) drawStation(station);
-  drawPizza();
-  drawPlayer();
-  drawTaskAnimation();
-  drawParticles();
-
-  // Aktionshinweis
-  const nearby=nearbyStation();
-  if(nearby){
-    rect(18,18,255,37,"#fff8e7");
-    ctx.strokeStyle="#28251f";ctx.lineWidth=2;
-    ctx.strokeRect(18,18,255,37);
-    text("E  "+nearby.label+" BENUTZEN",30,41,"#28251f",12);
-  }
-
-  // Bestellung als kleines Ticket
-  rect(W-246,18,228,64,"#fff8e7");
-  ctx.strokeStyle="#28251f";ctx.lineWidth=2;
-  ctx.strokeRect(W-246,18,228,64);
-  text("BESTELLUNG",W-234,36,"#28251f",10);
-  text(order ? order.name : "Keine Bestellung",W-234,53,"#9b382c",12);
-  text("BELAG: "+(order?order.base.concat(order.toppings).join(", "):"-"),
-    W-234,70,"#28251f",9);
-
-  // Timer am Ofen
-  if(ovenTimer>0){
-    rect(W/2-85,18,170,28,"#fff8e7");
-    ctx.strokeStyle="#28251f";ctx.lineWidth=2;
-    ctx.strokeRect(W/2-85,18,170,28);
-    text("OFEN: "+Math.ceil(ovenTimer)+" SEK.",W/2,36,"#28251f",12,"center");
-  }
-
-  if(messageTimer>0 && message){
-    const width=Math.min(W-36,Math.max(260,message.length*7.2+34));
-    rect((W-width)/2,H-52,width,34,"#fff8e7");
-    ctx.strokeStyle="#28251f";ctx.lineWidth=2;
-    ctx.strokeRect((W-width)/2,H-52,width,34);
-    text(message,W/2,H-31,"#28251f",11,"center");
-  }
-
-  // Kleine Schichtanzeige
-  rect(18,H-29,170,17,"#fff8e7");
-  text("SCHICHT 01  /  "+String(jobSave.delivered).padStart(2,"0")+" PIZZAS",
-    25,H-17,"#28251f",9);
+ ctx.clearRect(0,0,W,H);
+ drawBackground();
+ stations.forEach(drawStation);
+ drawPicturePizza();
+ drawPlayer();
+ drawEffects();
+ // Tiny iconography only; no tutorial text
+ const s=nearby();
+ if(s){
+  rect(18,18,35,35,"#fff0d2");outline(18,18,35,35);
+  txt("E",35,41,"#a94132",18,"center");
+ }
+ // ticket
+ rect(W-66,18,48,52,"#fff0d2");outline(W-66,18,48,52);
+ txt("✦",W-42,37,"#a94132",17,"center");
+ txt(String(job.delivered).padStart(2,"0"),W-42,56,"#476b43",13,"center");
+ if(ovenTimer>0||ovenReady){
+  rect(W/2-22,18,44,32,"#fff0d2");outline(W/2-22,18,44,32);
+  txt(ovenReady?"✦":String(Math.ceil(ovenTimer)),W/2,40,ovenReady?"#a94132":"#34271f",16,"center");
+ }
+ if(messageTimer>0&&message){
+  const w=Math.min(W-50,Math.max(75,message.length*7+26));
+  rect((W-w)/2,H-49,w,30,"#fff0d2");outline((W-w)/2,H-49,w,30);
+  txt(message,W/2,H-30,"#34271f",11,"center");
+ }
 }
-
-function loop(timestamp){
-  const dt=Math.min(.033,(timestamp-(lastTime||timestamp))/1000);
-  lastTime=timestamp;
-  update(dt);
-  draw();
-  requestAnimationFrame(loop);
+function loop(t){
+ const dt=Math.min(.033,(t-(lastTime||t))/1000);lastTime=t;
+ update(dt);draw();requestAnimationFrame(loop);
 }
-
-/* -------------------------------------------------------
-   TASTATUR UND TOUCH-STEUERUNG
-------------------------------------------------------- */
-window.addEventListener("keydown",event=>{
-  const key=event.key.toLowerCase();
-  if([" ","arrowleft","arrowright","arrowup"].includes(key)) event.preventDefault();
-  keys[key]=true;
-  if(key==="e" && !event.repeat) interact();
+window.addEventListener("keydown",e=>{
+ const k=e.key.toLowerCase();
+ if([" ","arrowleft","arrowright","arrowup"].includes(k))e.preventDefault();
+ keys[k]=true;
+ if(k==="e"&&!e.repeat)interact();
+ if(k===" "&&!e.repeat)jump();
 });
-window.addEventListener("keyup",event=>{
-  keys[event.key.toLowerCase()]=false;
+window.addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
+document.querySelectorAll("[data-key]").forEach(b=>{
+ const k=b.dataset.key;
+ const down=e=>{e.preventDefault();keys[k]=true};
+ const up=e=>{e.preventDefault();keys[k]=false};
+ b.addEventListener("pointerdown",down);b.addEventListener("pointerup",up);
+ b.addEventListener("pointercancel",up);b.addEventListener("pointerleave",up);
 });
-
-document.querySelectorAll("[data-key]").forEach(button=>{
-  const key=button.dataset.key;
-  const down=e=>{e.preventDefault();keys[key]=true;};
-  const up=e=>{e.preventDefault();keys[key]=false;};
-  button.addEventListener("pointerdown",down);
-  button.addEventListener("pointerup",up);
-  button.addEventListener("pointercancel",up);
-  button.addEventListener("pointerleave",up);
+$("mobileE").addEventListener("click",interact);
+$("soundBtn").addEventListener("click",()=>{
+ soundOn=!soundOn;
+ $("soundBtn").textContent=soundOn?"♫ ON":"♫ OFF";
+ if(soundOn){audioContext();sound("ding")}
 });
-document.getElementById("mobileInteract").addEventListener("click",interact);
-
-document.getElementById("resetJob").addEventListener("click",()=>{
-  if(!confirm("Die aktuelle Pizzeria-Bestellung und der Ofen werden zurückgesetzt. Dein Hauptspielstand und dein Geld bleiben erhalten. Fortfahren?")) return;
-  newOrder();
-  player.x=90;
-  player.y=FLOOR-player.h;
-  player.vx=0;
-  player.vy=0;
-  showMessage("Neue Schicht gestartet. Viel Erfolg!");
+window.addEventListener("storage",e=>{
+ if(e.key===STORAGE_KEY)$("money").textContent=money();
 });
-
-/* Cosmetics können während die Pizzeria geöffnet ist im Hauptspiel
-   geändert werden. Das Canvas liest den aktuellen Spielstand beim
-   Zeichnen erneut aus und zeigt die neuen Cosmetics automatisch. */
-window.addEventListener("storage",event=>{
-  if(event.key===STORAGE_KEY) updateMoney();
-});
-
-/* Start */
-updateMoney();
+$("money").textContent=money();
 newOrder();
-updatePanels();
+updateHUD();
 requestAnimationFrame(loop);
 })();
 </script>
