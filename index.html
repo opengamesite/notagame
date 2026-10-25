@@ -440,8 +440,7 @@
       rect(-2,-42,7,5,"#75b773");
       ctx.restore();
     }
-
-    function drawDecor() {
+        function drawDecor() {
       rect(374,250,157,36,"#d9d1c4");
       rect(378,254,149,27,"#f1e9dc");
       for(let x=385;x<524;x+=12) rect(x,257,5,20,"#d2c7b5");
@@ -690,7 +689,7 @@
         nearby.id==="computer"?"E  COMPUTER BENUTZEN":
         nearby.id==="faucet"?"E  WASSERHAHN":
         nearby.id==="bucket"?"E  EIMER":
-        nearby.id==="door"?"E  TÜR ÖFFNEN":
+        nearby.id==="door"?"E  STADT BETRETEN":
         nearby.id==="sink"?"E  WASCHBECKEN":
         "E  "+name.toUpperCase();
 
@@ -866,11 +865,16 @@
         panelContent.append(grid);
       }
     }
-        function renderShop() {
+
+    function renderShop() {
       const intro=document.createElement("p");
       intro.className="panel-intro";
       intro.textContent="Bestelle neue Dinge für dein Zimmer. Die Lieferzeit beträgt 20 Sekunden Spielzeit. Sobald der Postbote ankommt, wartet dein Paket an der Tür.";
       panelContent.append(intro);
+
+      panelContent.append(makeButton("Pakete annehmen und Inventar öffnen",()=>{
+        openPanel("door");
+      },"secondary-button"));
 
       const balance=document.createElement("div");
       balance.className="balance-line";
@@ -947,8 +951,7 @@
         }
       }
     }
-
-    function renderDoor() {
+        function renderDoor() {
       const orders=save.orders.filter(o=>o.status==="arrived");
 
       if(orders.length) {
@@ -1044,6 +1047,10 @@
           ));
         }
       }
+
+      panelContent.append(makeButton("Zurück zum Computer",()=>{
+        openPanel("computer");
+      },"secondary-button"));
     }
 
     function findPlacement(id) {
@@ -1152,7 +1159,9 @@
           break;
 
         case "door":
-          openPanel("door");
+          // Die Zimmertür führt in den Stadtbereich.
+          persist();
+          window.location.href="Stadt.html";
           break;
 
         case "sink":
@@ -1219,8 +1228,6 @@
           player.grounded=true;
         }
 
-        // Der Weg vor den Möbeln bleibt frei.
-        // Beim Tragen bleibt der Eimer vor den Händen.
         if(carrying==="bucket") {
           bucket.x=player.x+player.w/2-bucket.w/2+player.facing*18;
           bucket.y=player.y+34;
@@ -1266,7 +1273,8 @@
         persist();
       }
     }
-        function setupControls() {
+
+    function setupControls() {
       window.addEventListener("keydown",event=>{
         const key=event.key.toLowerCase();
 
