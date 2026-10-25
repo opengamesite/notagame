@@ -7,1464 +7,1856 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<main id="game">
-  <canvas id="world" width="960" height="540" aria-label="Pixel-Art-Spielzimmer"></canvas>
+  <main id="game">
+    <canvas id="world" width="960" height="540" aria-label="Pixel-Art-Spielzimmer"></canvas>
 
-  <header class="hud">
-    <div class="brand">
-      <span class="brand-icon">▦</span>
-      <div>
-        <strong>MEIN ZIMMER</strong>
-        <small>Dein kleines Zuhause</small>
+    <header class="hud">
+      <div class="brand">
+        <span class="brand-icon">▦</span>
+        <div>
+          <strong>MEIN ZIMMER</strong>
+          <small>Dein kleines Zuhause</small>
+        </div>
       </div>
-    </div>
-    <div class="money"><span>¢</span> <b id="money">120</b></div>
-  </header>
-
-  <div class="bottom-hud">
-    <div class="controls">
-      <span><kbd>A</kbd> <kbd>D</kbd> Bewegen</span>
-      <span><kbd>W</kbd> Springen</span>
-      <span><kbd>E</kbd> Interagieren</span>
-      <span><kbd>I</kbd> Inventar</span>
-      <span><kbd>ESC</kbd> Schließen</span>
-    </div>
-    <button id="soundButton" class="small-button" type="button" aria-label="Sound ein oder ausschalten">♫</button>
-  </div>
-
-  <div id="hint" class="hint">Erkunde dein Zimmer.</div>
-  <div id="hotbar" class="hotbar" aria-label="Schnellleiste"></div>
-
-  <section id="panel" class="panel hidden" aria-modal="true" role="dialog" aria-labelledby="panelTitle">
-    <div class="panel-head">
-      <div>
-        <small id="panelEyebrow">DEIN ZUHAUSE</small>
-        <h1 id="panelTitle">Zimmer</h1>
+      <div class="hud-right">
+        <div class="day-pill" id="dayLabel">Tag 1</div>
+        <div class="money-pill" id="moneyLabel">0 Münzen</div>
       </div>
-      <button id="closePanel" class="close-button" type="button" aria-label="Schließen">×</button>
-    </div>
-    <div id="panelContent" class="panel-content"></div>
-  </section>
-</main>
+    </header>
 
-<script>
-(() => {
-"use strict";
+    <div id="toast" class="toast" aria-live="polite"></div>
 
-const canvas = document.getElementById("world");
-const ctx = canvas.getContext("2d");
-ctx.imageSmoothingEnabled = false;
+    <section id="interactionHint" class="interaction-hint">
+      <span class="key">E</span>
+      <span id="interactionText">Interagieren</span>
+    </section>
 
-const $ = id => document.getElementById(id);
-const panel = $("panel");
-const panelContent = $("panelContent");
-const hint = $("hint");
-const hotbar = $("hotbar");
+    <section id="dialogPanel" class="dialog-panel hidden">
+      <div class="panel-header">
+        <div>
+          <span class="eyebrow" id="dialogEyebrow">INTERAKTION</span>
+          <h2 id="dialogTitle">Hallo!</h2>
+        </div>
+        <button id="closeDialog" class="close-button" aria-label="Schließen">×</button>
+      </div>
+      <p id="dialogText"></p>
+      <div id="dialogActions" class="dialog-actions"></div>
+    </section>
 
-const W = canvas.width;
-const H = canvas.height;
-const FLOOR = 444;
-const STORAGE_KEY = "mein-zimmer-save-v1";
+    <section id="inventoryPanel" class="inventory-panel hidden">
+      <div class="panel-header">
+        <div>
+          <span class="eyebrow">DEINE SAMMLUNG</span>
+          <h2>Inventar</h2>
+        </div>
+        <button id="closeInventory" class="close-button" aria-label="Inventar schließen">×</button>
+      </div>
+      <p class="panel-description">Wähle einen Gegenstand aus, um ihn auszurüsten oder im Zimmer zu platzieren.</p>
+      <div id="inventoryItems" class="inventory-items"></div>
+    </section>
 
-const cosmetics = [
-  {id:"cap",name:"Blaue Cap",type:"Kopf",price:25,color:"#3977bd",desc:"Eine blaue Pixel-Cap."},
-  {id:"crown",name:"Goldene Krone",type:"Kopf",price:80,color:"#f4c64e",desc:"Für echte Zimmer-Könige."},
-  {id:"beanie",name:"Grüne Beanie",type:"Kopf",price:30,color:"#4d995f",desc:"Eine gemütliche Strickmütze."},
-  {id:"headphones",name:"Kopfhörer",type:"Kopf",price:45,color:"#343b48",desc:"Perfekt für Musik am Computer."},
-  {id:"flowercrown",name:"Blumenkranz",type:"Kopf",price:55,color:"#d985a8",desc:"Ein bunter Kranz aus Pixelblumen."},
-  {id:"glasses",name:"Pixelbrille",type:"Gesicht",price:35,color:"#252c38",desc:"Klassische dunkle Brille."},
-  {id:"sunglasses",name:"Sonnenbrille",type:"Gesicht",price:40,color:"#202934",desc:"Dunkle Gläser für einen coolen Look."},
-  {id:"mask",name:"Blaue Maske",type:"Gesicht",price:30,color:"#548da9",desc:"Eine schlichte blaue Gesichtsmaske."},
-  {id:"eyepatch",name:"Augenklappe",type:"Gesicht",price:50,color:"#44352c",desc:"Ein markanter Piraten-Look."},
-  {id:"scarf",name:"Grüner Schal",type:"Kleidung",price:30,color:"#4d995f",desc:"Warm und gemütlich."},
-  {id:"shirt",name:"Rotes Shirt",type:"Kleidung",price:45,color:"#c64c48",desc:"Ein bisschen Farbe."},
-  {id:"hoodie",name:"Blauer Hoodie",type:"Kleidung",price:65,color:"#3977bd",desc:"Bequem für lange Abende."},
-  {id:"jacket",name:"Dunkle Jacke",type:"Kleidung",price:70,color:"#454c5a",desc:"Eine robuste Jacke mit Kragen."},
-  {id:"stripedshirt",name:"Gestreiftes Shirt",type:"Kleidung",price:55,color:"#e9e3d7",desc:"Helle Streifen im Pixel-Stil."},
-  {id:"purplehoodie",name:"Lila Hoodie",type:"Kleidung",price:75,color:"#8759a8",desc:"Ein gemütlicher Hoodie in Lila."}
-];
+    <section id="computerPanel" class="computer-panel hidden">
+      <div class="panel-header">
+        <div>
+          <span class="eyebrow">DEIN COMPUTER</span>
+          <h2>Was möchtest du machen?</h2>
+        </div>
+        <button id="closeComputer" class="close-button" aria-label="Schließen">×</button>
+      </div>
+      <div class="computer-options">
+        <button class="computer-option" id="openShop">
+          <span class="option-icon">🛍️</span>
+          <span><strong>Shop</strong><small>Neue Sachen kaufen</small></span>
+          <span class="option-arrow">›</span>
+        </button>
+        <button class="computer-option" id="openOrders">
+          <span class="option-icon">📦</span>
+          <span><strong>Bestellungen</strong><small>Deine Pakete ansehen</small></span>
+          <span class="option-arrow">›</span>
+        </button>
+        <button class="computer-option" id="openWardrobe">
+          <span class="option-icon">👕</span>
+          <span><strong>Kleiderschrank</strong><small>Dein Outfit ändern</small></span>
+          <span class="option-arrow">›</span>
+        </button>
+      </div>
+    </section>
 
-const shopItems = [
-  {id:"plant",name:"Zimmerpflanze",price:35,desc:"Eine kleine Pflanze für dein Zimmer."},
-  {id:"lamp",name:"Schreibtischlampe",price:45,desc:"Ein warmes Licht für den Abend."},
-  {id:"poster",name:"Pixel-Poster",price:25,desc:"Ein Poster für die freie Wand."},
-  {id:"teddy",name:"Kleiner Teddybär",price:40,desc:"Ein gemütlicher neuer Mitbewohner."},
-  {id:"rug",name:"Blauer Teppich",price:50,desc:"Macht den Boden gemütlicher."},
-  {id:"star",name:"Sternen-Deko",price:60,desc:"Kleine Sterne für die Wand."}
-];
+    <section id="shopPanel" class="shop-panel hidden">
+      <div class="panel-header">
+        <div>
+          <span class="eyebrow">MÖBEL & DEKO</span>
+          <h2>Zimmer-Shop</h2>
+        </div>
+        <button id="closeShop" class="close-button" aria-label="Shop schließen">×</button>
+      </div>
+      <div class="shop-tabs">
+        <button class="shop-tab active" data-category="all">Alles</button>
+        <button class="shop-tab" data-category="furniture">Möbel</button>
+        <button class="shop-tab" data-category="decor">Deko</button>
+        <button class="shop-tab" data-category="clothing">Kleidung</button>
+      </div>
+      <div id="shopItems" class="shop-items"></div>
+    </section>
 
-const defaults = {
-  money:120,
-  unlocked:[],
-  equipped:{head:null,face:null,clothes:null},
-  inventory:[],
-  placed:[],
-  orders:[],
-  received:[],
-  faucetOn:false,
-  bucketWater:0
-};
+    <section id="ordersPanel" class="orders-panel hidden">
+      <div class="panel-header">
+        <div>
+          <span class="eyebrow">LIEFERDIENST</span>
+          <h2>Deine Bestellungen</h2>
+        </div>
+        <button id="closeOrders" class="close-button" aria-label="Bestellungen schließen">×</button>
+      </div>
+      <div id="ordersList" class="orders-list"></div>
+    </section>
 
-function loadSave() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-    if (!saved || typeof saved !== "object") return structuredClone(defaults);
-    return {
-      ...structuredClone(defaults),
-      ...saved,
-      equipped:{...defaults.equipped,...(saved.equipped || {})},
-      unlocked:Array.isArray(saved.unlocked) ? saved.unlocked : [],
-      inventory:Array.isArray(saved.inventory) ? saved.inventory : [],
-      placed:Array.isArray(saved.placed) ? saved.placed.map(item=>({...item})) : [],
-      orders:Array.isArray(saved.orders) ? saved.orders : [],
-      received:Array.isArray(saved.received) ? saved.received : []
+    <section id="wardrobePanel" class="wardrobe-panel hidden">
+      <div class="panel-header">
+        <div>
+          <span class="eyebrow">DEIN STYLE</span>
+          <h2>Kleiderschrank</h2>
+        </div>
+        <button id="closeWardrobe" class="close-button" aria-label="Schließen">×</button>
+      </div>
+      <div id="wardrobeItems" class="wardrobe-items"></div>
+    </section>
+
+    <section id="doorPanel" class="door-panel hidden">
+      <div class="panel-header">
+        <div>
+          <span class="eyebrow">DEIN ZUHAUSE</span>
+          <h2>Wohin möchtest du?</h2>
+        </div>
+        <button id="closeDoor" class="close-button" aria-label="Schließen">×</button>
+      </div>
+      <p>Dein Zimmer ist nur der Anfang. Draußen wartet die Stadt auf dich.</p>
+      <div class="dialog-actions">
+        <button id="goToCity" class="primary-button">Zur Stadt gehen →</button>
+        <button id="stayHome" class="secondary-button">Hierbleiben</button>
+      </div>
+    </section>
+
+    <footer class="controls">
+      <div class="control-group">
+        <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Bewegen</span>
+        <span><kbd>E</kbd> Interagieren</span>
+        <span><kbd>I</kbd> Inventar</span>
+        <span><kbd>Shift</kbd> + <kbd>E</kbd> Aufheben</span>
+      </div>
+      <div class="control-group control-right">
+        <span><kbd>1–9</kbd> Schnellleiste</span>
+        <span id="statusLabel">Bereit für einen neuen Tag</span>
+      </div>
+    </footer>
+  </main>
+
+  <script>
+    "use strict";
+
+    const canvas = document.getElementById("world");
+    const ctx = canvas.getContext("2d");
+
+    const toast = document.getElementById("toast");
+    const interactionHint = document.getElementById("interactionHint");
+    const interactionText = document.getElementById("interactionText");
+
+    const dialogPanel = document.getElementById("dialogPanel");
+    const dialogEyebrow = document.getElementById("dialogEyebrow");
+    const dialogTitle = document.getElementById("dialogTitle");
+    const dialogText = document.getElementById("dialogText");
+    const dialogActions = document.getElementById("dialogActions");
+
+    const inventoryPanel = document.getElementById("inventoryPanel");
+    const inventoryItems = document.getElementById("inventoryItems");
+
+    const computerPanel = document.getElementById("computerPanel");
+    const shopPanel = document.getElementById("shopPanel");
+    const ordersPanel = document.getElementById("ordersPanel");
+    const wardrobePanel = document.getElementById("wardrobePanel");
+    const doorPanel = document.getElementById("doorPanel");
+
+    const moneyLabel = document.getElementById("moneyLabel");
+    const dayLabel = document.getElementById("dayLabel");
+    const statusLabel = document.getElementById("statusLabel");
+
+    const WIDTH = canvas.width;
+    const HEIGHT = canvas.height;
+    const TILE = 32;
+
+    const COLORS = {
+      wall: "#e9d9bd",
+      wallDark: "#d8c3a2",
+      floor: "#c89565",
+      floorLight: "#d6a878",
+      floorDark: "#b77e50",
+      outline: "#47352e",
+      skin: "#f2c39b",
+      hair: "#593b2d",
+      shirt: "#5e91c9",
+      pants: "#394f76",
+      shoes: "#49362d",
+      green: "#7dbb82",
+      yellow: "#f2cf62",
+      blue: "#78b7d6",
+      red: "#d87972"
     };
-  } catch {
-    return structuredClone(defaults);
-  }
-}
 
-let save = loadSave();
-let keys = new Set();
-let activePanel = null;
-let activePlacedId = null;
-let dragging = false;
-let carrying = null;
-let dragOffset = {x:0,y:0};
-let lastTime = performance.now();
-let gameTime = 0;
-let saveTimer = 0;
-let faucetTimer = 0;
-let soundOn = true;
-let audio = null;
-let hintTimer = null;
-let selectedSlot = 0;
-let waterParticles = [];
-let inventoryOpen = false;
-
-const player = {
-  x:300,y:FLOOR-82,vx:0,vy:0,
-  w:34,h:78,grounded:true,
-  facing:1,walk:0,dragging:false
-};
-
-const bucket = {x:575,y:FLOOR-34,w:34,h:32};
-
-const objects = [
-  {id:"bed",x:54,y:330,w:220,h:114,solid:true},
-  {id:"wardrobe",x:75,y:170,w:112,h:158,solid:true},
-  {id:"desk",x:548,y:320,w:190,h:124,solid:true},
-  {id:"computer",x:588,y:258,w:78,h:64,solid:false},
-  {id:"sink",x:774,y:325,w:112,h:102,solid:true},
-  {id:"door",x:875,y:220,w:65,h:224,solid:false},
-  {id:"window",x:365,y:122,w:172,h:112,solid:false},
-  {id:"bucket",x:575,y:FLOOR-34,w:34,h:32,solid:false},
-  {id:"faucet",x:805,y:285,w:50,h:48,solid:false}
-];
-
-const labels = {
-  wardrobe:"Kleiderschrank",computer:"Computer",bed:"Bett",
-  sink:"Waschbecken",faucet:"Wasserhahn",bucket:"Eimer",door:"Zimmertür"
-};
-
-function persist() {
-  try {
-    localStorage.setItem(STORAGE_KEY,JSON.stringify(save));
-  } catch(error) {
-    console.warn("Speichern nicht möglich:",error);
-    showHint("Speichern ist in diesem Browser gerade nicht möglich.");
-  }
-  $("money").textContent = save.money;
-  renderHotbar();
-}
-
-function showHint(text) {
-  hint.textContent = text;
-  hint.classList.add("visible");
-  clearTimeout(hintTimer);
-  hintTimer = setTimeout(()=>hint.classList.remove("visible"),2600);
-}
-
-function playTone(freq=440,duration=.07,wave="square") {
-  if (!soundOn) return;
-  try {
-    audio ||= new (window.AudioContext || window.webkitAudioContext)();
-    if(audio.state==="suspended") audio.resume();
-    const osc=audio.createOscillator();
-    const gain=audio.createGain();
-    osc.type=wave;
-    osc.frequency.value=freq;
-    gain.gain.setValueAtTime(.045,audio.currentTime);
-    gain.gain.exponentialRampToValueAtTime(.001,audio.currentTime+duration);
-    osc.connect(gain);
-    gain.connect(audio.destination);
-    osc.start();
-    osc.stop(audio.currentTime+duration);
-  } catch {}
-}
-
-function rect(x,y,w,h,color) {
-  ctx.fillStyle=color;
-  ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h));
-}
-
-function line(x1,y1,x2,y2,color,width=2) {
-  ctx.strokeStyle=color;
-  ctx.lineWidth=width;
-  ctx.lineCap="square";
-  ctx.beginPath();
-  ctx.moveTo(Math.round(x1),Math.round(y1));
-  ctx.lineTo(Math.round(x2),Math.round(y2));
-  ctx.stroke();
-}
-
-function pixelText(text,x,y,color="#433a38",size=10) {
-  ctx.fillStyle=color;
-  ctx.font=`${size}px monospace`;
-  ctx.fillText(text,x,y);
-}
-
-function drawRoom() {
-  rect(0,0,W,H,"#e7d7c1");
-  rect(0,0,W,78,"#d4bda2");
-
-  for(let x=0;x<W;x+=80) {
-    rect(x,78,2,365,"#d9c6ae");
-    rect(x+5,82,1,350,"#eee2d1");
-  }
-
-  rect(0,438,W,12,"#9c6b4c");
-  rect(0,450,W,90,"#986c4d");
-  for(let y=452;y<H;y+=22) {
-    rect(0,y,W,2,"#80583f");
-    for(let x=(y%44===0?0:45);x<W;x+=90) rect(x,y,2,22,"#80583f");
-  }
-  rect(0,536,W,4,"#64432f");
-
-  rect(352,110,198,132,"#7a5038");
-  rect(360,118,182,116,"#c0e5ec");
-  rect(364,122,174,108,"#a4d7e3");
-  rect(364,122,174,36,"#d3eff0");
-  rect(380,140,28,7,"#fff1c4");
-  rect(410,132,16,8,"#fff1c4");
-  rect(374,167,160,63,"#82b4a1");
-  rect(374,190,160,40,"#6b9a77");
-  rect(445,118,6,116,"#f0e0ca");
-  rect(360,170,182,6,"#f0e0ca");
-  rect(344,106,214,8,"#a47b5a");
-  rect(344,106,8,140,"#a47b5a");
-  rect(550,106,8,140,"#a47b5a");
-
-  rect(294,150,39,52,"#8d6248");
-  rect(299,155,29,42,"#f2e5ce");
-  rect(304,160,19,18,"#6e9a91");
-  rect(304,179,19,13,"#d3a56f");
-
-  rect(694,132,48,59,"#8d6248");
-  rect(699,137,38,49,"#f0dfc5");
-  rect(705,143,26,36,"#a7c5bc");
-  rect(709,147,8,8,"#f5d58d");
-  rect(715,158,12,18,"#6c917d");
-
-  rect(290,458,270,66,"#587b91");
-  rect(300,465,250,52,"#7196a5");
-  for(let x=310;x<545;x+=18) rect(x,470,5,42,"#87a9b2");
-  rect(290,458,270,4,"#3d6177");
-  rect(290,520,270,4,"#3d6177");
-}
-
-function drawBed() {
-  rect(45,340,236,93,"#744a35);
-  rect(53,333,220,18,"#a77a55);
-  rect(53,352,220,67,"#c7b9a2);
-  rect(53,352,220,13,"#e4d8c4);
-  rect(45,315,18,119,"#85573b);
-  rect(49,321,10,102,"#a47753");
-  rect(67,355,57,30,"#e6e0d1");
-  rect(72,359,47,22,"#f4ecde");
-  rect(129,355,57,30,"#e6e0d1");
-  rect(134,359,47,22,"#f4ecde");
-  rect(64,383,204,43,"#5b7e9a");
-  rect(64,383,204,8,"#7f9eb3");
-  for(let x=82;x<240;x+=29) rect(x,391,5,28,"#7896ac");
-  rect(57,427,18,12,"#65412e");
-  rect(250,427,18,12,"#65412e");
-}
-
-function drawWardrobe() {
-  rect(69,164,125,171,"#67442f");
-  rect(76,169,111,161,"#b4835a");
-  rect(81,175,49,149,"#c29469");
-  rect(133,175,48,149,"#b6875c");
-  rect(128,175,5,149,"#805638");
-  rect(87,183,35,127,"#d1a477");
-  rect(139,183,35,127,"#c99a6b");
-  for(let y=194;y<305;y+=17) {
-    rect(93,y,23,2,"#bd8b5c");
-    rect(145,y,23,2,"#b27f52");
-  }
-  rect(116,236,4,12,"#f1d08a");
-  rect(141,236,4,12,"#f1d08a");
-  rect(80,172,101,5,"#e0b88a");
-  rect(80,326,101,5,"#744b32");
-  rect(80,151,34,13,"#d8c7ac");
-  rect(84,145,26,8,"#e8ddc8");
-  rect(91,138,12,7,"#d9b66e");
-}
-
-function drawDesk() {
-  rect(541,328,204,17,"#85583c");
-  rect(550,345,14,91,"#8d5c3b");
-  rect(720,345,14,91,"#8d5c3b");
-  rect(548,337,190,9,"#b17c52");
-  rect(554,354,178,6,"#c49364");
-  rect(561,370,62,51,"#835438");
-  rect(566,375,52,40,"#a06d46");
-  rect(565,393,54,3,"#754a32");
-  rect(590,387,5,5,"#e3c38c");
-  rect(693,312,11,16,"#b64c48");
-  rect(705,307,10,21,"#e0bd77");
-  rect(716,314,11,14,"#527b8b");
-  rect(552,306,30,5,"#464b54");
-  rect(566,288,5,19,"#464b54");
-  rect(551,279,34,12,"#e6c777");
-  rect(555,282,26,6,"#f6e0a0");
-}
-
-function drawComputer() {
-  rect(600,257,72,53,"#353b44");
-  rect(605,262,62,41,"#111d28");
-  rect(608,265,56,35,"#304c59");
-  rect(610,268,51,4,"#7fc3b3");
-  rect(610,275,28,2,"#b7d4ba");
-  rect(610,280,40,2,"#b7d4ba");
-  rect(610,285,21,2,"#b7d4ba");
-  rect(610,291,35,2,"#b7d4ba");
-  rect(633,310,7,10,"#474b52");
-  rect(619,319,35,4,"#474b52");
-  rect(594,322,69,7,"#41464c");
-  for(let x=598;x<659;x+=8) rect(x,324,5,2,"#8c9297");
-  rect(667,321,10,8,"#d2d0c9");
-}
-
-function drawSink() {
-  rect(769,337,123,15,"#75503b");
-  rect(779,350,13,87,"#956a4a");
-  rect(871,350,13,87,"#956a4a");
-  rect(778,323,112,19,"#f0e8d9");
-  rect(786,328,96,10,"#c6d2d0");
-  rect(793,330,82,6,"#a5b7b5");
-  rect(824,310,22,8,"#a5afb0");
-  rect(832,291,6,20,"#a5afb0");
-  rect(832,286,20,6,"#a5afb0");
-  rect(848,286,5,12,"#a5afb0");
-  rect(842,299,11,5,"#a5afb0");
-  rect(827,330,10,3,"#718684");
-  rect(870,343,14,29,"#e8d3b8");
-  rect(873,347,8,20,"#d0b89b");
-}
-
-function drawDoor() {
-  rect(881,203,68,244,"#72492f");
-  rect(889,211,54,233,"#a16f48");
-  rect(895,218,42,218,"#b98556");
-  rect(899,224,34,202,"#c3915f");
-  rect(905,237,22,68,"#b17e4f");
-  rect(905,318,22,83,"#b17e4f");
-  rect(919,322,6,6,"#efd18c");
-  rect(889,211,54,5,"#d6a572");
-  rect(881,203,68,5,"#815438");
-  rect(875,443,78,7,"#65432f");
-}
-        function drawPlant(x,y,scale=1,watered=false) {
-  ctx.save();
-  ctx.translate(x,y);
-  ctx.scale(scale,scale);
-  rect(-11,0,22,14,"#b96f4c");
-  rect(-13,-3,26,5,"#d28a5e");
-  rect(-8,4,16,4,"#94583e");
-  const leaf=watered?"#39834c":"#477d4b";
-  line(0,-3,0,watered?-35:-30,leaf,3);
-  line(0,-15,-12,-24,leaf,3);
-  line(0,-20,12,-29,leaf,3);
-  rect(-19,-28,11,6,watered?"#56a961":"#68a56b");
-  rect(-16,-32,9,7,watered?"#56a961":"#68a56b");
-  rect(8,-33,11,6,watered?"#59a861":"#72ae6f");
-  rect(10,-29,10,6,watered?"#59a861":"#72ae6f");
-  rect(-5,watered?-42:-39,10,9,watered?"#39834c":"#5e995f");
-  rect(-2,watered?-45:-42,7,5,watered?"#72c57a":"#75b773");
-  if(watered) {
-    rect(-16,-35,3,3,"#9bdc83");
-    rect(14,-36,3,3,"#9bdc83");
-  }
-  ctx.restore();
-}
-
-function drawStar(x,y,r,color) {
-  ctx.fillStyle=color;
-  ctx.beginPath();
-  for(let i=0;i<10;i++) {
-    const a=-Math.PI/2+i*Math.PI/5;
-    const rr=i%2===0?r:r*.45;
-    const px=x+Math.cos(a)*rr,py=y+Math.sin(a)*rr;
-    if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
-  }
-  ctx.closePath();
-  ctx.fill();
-}
-
-function drawDecor() {
-  rect(374,250,157,36,"#d9d1c4");
-  rect(378,254,149,27,"#f1e9dc");
-  for(let x=385;x<524;x+=12)rect(x,257,5,20,"#d2c7b5");
-  rect(700,214,125,7,"#9b6d4b");
-  rect(707,196,22,17,"#8eac9b");
-  rect(710,191,16,7,"#6c967e");
-  rect(737,191,16,22,"#c5a16b");
-  rect(740,185,10,6,"#dfbd83");
-  rect(762,199,19,14,"#6f879a");
-  rect(765,194,13,5,"#a5bbc9");
-  drawPlant(517,439,.85);
-  drawPlant(754,439,.7);
-  rect(488,414,28,26,"#6c8790");
-  rect(485,410,34,5,"#8ca2a5");
-  rect(494,419,3,17,"#4d6873");
-  rect(503,419,3,17,"#4d6873");
-  rect(742,270,20,17,"#f5eadd");
-  rect(748,275,3,5,"#80776e");
-  rect(755,275,3,5,"#80776e");
-  rect(606,127,43,43,"#805b41");
-  rect(610,131,35,35,"#f0e3ca");
-  rect(626,137,2,12,"#55483d");
-  rect(626,148,10,2,"#55483d");
-  rect(621,135,2,3,"#b28b61");
-  rect(635,151,2,3,"#b28b61");
-}
-
-function drawPlacedItems() {
-  for(const item of save.placed) {
-    const x=item.x,y=item.y;
-    if(item.id==="plant") {
-      drawPlant(x,y,1,!!item.watered);
-    } else if(item.id==="lamp") {
-      rect(x-15,y-3,30,5,"#474b53");
-      rect(x-2,y-22,4,20,"#474b53");
-      rect(x-17,y-32,34,12,item.on?"#ffe28a":"#b9a36c");
-      rect(x-12,y-29,24,5,item.on?"#fff2bf":"#d8c99f");
-      if(item.on) {
-        ctx.save();
-        ctx.globalAlpha=.16;
-        rect(x-25,y-48,50,43,"#ffe8a3");
-        ctx.restore();
+    const ITEM_DATA = {
+      plant: {
+        name: "Zimmerpflanze",
+        icon: "🪴",
+        category: "decor",
+        price: 25,
+        description: "Eine kleine Pflanze für dein Zimmer.",
+        placeable: true,
+        kind: "plant"
+      },
+      lamp: {
+        name: "Stehlampe",
+        icon: "💡",
+        category: "furniture",
+        price: 45,
+        description: "Eine gemütliche Lampe für dunkle Abende.",
+        placeable: true,
+        kind: "lamp"
+      },
+      teddy: {
+        name: "Teddybär",
+        icon: "🧸",
+        category: "decor",
+        price: 30,
+        description: "Ein kleiner Bär für dein Zuhause.",
+        placeable: true,
+        kind: "teddy"
+      },
+      poster: {
+        name: "Wandposter",
+        icon: "🖼️",
+        category: "decor",
+        price: 20,
+        description: "Ein Poster für eine freie Wand.",
+        placeable: true,
+        kind: "poster"
+      },
+      rug: {
+        name: "Teppich",
+        icon: "🟫",
+        category: "furniture",
+        price: 50,
+        description: "Ein weicher Teppich für den Boden.",
+        placeable: true,
+        kind: "rug"
+      },
+      star: {
+        name: "Sternendeko",
+        icon: "⭐",
+        category: "decor",
+        price: 15,
+        description: "Ein kleiner Stern als Dekoration.",
+        placeable: true,
+        kind: "star"
+      },
+      bucket: {
+        name: "Gießkanne",
+        icon: "🚿",
+        category: "decor",
+        price: 10,
+        description: "Damit kannst du deine Pflanzen gießen.",
+        placeable: false,
+        kind: "bucket"
+      },
+      hat: {
+        name: "Blaue Mütze",
+        icon: "🧢",
+        category: "clothing",
+        price: 20,
+        description: "Eine blaue Mütze für deinen Charakter.",
+        placeable: false,
+        kind: "hat",
+        equipType: "hat"
+      },
+      glasses: {
+        name: "Sonnenbrille",
+        icon: "🕶️",
+        category: "clothing",
+        price: 35,
+        description: "Eine coole Sonnenbrille.",
+        placeable: false,
+        kind: "glasses",
+        equipType: "glasses"
+      },
+      jacket: {
+        name: "Grüne Jacke",
+        icon: "🧥",
+        category: "clothing",
+        price: 60,
+        description: "Eine grüne Jacke für deinen Charakter.",
+        placeable: false,
+        kind: "jacket",
+        equipType: "jacket"
       }
-    } else if(item.id==="poster") {
-      rect(x-18,y-27,36,46,"#80593e");
-      rect(x-14,y-23,28,38,"#d5e5de");
-      rect(x-10,y-19,20,14,"#709b93");
-      rect(x-10,y-4,20,14,"#e2b978");
-    } else if(item.id==="teddy") {
-      rect(x-10,y-22,20,20,"#b47e55");
-      rect(x-14,y-28,8,8,"#b47e55");
-      rect(x+6,y-28,8,8,"#b47e55");
-      rect(x-13,y-4,26,13,"#b47e55");
-      rect(x-7,y-20,3,3,"#362c27");
-      rect(x+4,y-20,3,3,"#362c27");
-      rect(x-2,y-15,5,3,"#5a3c2c");
-    } else if(item.id==="rug") {
-      rect(x-54,y-13,108,26,"#466d96");
-      rect(x-49,y-9,98,18,"#7e9fc1");
-      for(let xx=x-42;xx<x+42;xx+=12)rect(xx,y-7,4,14,"#a4bed6");
-    } else if(item.id==="star") {
-      drawStar(x,y,11,"#e6c66e");
+    };
+
+    const DEFAULT_SAVE = {
+      money: 100,
+      day: 1,
+      inventory: ["plant", "bucket"],
+      clothing: [],
+      equipped: {
+        hat: null,
+        glasses: null,
+        jacket: null
+      },
+      placed: [
+        {
+          id: "starter-plant",
+          type: "plant",
+          x: 150,
+          y: 300,
+          watered: false
+        }
+      ],
+      orders: [],
+      nextOrderId: 1,
+      selectedHotbar: 0,
+      player: {
+        x: 470,
+        y: 360,
+        direction: "down",
+        frame: 0
+      }
+    };
+
+    function cloneData(data) {
+      return JSON.parse(JSON.stringify(data));
     }
-  }
-}
 
-function drawFaucetWater() {
-  if(!save.faucetOn)return;
-  const under=bucket.x+bucket.w>805&&bucket.x<855&&
-    bucket.y+bucket.h>315&&bucket.y<405;
-  const endY=under?bucket.y+5:329;
-  const wobble=Math.sin(gameTime*15)*1.5;
-  line(850,299,850+wobble,endY,"#8cd9ec",3);
-  for(let i=0;i<5;i++) {
-    const yy=302+((gameTime*42+i*17)%Math.max(8,endY-302));
-    rect(847+Math.round(Math.sin(gameTime*8+i)*2),yy,3,4,"#d6f5ff");
-  }
-  if(under&&save.bucketWater>0) {
-    const fill=Math.min(20,save.bucketWater*20);
-    rect(bucket.x+5,bucket.y+bucket.h-6-fill,bucket.w-10,fill,"#69c9e7");
-  }
-}
+    function loadSave() {
+      try {
+        const raw = localStorage.getItem("meinZimmerPixelAdventureSave");
+        if (!raw) return cloneData(DEFAULT_SAVE);
 
-function drawBucket() {
-  const x=bucket.x,y=bucket.y;
-  rect(x+2,y,30,4,"#9b9b9a");
-  rect(x+3,y+4,28,23,"#b7c2c2");
-  rect(x+6,y+5,22,18,"#879d9f");
-  rect(x+7,y+8,20,12,"#b1dce3");
-  rect(x+2,y+24,30,5,"#899a9b");
-  line(x+5,y+3,x+9,y-5,"#7b8587",2);
-  line(x+9,y-5,x+25,y-5,"#7b8587",2);
-  line(x+25,y-5,x+29,y+3,"#7b8587",2);
-  if(save.bucketWater>0) {
-    const fill=Math.min(14,save.bucketWater*14);
-    rect(x+7,y+22-fill,20,fill,"#58bddd");
-    rect(x+7,y+22-fill,20,2,"#b2f0ff");
-  }
-}
-
-function drawPlayer() {
-  const x=player.x,y=player.y,f=player.facing;
-  const moving=Math.abs(player.vx)>.1&&player.grounded&&!dragging;
-  const swing=moving?Math.sin(player.walk)*7:0;
-  const lift=player.grounded?0:Math.sin(gameTime*12)*1.5;
-  const skin="#d5b18a",edge="#805b3c",wood="#b98552",light="#dfb47b";
-  const cx=x+player.w/2,shoulderY=y+31+lift,hipY=y+52+lift,headY=y+7+lift;
-
-  rect(cx-18,FLOOR-3,36,3,"#805d46");
-  rect(cx-12,FLOOR-5,24,2,"#8b6b52");
-
-  function segment(a,b,width,color,outline=edge) {
-    line(a.x,a.y,b.x,b.y,outline,width+4);
-    line(a.x,a.y,b.x,b.y,color,width);
-    rect(a.x-width/2,a.y-width/2,width,width,light);
-  }
-  function joint(p,r=4) {
-    rect(p.x-r-1,p.y-r-1,(r+1)*2,(r+1)*2,edge);
-    rect(p.x-r,p.y-r,r*2,r*2,wood);
-    rect(p.x-r+1,p.y-r+1,Math.max(2,r-1),2,light);
-  }
-
-  const lh={x:cx-5,y:hipY},rh={x:cx+5,y:hipY};
-  const lk={x:cx-7-swing*.4,y:y+65+lift},rk={x:cx+7+swing*.4,y:y+65+lift};
-  const lf={x:cx-9+swing,y:y+77+lift},rf={x:cx+9-swing,y:y+77+lift};
-  segment(lh,lk,7,wood);segment(lk,lf,6,wood);
-  segment(rh,rk,7,wood);segment(rk,rf,6,wood);
-  [lh,rh,lk,rk].forEach(p=>joint(p,4));
-  [lf,rf].forEach(p=>joint(p,3));
-  rect(lf.x-5,lf.y-1,10,5,edge);rect(lf.x-4,lf.y,8,3,wood);
-  rect(rf.x-5,rf.y-1,10,5,edge);rect(rf.x-4,rf.y,8,3,wood);
-
-  const holding=carrying==="bucket";
-  const ls={x:cx-10,y:shoulderY},rs={x:cx+10,y:shoulderY};
-  const le=holding?{x:cx-13,y:y+39+lift}:{x:cx-15-swing*.55,y:y+43+lift};
-  const re=holding?{x:cx+13,y:y+39+lift}:{x:cx+15+swing*.55,y:y+43+lift};
-  const lhand=holding?{x:cx-7,y:y+36+lift}:{x:cx-14-swing,y:y+54+lift};
-  const rhand=holding?{x:cx+7,y:y+36+lift}:{x:cx+14+swing,y:y+54+lift};
-  segment(ls,le,6,wood);segment(le,lhand,5,wood);
-  segment(rs,re,6,wood);segment(re,rhand,5,wood);
-  [ls,rs].forEach(p=>joint(p,4));[le,re].forEach(p=>joint(p,3));
-  [lhand,rhand].forEach(p=>joint(p,3));
-
-  rect(cx-11,shoulderY-3,22,24,edge);
-  rect(cx-8,shoulderY,16,18,wood);
-  rect(cx-6,shoulderY+2,4,13,light);
-  rect(cx-5,hipY-1,10,5,edge);rect(cx-4,hipY,8,3,wood);
-
-  const clothes=save.equipped.clothes;
-  const colors={shirt:"#c64c48",hoodie:"#3977bd",jacket:"#454c5a",stripedshirt:"#e9e3d7",purplehoodie:"#8759a8"};
-  if(clothes==="scarf") {
-    rect(cx-10,shoulderY-2,20,6,"#4d995f");
-    rect(cx+3,shoulderY+1,5,15,"#4d995f");
-  } else if(colors[clothes]) {
-    rect(cx-10,shoulderY-2,20,20,colors[clothes]);
-    if(clothes==="hoodie"||clothes==="purplehoodie") {
-      rect(cx-7,shoulderY-5,14,6,clothes==="hoodie"?"#28578b":"#664080");
-      rect(cx-1,shoulderY+2,2,9,"#d9d5ce");
-    } else if(clothes==="jacket") {
-      rect(cx-1,shoulderY+1,2,17,"#252b35");
-      rect(cx-7,shoulderY+7,4,3,"#a8adb4");
-      rect(cx+3,shoulderY+7,4,3,"#a8adb4");
-    } else if(clothes==="stripedshirt") {
-      rect(cx-9,shoulderY+3,18,3,"#527b9e");
-      rect(cx-9,shoulderY+10,18,3,"#527b9e");
-      rect(cx-9,shoulderY+17,18,2,"#527b9e");
+        const loaded = JSON.parse(raw);
+        return {
+          ...cloneData(DEFAULT_SAVE),
+          ...loaded,
+          player: {
+            ...DEFAULT_SAVE.player,
+            ...(loaded.player || {})
+          },
+          equipped: {
+            ...DEFAULT_SAVE.equipped,
+            ...(loaded.equipped || {})
+          },
+          inventory: Array.isArray(loaded.inventory) ? loaded.inventory : [...DEFAULT_SAVE.inventory],
+          clothing: Array.isArray(loaded.clothing) ? loaded.clothing : [],
+          placed: Array.isArray(loaded.placed) ? loaded.placed : cloneData(DEFAULT_SAVE.placed),
+          orders: Array.isArray(loaded.orders) ? loaded.orders : []
+        };
+      } catch (error) {
+        console.warn("Spielstand konnte nicht geladen werden:", error);
+        return cloneData(DEFAULT_SAVE);
+      }
     }
-  }
 
-  rect(cx-4,shoulderY-7,8,7,edge);
-  rect(cx-3,shoulderY-6,6,6,wood);
-  const hx=cx-11;
-  rect(hx,headY,22,23,edge);
-  rect(hx+2,headY+2,18,19,skin);
-  rect(hx+4,headY+4,14,15,wood);
-  rect(hx+5,headY+5,4,11,light);
-  rect(hx+10,headY+5,7,11,"#c99a64");
-  rect(hx+5,headY+17,12,2,edge);
-  rect(cx-6,headY+10,3,3,"#43362c");
-  rect(cx+4,headY+10,3,3,"#43362c");
-  rect(cx-2,headY+16,5,2,"#8c5944");
+    let save = loadSave();
+    let keys = {};
+    let activePanel = null;
+    let activeShopCategory = "all";
+    let toastTimeout = null;
+    let lastFrameTime = 0;
+    let animationTime = 0;
+    let waterParticles = [];
+    let nearbyInteraction = null;
+    let selectedItemForPlacement = null;
 
-  const head=save.equipped.head;
-  if(head==="cap") {
-    rect(cx-13,headY+1,26,5,"#3977bd");
-    rect(cx-10,headY-5,20,7,"#3977bd");
-    rect(cx+4,headY+4,10,3,"#285a91");
-  } else if(head==="crown") {
-    rect(cx-12,headY-4,24,5,"#d8a92e");
-    rect(cx-12,headY-11,5,8,"#f4c64e");
-    rect(cx-4,headY-14,6,11,"#f4c64e");
-    rect(cx+5,headY-10,6,7,"#f4c64e");
-  } else if(head==="beanie") {
-    rect(cx-12,headY-4,24,9,"#4d995f");
-    rect(cx-9,headY-8,18,6,"#4d995f");
-    rect(cx-12,headY+2,24,3,"#347344");
-  } else if(head==="headphones") {
-    rect(cx-14,headY+1,4,14,"#343b48");
-    rect(cx+10,headY+1,4,14,"#343b48");
-    rect(cx-12,headY-5,24,5,"#343b48");
-  } else if(head==="flowercrown") {
-    rect(cx-12,headY+1,24,3,"#47764b");
-    for(const [dx,dy,c] of [[-10,0,"#e88aaa"],[-5,-4,"#f0c45d"],[0,-5,"#d98cbd"],[5,-4,"#f0c45d"],[10,0,"#e88aaa"]]) {
-      rect(cx+dx-2,headY+dy-2,5,5,c);
+    function saveGame() {
+      try {
+        localStorage.setItem("meinZimmerPixelAdventureSave", JSON.stringify(save));
+      } catch (error) {
+        console.warn("Spielstand konnte nicht gespeichert werden:", error);
+      }
+      updateHUD();
     }
-  }
 
-  const face=save.equipped.face;
-  if(face==="glasses"||face==="sunglasses") {
-    const c=face==="glasses"?"#29323c":"#202934";
-    rect(cx-9,headY+9,8,6,c);rect(cx+1,headY+9,8,6,c);
-    rect(cx-1,headY+11,2,2,c);
-    rect(cx-7,headY+10,4,2,"#9fc9d6");
-    rect(cx+3,headY+10,4,2,"#9fc9d6");
-  } else if(face==="mask") {
-    rect(cx-8,headY+13,16,7,"#548da9");
-    rect(cx-5,headY+15,10,2,"#8fc3d8");
-  } else if(face==="eyepatch") {
-    rect(cx-8,headY+8,8,8,"#44352c");
-    rect(cx-10,headY+10,18,2,"#44352c");
-  }
-}
+    function updateHUD() {
+      moneyLabel.textContent = `${save.money} Münzen`;
+      dayLabel.textContent = `Tag ${save.day}`;
+      statusLabel.textContent = selectedItemForPlacement
+        ? `${ITEM_DATA[selectedItemForPlacement]?.name || "Gegenstand"} platzieren`
+        : "Bereit für einen neuen Tag";
+    }
 
-function drawCarriedBucket() {
-  const cx=player.x+player.w/2+player.facing*13,y=player.y+34;
-  rect(cx-14,y,28,4,"#9b9b9a");
-  rect(cx-13,y+4,26,19,"#b7c2c2");
-  rect(cx-10,y+5,20,15,"#879d9f");
-  rect(cx-9,y+8,18,9,save.bucketWater>0?"#58bddd":"#b1dce3");
-  rect(cx-14,y+20,28,5,"#899a9b");
-  line(cx-10,y+3,cx-7,y-4,"#7b8587",2);
-  line(cx-7,y-4,cx+7,y-4,"#7b8587",2);
-  line(cx+7,y-4,cx+10,y+3,"#7b8587",2);
-}
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("visible");
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove("visible");
+      }, 2400);
+    }
 
-function createWaterParticles(x,y) {
-  for(let i=0;i<16;i++) {
-    waterParticles.push({
-      x:x+(Math.random()-.5)*20,
-      y:y+Math.random()*5,
-      vx:(Math.random()-.5)*65,
-      vy:-25-Math.random()*75,
-      life:.35+Math.random()*.45,
-      maxLife:.8,
-      size:2+Math.random()*3
-    });
-  }
-}
+    function hideAllPanels() {
+      [
+        dialogPanel,
+        inventoryPanel,
+        computerPanel,
+        shopPanel,
+        ordersPanel,
+        wardrobePanel,
+        doorPanel
+      ].forEach(panel => panel.classList.add("hidden"));
 
-function updateWaterParticles(dt) {
-  for(const p of waterParticles) {
-    p.x+=p.vx*dt;
-    p.y+=p.vy*dt;
-    p.vy+=150*dt;
-    p.life-=dt;
-  }
-  waterParticles=waterParticles.filter(p=>p.life>0);
-}
+      activePanel = null;
+      interactionHint.classList.remove("hidden");
+    }
 
-function drawWaterParticles() {
-  for(const p of waterParticles) {
-    ctx.globalAlpha=Math.max(0,p.life/p.maxLife);
-    rect(p.x,p.y,p.size,p.size+1,"#75d9ff");
-  }
-  ctx.globalAlpha=1;
-}
+    function openPanel(panel) {
+      hideAllPanels();
+      panel.classList.remove("hidden");
+      activePanel = panel;
+      interactionHint.classList.add("hidden");
+    }
 
-function drawPostman() {
-  if(!save.orders.some(o=>o.status==="arrived"))return;
-  const x=902,y=FLOOR-77;
-  rect(x-18,FLOOR-4,37,4,"#684b3b");
-  rect(x-10,y+49,8,24,"#344d68");
-  rect(x+3,y+49,8,24,"#344d68");
-  rect(x-13,y+70,13,5,"#493d35");
-  rect(x+1,y+70,13,5,"#493d35");
-  rect(x-15,y+20,30,31,"#527b9e");
-  rect(x-15,y+20,30,6,"#3f6689");
-  rect(x-2,y+22,4,25,"#e1d6bd");
-  rect(x-11,y+2,22,19,"#e6b991");
-  rect(x-13,y-3,26,8,"#4d7293");
-  rect(x-9,y-9,18,8,"#4d7293");
-  rect(x-5,y+10,3,3,"#49362c");
-  rect(x+4,y+10,3,3,"#49362c");
-  rect(x-30,y+31,17,18,"#bd8b59");
-}
+    function closePanel(panel) {
+      panel.classList.add("hidden");
+      if (activePanel === panel) activePanel = null;
+      interactionHint.classList.remove("hidden");
+    }
 
-function draw() {
-  ctx.clearRect(0,0,W,H);
-  drawRoom();
-  drawDecor();
-  drawBed();
-  drawWardrobe();
-  drawDesk();
-  drawComputer();
-  drawSink();
-  drawDoor();
-  drawPlacedItems();
-  drawFaucetWater();
-  if(carrying!=="bucket")drawBucket();
-  drawPostman();
-  drawPlayer();
-  if(carrying==="bucket")drawCarriedBucket();
-  drawWaterParticles();
-  drawObjectLabels();
-  ctx.strokeStyle="#6e5745";
-  ctx.lineWidth=4;
-  ctx.strokeRect(2,2,W-4,H-4);
-}
+    function addActionButton(label, callback, secondary = false) {
+      const button = document.createElement("button");
+      button.className = secondary ? "secondary-button" : "primary-button";
+      button.textContent = label;
+      button.addEventListener("click", callback);
+      dialogActions.appendChild(button);
+      return button;
+    }
 
-function getHotbarItems() {
-  return Array.from({length:9},(_,i)=>save.inventory[i]||null);
-}
+    function openDialog(title, message, actions = [], eyebrow = "INTERAKTION") {
+      openPanel(dialogPanel);
+      dialogEyebrow.textContent = eyebrow;
+      dialogTitle.textContent = title;
+      dialogText.textContent = message;
+      dialogActions.innerHTML = "";
 
-function renderHotbar() {
-  if(!hotbar)return;
-  hotbar.replaceChildren();
-  getHotbarItems().forEach((id,index)=>{
-    const item=shopItems.find(i=>i.id===id);
-    const button=document.createElement("button");
-    button.type="button";
-    button.className="hotbar-slot"+(selectedSlot===index?" selected":"");
-    button.title=item?item.name:"Leerer Platz";
-    button.innerHTML=`<span class="hotbar-number">${index+1}</span><span class="hotbar-item">${item?item.name:""}</span>`;
-    button.addEventListener("click",()=>{
-      selectedSlot=index;
-      renderHotbar();
-      if(item)showHint(`${item.name} ausgewählt.`);
-    });
-    hotbar.append(button);
-  });
-}
+      actions.forEach(action => {
+        addActionButton(action.label, action.callback, Boolean(action.secondary));
+      });
+    }
 
-function openPanel(kind,placedId=null) {
-  activePanel=kind;
-  activePlacedId=placedId;
-  inventoryOpen=kind==="inventory";
-  panel.classList.remove("hidden");
-  renderPanel();
-  playTone(540,.06,"triangle");
-}
+    function getItemData(id) {
+      return ITEM_DATA[id] || {
+        name: id,
+        icon: "📦",
+        category: "decor",
+        price: 0,
+        description: "Ein Gegenstand.",
+        placeable: false,
+        kind: id
+      };
+    }
 
-function closePanel() {
-  activePanel=null;
-  activePlacedId=null;
-  inventoryOpen=false;
-  panel.classList.add("hidden");
-  panelContent.innerHTML="";
-  keys.clear();
-  canvas.focus();
-}
+    function countInventoryItem(id) {
+      return save.inventory.filter(item => item === id).length;
+    }
 
-function makeButton(text,action,className="action-button") {
-  const button=document.createElement("button");
-  button.type="button";
-  button.className=className;
-  button.textContent=text;
-  button.addEventListener("click",action);
-  return button;
-}
+    function addToInventory(id) {
+      save.inventory.push(id);
+      saveGame();
+    }
 
-function makeCard(title,description,detail,actionText,action,disabled=false) {
-  const card=document.createElement("article");
-  card.className="item-card";
-  const info=document.createElement("div");
-  info.className="item-info";
-  const h=document.createElement("strong");
-  h.textContent=title;
-  const p=document.createElement("p");
-  p.textContent=description;
-  const meta=document.createElement("small");
-  meta.textContent=detail;
-  info.append(h,p,meta);
-  card.append(info,makeButton(actionText,action,"action-button"+(disabled?" muted":"")));
-  if(disabled)card.querySelector("button").disabled=true;
-  return card;
-}
+    function removeFromInventory(id) {
+      const index = save.inventory.indexOf(id);
+      if (index < 0) return false;
+      save.inventory.splice(index, 1);
+      saveGame();
+      return true;
+    }
 
-function renderPanel() {
-  panelContent.replaceChildren();
-  const headings={
-    wardrobe:["DEIN STYLE","Kleiderschrank"],
-    computer:["ONLINE-SHOP","Dein Computer"],
-    door:["LIEFERUNG","An deiner Tür"],
-    sink:["WASSER & ALLTAG","Waschbecken"],
-    bucket:["GEGENSTAND","Eimer"],
-    placed:["DEIN ZIMMER","Gegenstand benutzen"],
-    inventory:["DEIN ZUHAUSE","Inventar"]
-  };
-  const h=headings[activePanel]||["DEIN ZUHAUSE","Zimmer"];
-  $("panelEyebrow").textContent=h[0];
-  $("panelTitle").textContent=h[1];
+    function ownsItem(id) {
+      return save.inventory.includes(id) ||
+        save.clothing.includes(id) ||
+        Object.values(save.equipped).includes(id);
+    }
 
-  if(activePanel==="wardrobe")renderWardrobe();
-  else if(activePanel==="computer")renderShop();
-  else if(activePanel==="door")renderDoor();
-  else if(activePanel==="sink")renderSink();
-  else if(activePanel==="bucket")renderBucket();
-  else if(activePanel==="placed")renderPlacedItem();
-  else if(activePanel==="inventory")renderInventory();
-}
+    function getHotbarItems() {
+      const items = [];
+      const seen = {};
 
-function renderWardrobe() {
-  const intro=document.createElement("p");
-  intro.className="panel-intro";
-  intro.textContent="Schalte neue Styles frei und zieh sie direkt an. Deine freigeschalteten Cosmetics bleiben dir erhalten.";
-  panelContent.append(intro);
+      for (const id of save.inventory) {
+        if (!seen[id]) {
+          items.push(id);
+          seen[id] = true;
+        }
+      }
 
-  for(const cat of [
-    {title:"Kopf",slot:"head"},
-    {title:"Gesicht",slot:"face"},
-    {title:"Kleidung",slot:"clothes"}
-  ]) {
-    const heading=document.createElement("h2");
-    heading.textContent=cat.title;
-    panelContent.append(heading);
-    const grid=document.createElement("div");
-    grid.className="item-grid";
-    for(const item of cosmetics.filter(c=>c.type===cat.title)) {
-      const owned=save.unlocked.includes(item.id);
-      const equipped=save.equipped[cat.slot]===item.id;
-      panelContent.appendChild; // wird im nächsten Teil entfernt
-      const card=makeCard(
-        item.name,item.desc,
-        owned?(equipped?"Gerade angezogen":"Freigeschaltet"):`${item.price} Münzen`,
-        owned?(equipped?"Ausziehen":"Anziehen"):"Freischalten",
-        ()=>{
-          if(owned) {
-            save.equipped[cat.slot]=equipped?null:item.id;
-          } else {
-            if(save.money<item.price) {
-              showHint("Dafür hast du noch nicht genug Münzen.");
-              playTone(180,.1);
-              return;
-            }
-            save.money-=item.price;
-            save.unlocked.push(item.id);
-            save.equipped[cat.slot]=item.id;
+      for (const id of save.clothing) {
+        if (!seen[id]) {
+          items.push(id);
+          seen[id] = true;
+        }
+      }
+
+      return items.slice(0, 9);
+    }
+
+    function drawHotbar() {
+      const items = getHotbarItems();
+      const slotSize = 42;
+      const gap = 5;
+      const totalWidth = slotSize * 9 + gap * 8;
+      const startX = Math.floor((WIDTH - totalWidth) / 2);
+      const y = HEIGHT - 57;
+
+      ctx.save();
+      ctx.globalAlpha = 0.96;
+
+      for (let i = 0; i < 9; i++) {
+        const x = startX + i * (slotSize + gap);
+        const selected = save.selectedHotbar === i;
+
+        ctx.fillStyle = selected ? "#f5d36b" : "#342d2a";
+        ctx.fillRect(x, y, slotSize, slotSize);
+
+        ctx.strokeStyle = selected ? "#fff2b7" : "#8c7560";
+        ctx.lineWidth = selected ? 3 : 1;
+        ctx.strokeRect(x + 0.5, y + 0.5, slotSize - 1, slotSize - 1);
+
+        ctx.fillStyle = selected ? "#493b2e" : "#fff8e9";
+        ctx.font = "bold 10px Arial";
+        ctx.textAlign = "left";
+        ctx.fillText(String(i + 1), x + 4, y + 11);
+
+        if (items[i]) {
+          const item = getItemData(items[i]);
+          ctx.font = "21px Arial";
+          ctx.textAlign = "center";
+          ctx.fillText(item.icon, x + slotSize / 2, y + 29);
+
+          const count = countInventoryItem(items[i]);
+          if (count > 1) {
+            ctx.font = "bold 10px Arial";
+            ctx.textAlign = "right";
+            ctx.fillStyle = selected ? "#493b2e" : "#fff8e9";
+            ctx.fillText(String(count), x + slotSize - 4, y + slotSize - 4);
           }
-          persist();
-          playTone(660,.08,"triangle");
-          renderPanel();
         }
-      );
-      grid.append(card);
+      }
+
+      ctx.restore();
     }
-    panelContent.append(grid);
-  }
-}
-       function renderInventory() {
-  const intro=document.createElement("p");
-  intro.className="panel-intro";
-  intro.textContent="Wähle einen Gegenstand aus, platziere ihn im Zimmer oder lege ihn zurück. Die Schnellleiste unten kannst du mit den Tasten 1–9 auswählen.";
-  panelContent.append(intro);
 
-  const grid=document.createElement("div");
-  grid.className="item-grid";
+    function drawWaterParticles(delta) {
+      waterParticles = waterParticles.filter(particle => particle.life > 0);
 
-  for(const id of save.inventory) {
-    const item=shopItems.find(i=>i.id===id);
-    if(!item)continue;
-    grid.append(makeCard(item.name,item.desc,"Im Inventar","Im Zimmer platzieren",()=>{
-      placeItem(id);
-      renderPanel();
-    }));
-  }
+      for (const particle of waterParticles) {
+        particle.x += particle.vx * delta;
+        particle.y += particle.vy * delta;
+        particle.life -= delta;
 
-  if(!save.inventory.length) {
-    const empty=document.createElement("p");
-    empty.className="empty-state";
-    empty.textContent="Dein Inventar ist leer. Bestelle Gegenstände am Computer.";
-    panelContent.append(empty);
-  } else {
-    panelContent.append(grid);
-  }
+        ctx.globalAlpha = Math.max(0, particle.life / particle.maxLife);
+        ctx.fillStyle = "#76c9ee";
+        ctx.fillRect(Math.round(particle.x), Math.round(particle.y), 4, 4);
+      }
 
-  panelContent.append(makeButton("Kleiderschrank öffnen",()=>openPanel("wardrobe"),"secondary-button"));
-}
+      ctx.globalAlpha = 1;
+    }
 
-function renderShop() {
-  const intro=document.createElement("p");
-  intro.className="panel-intro";
-  intro.textContent="Bestelle neue Dinge für dein Zimmer. Nach 20 Sekunden Spielzeit kommt der Postbote.";
-  panelContent.append(intro);
-
-  panelContent.append(makeButton("Zur Tür und zum Inventar",()=>openPanel("door"),"secondary-button"));
-
-  const balance=document.createElement("div");
-  balance.className="balance-line";
-  balance.textContent=`Dein Guthaben: ${save.money} Münzen`;
-  panelContent.append(balance);
-
-  const grid=document.createElement("div");
-  grid.className="item-grid";
-
-  for(const item of shopItems) {
-    const alreadyOwned=save.inventory.includes(item.id)||
-      save.placed.some(p=>p.id===item.id)||
-      save.orders.some(o=>o.itemId===item.id&&o.status!=="cancelled");
-
-    grid.append(makeCard(
-      item.name,item.desc,
-      alreadyOwned?"Bereits bestellt oder vorhanden":`${item.price} Münzen`,
-      alreadyOwned?"Schon bestellt":`Bestellen · ${item.price} ¢`,
-      ()=>{
-        if(save.money<item.price) {
-          showHint("Du hast nicht genug Münzen.");
-          playTone(180,.1);
-          return;
-        }
-        save.money-=item.price;
-        save.orders.push({
-          id:item.id+"-"+Date.now()+"-"+Math.floor(Math.random()*1000),
-          itemId:item.id,status:"ordered",remaining:20
+    function createWaterParticles(x, y) {
+      for (let i = 0; i < 12; i++) {
+        waterParticles.push({
+          x: x + Math.random() * 12 - 6,
+          y: y + Math.random() * 4,
+          vx: Math.random() * 70 - 35,
+          vy: -Math.random() * 60 - 10,
+          life: 0.6 + Math.random() * 0.5,
+          maxLife: 1.1
         });
-        persist();
-        playTone(494,.08,"triangle");
-        showHint(`${item.name} bestellt. Der Postbote kommt bald.`);
-        renderPanel();
-      },alreadyOwned
-    ));
-  }
-  panelContent.append(grid);
-
-  const heading=document.createElement("h2");
-  heading.textContent="Deine Bestellungen";
-  panelContent.append(heading);
-
-  const orders=save.orders.filter(o=>o.status==="ordered"||o.status==="arrived");
-  if(!orders.length) {
-    const empty=document.createElement("p");
-    empty.className="empty-state";
-    empty.textContent="Noch keine Bestellungen.";
-    panelContent.append(empty);
-  }
-
-  for(const order of orders) {
-    const item=shopItems.find(i=>i.id===order.itemId);
-    const row=document.createElement("div");
-    row.className="order-row";
-    const label=document.createElement("span");
-    label.textContent=item?item.name:"Bestellung";
-    const status=document.createElement("small");
-    status.textContent=order.status==="arrived"
-      ?"Paket wartet an der Tür"
-      :`Unterwegs · ${Math.ceil(order.remaining)} Sekunden`;
-    row.append(label,status);
-    panelContent.append(row);
-  }
-}
-
-function renderDoor() {
-  const orders=save.orders.filter(o=>o.status==="arrived");
-  if(orders.length) {
-    const intro=document.createElement("p");
-    intro.className="panel-intro";
-    intro.textContent="Ding-dong! Der Postbote hat deine Lieferung gebracht.";
-    panelContent.append(intro);
-
-    for(const order of orders) {
-      const item=shopItems.find(i=>i.id===order.itemId);
-      panelContent.append(makeCard(
-        item?item.name:"Paket","Dein Paket ist angekommen.",
-        "Bereit zum Öffnen","Paket annehmen",()=>{
-          order.status="received";
-          if(!save.received.includes(order.itemId))save.received.push(order.itemId);
-          if(!save.inventory.includes(order.itemId)&&!save.placed.some(p=>p.id===order.itemId)) {
-            save.inventory.push(order.itemId);
-          }
-          persist();
-          playTone(720,.12,"triangle");
-          showHint("Paket angenommen! Du kannst den Gegenstand jetzt benutzen.");
-          renderPanel();
-        }
-      ));
+      }
     }
-  } else {
-    const empty=document.createElement("p");
-    empty.className="panel-intro";
-    empty.textContent="Im Moment steht niemand vor der Tür.";
-    panelContent.append(empty);
-  }
 
-  const heading=document.createElement("h2");
-  heading.textContent="Gegenstände im Inventar";
-  panelContent.append(heading);
+    function renderInventory() {
+      inventoryItems.innerHTML = "";
 
-  if(!save.inventory.length) {
-    const empty=document.createElement("p");
-    empty.className="empty-state";
-    empty.textContent="Hier erscheinen die Gegenstände aus deinen Paketen.";
-    panelContent.append(empty);
-  } else {
-    for(const id of save.inventory) {
-      const item=shopItems.find(i=>i.id===id);
-      if(!item)continue;
-      panelContent.append(makeCard(item.name,item.desc,"Noch nicht platziert","Im Zimmer platzieren",()=>{
-        placeItem(id);
-        renderPanel();
-      }));
-    }
-  }
+      const uniqueItems = [...new Set([...save.inventory, ...save.clothing])];
 
-  panelContent.append(makeButton("Inventar öffnen",()=>openPanel("inventory"),"secondary-button"));
-  panelContent.append(makeButton("Zurück zum Computer",()=>openPanel("computer"),"secondary-button"));
-}
-
-function findPlacement(id) {
-  const spots=[
-    {x:315,y:438},{x:475,y:438},{x:760,y:438},
-    {x:700,y:438},{x:320,y:438},{x:450,y:438},
-    {x:400,y:438},{x:600,y:438},{x:820,y:438}
-  ];
-  const occupied=save.placed.map(p=>`${p.x},${p.y}`);
-  return spots.find(p=>!occupied.includes(`${p.x},${p.y}`))||null;
-}
-
-function placeItem(id) {
-  if(!save.inventory.includes(id)) {
-    showHint("Dieser Gegenstand ist nicht in deinem Inventar.");
-    return;
-  }
-  const spot=findPlacement(id);
-  if(!spot) {
-    showHint("Kein Platz frei. Lege zuerst einen Gegenstand zurück.");
-    return;
-  }
-  save.placed.push({id,x:spot.x,y:spot.y,on:false,watered:false});
-  save.inventory=save.inventory.filter(i=>i!==id);
-  persist();
-  playTone(620,.08,"triangle");
-  showHint("Gegenstand platziert. Geh hin und drücke E.");
-}
-
-function renderPlacedItem() {
-  const item=save.placed.find(p=>p.id===activePlacedId);
-  if(!item) {
-    showHint("Dieser Gegenstand steht nicht mehr im Zimmer.");
-    closePanel();
-    return;
-  }
-
-  const definition=shopItems.find(i=>i.id===item.id);
-  const intro=document.createElement("p");
-  intro.className="panel-intro";
-  intro.textContent=definition?definition.desc:"Du kannst diesen Gegenstand benutzen.";
-  panelContent.append(intro);
-
-  if(item.id==="lamp") {
-    panelContent.append(makeButton(item.on?"Lampe ausschalten":"Lampe einschalten",()=>{
-      item.on=!item.on;
-      persist();
-      playTone(item.on?660:300,.08,"triangle");
-      renderPanel();
-      showHint(item.on?"Die Lampe leuchtet.":"Die Lampe ist ausgeschaltet.");
-    }));
-  } else if(item.id==="plant") {
-    panelContent.append(makeButton("Pflanze mit E gießen",()=>{
-      if(save.bucketWater<=0) {
-        showHint("Der Eimer ist leer. Fülle ihn zuerst am Wasserhahn.");
-        playTone(180,.1);
+      if (uniqueItems.length === 0) {
+        inventoryItems.innerHTML = '<p class="empty-message">Dein Inventar ist noch leer.</p>';
         return;
       }
-      save.bucketWater=0;
-      item.watered=true;
-      createWaterParticles(item.x,item.y-28);
-      persist();
-      playTone(580,.1,"triangle");
-      renderPanel();
-      showHint("Die Pflanze wurde gegossen!");
-    }));
-    const status=document.createElement("div");
-    status.className="notice";
-    status.textContent=item.watered
-      ?"Die Blätter sind frisch und grün."
-      :"Die Pflanze wartet auf Wasser.";
-    panelContent.append(status);
-  } else if(item.id==="teddy") {
-    panelContent.append(makeButton("Mit dem Teddy spielen",()=>{
-      playTone(660,.08,"triangle");
-      showHint("Du spielst mit deinem Teddybären.");
-    }));
-  } else if(item.id==="poster") {
-    panelContent.append(makeButton("Poster betrachten",()=>{
-      playTone(480,.08,"triangle");
-      showHint("Dein Pixel-Poster dekoriert das Zimmer.");
-    }));
-  } else if(item.id==="rug") {
-    panelContent.append(makeButton("Auf dem Teppich entspannen",()=>{
-      playTone(390,.12,"triangle");
-      showHint("Du entspannst dich einen Moment.");
-    }));
-  } else if(item.id==="star") {
-    panelContent.append(makeButton("Sternen-Deko betrachten",()=>{
-      playTone(780,.12,"sine");
-      showHint("Die Sternen-Deko funkelt.");
-    }));
-  }
 
-  panelContent.append(makeButton("Gegenstand ins Inventar zurücklegen",()=>{
-    save.placed=save.placed.filter(p=>p!==item);
-    save.inventory.push(item.id);
-    persist();
-    playTone(420,.08,"triangle");
-    showHint("Gegenstand zurückgelegt.");
-    openPanel("inventory");
-  },"secondary-button"));
+      uniqueItems.forEach(id => {
+        const item = getItemData(id);
+        const count = countInventoryItem(id);
+        const equipped = Object.values(save.equipped).includes(id);
 
-  panelContent.append(makeButton("Fertig",closePanel,"secondary-button"));
-}
+        const card = document.createElement("article");
+        card.className = "inventory-card";
 
-function renderSink() {
-  const intro=document.createElement("p");
-  intro.className="panel-intro";
-  intro.textContent="Stelle den Eimer unter den laufenden Wasserhahn, um Wasser aufzufangen.";
-  panelContent.append(intro);
+        const icon = document.createElement("span");
+        icon.className = "inventory-icon";
+        icon.textContent = item.icon;
 
-  panelContent.append(makeButton(
-    save.faucetOn?"Wasserhahn ausschalten":"Wasserhahn einschalten",
-    ()=>{
-      save.faucetOn=!save.faucetOn;
-      persist();
-      playTone(save.faucetOn?540:300,.07,"triangle");
-      renderPanel();
+        const info = document.createElement("div");
+        info.className = "inventory-info";
+
+        const name = document.createElement("strong");
+        name.textContent = item.name;
+
+        const detail = document.createElement("small");
+        detail.textContent = count > 1 ? `${count} Stück` : equipped ? "Ausgerüstet" : item.description;
+
+        info.append(name, detail);
+        card.append(icon, info);
+
+        const actions = document.createElement("div");
+        actions.className = "inventory-card-actions";
+
+        if (item.equipType && ownsItem(id)) {
+          const equipButton = document.createElement("button");
+          equipButton.className = "small-button";
+          equipButton.textContent = equipped ? "Ablegen" : "Anziehen";
+          equipButton.addEventListener("click", () => toggleEquip(id));
+          actions.appendChild(equipButton);
+        } else if (item.placeable && count > 0) {
+          const placeButton = document.createElement("button");
+          placeButton.className = "small-button";
+          placeButton.textContent = "Platzieren";
+          placeButton.addEventListener("click", () => startPlacing(id));
+          actions.appendChild(placeButton);
+        }
+
+        card.appendChild(actions);
+        inventoryItems.appendChild(card);
+      });
     }
-  ));
 
-  const status=document.createElement("div");
-  status.className="notice";
-  status.textContent=save.faucetOn?"Der Wasserhahn läuft.":"Der Wasserhahn ist ausgeschaltet.";
-  panelContent.append(status);
+    function toggleInventory() {
+      if (activePanel === inventoryPanel) {
+        closePanel(inventoryPanel);
+        return;
+      }
 
-  const amount=document.createElement("p");
-  amount.className="empty-state";
-  amount.textContent=`Wasser im Eimer: ${Math.round(save.bucketWater*100)} %`;
-  panelContent.append(amount);
-}
-
-function renderBucket() {
-  const intro=document.createElement("p");
-  intro.className="panel-intro";
-  intro.textContent="Der Eimer fängt Wasser auf, wenn er unter dem Wasserhahn steht.";
-  panelContent.append(intro);
-
-  panelContent.append(makeButton("Eimer unter den Wasserhahn stellen",()=>{
-    carrying=null;
-    bucket.x=814;
-    bucket.y=FLOOR-bucket.h;
-    persist();
-    showHint("Der Eimer steht jetzt unter dem Wasserhahn.");
-    renderPanel();
-  }));
-
-  const status=document.createElement("div");
-  status.className="notice";
-  status.textContent=`Füllstand: ${Math.round(save.bucketWater*100)} %`;
-  panelContent.append(status);
-
-  panelContent.append(makeButton("Eimer zurückstellen",()=>{
-    bucket.x=575;
-    bucket.y=FLOOR-bucket.h;
-    persist();
-    renderPanel();
-  },"secondary-button"));
-}
-
-function getPostmanNearby() {
-  if(!save.orders.some(o=>o.status==="arrived"))return false;
-  const px=player.x+player.w/2,py=player.y+player.h/2;
-  return Math.hypot(Math.max(0,Math.abs(px-902)-18),Math.max(0,Math.abs(py-(FLOOR-38))-24))<96;
-}
-
-function getNearby() {
-  if(getPostmanNearby())return {id:"postman",x:884,y:FLOOR-77,w:36,h:77};
-
-  const px=player.x+player.w/2,py=player.y+player.h/2;
-  let best=null,bestDistance=Infinity;
-  const targets={
-    wardrobe:{x:190,y:330},computer:{x:636,y:325},bed:{x:285,y:405},
-    sink:{x:790,y:355},faucet:{x:842,y:310},
-    bucket:{x:bucket.x+bucket.w/2,y:bucket.y+bucket.h/2},door:{x:875,y:390}
-  };
-
-  for(const obj of objects) {
-    if(carrying==="bucket"&&obj.id==="bucket")continue;
-    const target=targets[obj.id]||{x:obj.x+obj.w/2,y:obj.y+obj.h/2};
-    const dx=Math.max(0,Math.abs(px-target.x)-18);
-    const dy=Math.max(0,Math.abs(py-target.y)-24);
-    const d=Math.hypot(dx,dy);
-    if(d<96&&d<bestDistance) {best=obj;bestDistance=d;}
-  }
-
-  for(const item of save.placed) {
-    const dx=Math.max(0,Math.abs(px-item.x)-18);
-    const dy=Math.max(0,Math.abs(py-(item.y-12))-24);
-    const d=Math.hypot(dx,dy);
-    if(d<78&&d<bestDistance) {
-      best={id:"placed",itemId:item.id,x:item.x,y:item.y};
-      bestDistance=d;
+      renderInventory();
+      openPanel(inventoryPanel);
     }
-  }
-  return best;
-}
 
-function drawObjectLabels() {
-  const nearby=getNearby();
-  if(!nearby)return;
-  let text;
+    function startPlacing(id) {
+      const item = getItemData(id);
 
-  if(nearby.id==="postman")text="E  PAKET ANNEHMEN";
-  else if(nearby.id==="placed") {
-    const names={plant:"PFLANZE",lamp:"LAMPE",poster:"POSTER",teddy:"TEDDY",rug:"TEPPICH",star:"STERNEN-DEKO"};
-    text="E  "+(names[nearby.itemId]||"GEGENSTAND")+" BENUTZEN";
-  } else {
-    text=nearby.id==="wardrobe"?"E  SCHRANK ÖFFNEN":
-      nearby.id==="computer"?"E  COMPUTER BENUTZEN":
-      nearby.id==="faucet"?"E  WASSERHAHN":
-      nearby.id==="bucket"?"E  EIMER":
-      nearby.id==="door"?"E  STADT BETRETEN":
-      nearby.id==="sink"?"E  WASCHBECKEN":
-      "E  "+(labels[nearby.id]||nearby.id).toUpperCase();
-  }
+      if (!item.placeable) {
+        showToast("Diesen Gegenstand kannst du nicht platzieren.");
+        return;
+      }
 
-  ctx.font="bold 12px monospace";
-  const width=ctx.measureText(text).width+20;
-  const px=Math.max(5,Math.min(W-width-5,player.x+player.w/2-width/2));
-  const py=Math.max(22,player.y-25);
-  rect(px,py,width,21,"#292e35");
-  rect(px+2,py+2,width-4,17,"#f4ead8");
-  pixelText(text,px+10,py+14,"#343941",10);
-}
+      if (!countInventoryItem(id)) {
+        showToast("Du hast diesen Gegenstand nicht im Inventar.");
+        return;
+      }
 
-function interact() {
-  if(carrying==="bucket") {
-    bucket.x=Math.max(8,Math.min(W-bucket.w-8,player.x+player.w/2-bucket.w/2+player.facing*25));
-    bucket.y=FLOOR-bucket.h;
-    carrying=null;
-    persist();
-    playTone(330,.06,"triangle");
-    showHint("Eimer abgestellt.");
-    return;
-  }
+      selectedItemForPlacement = id;
+      closePanel(inventoryPanel);
+      showToast(`${item.name}: Bewege dich an die gewünschte Stelle und drücke E.`);
+      updateHUD();
+    }
 
-  const obj=getNearby();
-  if(!obj)return;
+    function placeSelectedItem() {
+      if (!selectedItemForPlacement) return false;
 
-  if(obj.id==="postman") {openPanel("door");return;}
-  if(obj.id==="placed") {openPanel("placed",obj.itemId);return;}
+      const id = selectedItemForPlacement;
+      const item = getItemData(id);
 
-  switch(obj.id) {
-    case "wardrobe":openPanel("wardrobe");break;
-    case "computer":openPanel("computer");break;
-    case "door":
-      persist();
-      window.location.href="Stadt.html";
-      break;
-    case "sink":openPanel("sink");break;
-    case "faucet":
-      save.faucetOn=!save.faucetOn;
-      persist();
-      showHint(save.faucetOn?"Wasserhahn eingeschaltet.":"Wasserhahn ausgeschaltet.");
-      playTone(save.faucetOn?540:300,.07,"triangle");
-      break;
-    case "bucket":
-      carrying="bucket";
-      bucket.x=player.x+player.w/2-bucket.w/2+player.facing*18;
-      bucket.y=player.y+34;
-      playTone(520,.07,"triangle");
-      showHint("Eimer aufgenommen.");
-      break;
-    case "bed":
-      showHint("Ein gemütliches Bett. Vielleicht kannst du hier später schlafen.");
-      playTone(340,.07,"triangle");
-      break;
-  }
-}
+      if (!countInventoryItem(id)) {
+        selectedItemForPlacement = null;
+        showToast("Der Gegenstand ist nicht mehr im Inventar.");
+        updateHUD();
+        return false;
+      }
 
-function update(dt) {
-  gameTime+=dt;
-  saveTimer+=dt;
+      const player = save.player;
+      const x = Math.max(52, Math.min(WIDTH - 52, Math.round(player.x / TILE) * TILE));
+      const y = Math.max(120, Math.min(HEIGHT - 100, Math.round(player.y / TILE) * TILE));
 
-  if(!dragging&&!activePanel) {
-    const left=keys.has("a")||keys.has("arrowleft");
-    const right=keys.has("d")||keys.has("arrowright");
-    player.vx=left?-185:right?185:0;
+      const occupied = save.placed.some(placed =>
+        Math.abs(placed.x - x) < 38 && Math.abs(placed.y - y) < 30
+      );
 
-    if(left)player.facing=-1;
-    if(right)player.facing=1;
-    player.x=Math.max(8,Math.min(W-player.w-8,player.x+player.vx*dt));
-    if(player.vx!==0)player.walk+=dt*12;
+      if (occupied) {
+        showToast("Hier steht schon etwas. Geh ein Stück weiter.");
+        return true;
+      }
 
-    if(keys.has("w")||keys.has("arrowup")||keys.has(" ")) {
-      if(player.grounded) {
-        player.vy=-365;
-        player.grounded=false;
-        playTone(280,.05,"triangle");
+      removeFromInventory(id);
+
+      save.placed.push({
+        id: `placed-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+        type: item.kind,
+        x,
+        y,
+        watered: false,
+        on: true
+      });
+
+      selectedItemForPlacement = null;
+      saveGame();
+      showToast(`${item.name} wurde platziert.`);
+      updateHUD();
+      return true;
+    }
+        function toggleEquip(id) {
+      const item = getItemData(id);
+      if (!item.equipType) return;
+
+      const slot = item.equipType;
+      if (save.equipped[slot] === id) {
+        save.equipped[slot] = null;
+        showToast(`${item.name} abgelegt.`);
+      } else {
+        save.equipped[slot] = id;
+        showToast(`${item.name} angezogen.`);
+      }
+
+      saveGame();
+      renderInventory();
+    }
+
+    function drawRect(x, y, w, h, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
+    }
+
+    function drawText(text, x, y, color = COLORS.outline, size = 12) {
+      ctx.fillStyle = color;
+      ctx.font = `bold ${size}px monospace`;
+      ctx.textAlign = "left";
+      ctx.fillText(text, x, y);
+    }
+
+    function drawRoom() {
+      drawRect(0, 0, WIDTH, HEIGHT, COLORS.wall);
+
+      // Wandverkleidung
+      drawRect(0, 105, WIDTH, 10, COLORS.wallDark);
+      drawRect(0, 115, WIDTH, 4, "#f5e8d3");
+
+      // Holzboden
+      drawRect(0, 120, WIDTH, HEIGHT - 120, COLORS.floor);
+
+      for (let y = 120; y < HEIGHT; y += 32) {
+        drawRect(0, y, WIDTH, 2, COLORS.floorDark);
+
+        const offset = ((y / 32) % 2) * 40;
+        for (let x = -offset; x < WIDTH; x += 80) {
+          drawRect(x, y, 2, 32, COLORS.floorDark);
+        }
+      }
+
+      // Fußleiste
+      drawRect(0, 112, WIDTH, 8, "#a97c56");
+      drawRect(0, 112, WIDTH, 2, "#f1d6b3");
+
+      // Fenster
+      drawRect(75, 27, 160, 78, "#8a694d");
+      drawRect(81, 33, 148, 66, "#a9d6e8");
+      drawRect(153, 33, 5, 66, "#f5e9d4");
+      drawRect(81, 64, 148, 5, "#f5e9d4");
+
+      // Landschaft hinter dem Fenster
+      drawRect(83, 75, 144, 22, "#9fc58c");
+      drawRect(90, 67, 20, 12, "#80ae78");
+      drawRect(183, 65, 28, 14, "#80ae78");
+      drawRect(112, 43, 25, 8, "#ffffff");
+      drawRect(120, 38, 17, 8, "#ffffff");
+      drawRect(189, 45, 20, 7, "#ffffff");
+
+      // Vorhänge
+      drawRect(65, 25, 15, 83, "#d97f70");
+      drawRect(230, 25, 15, 83, "#d97f70");
+      drawRect(65, 25, 15, 7, "#f0b2a2");
+      drawRect(230, 25, 15, 7, "#f0b2a2");
+
+      // Kleine Wandbilder
+      drawRect(320, 34, 48, 54, "#78543b");
+      drawRect(325, 39, 38, 44, "#f5e7d0");
+      drawRect(332, 47, 24, 28, "#8bb89c");
+      drawRect(337, 53, 14, 15, "#c4d9a4");
+      drawRect(343, 47, 4, 22, "#65885c");
+
+      drawRect(400, 45, 45, 35, "#78543b");
+      drawRect(405, 50, 35, 25, "#c6d8e2");
+      drawRect(410, 55, 12, 15, "#f0d18a");
+      drawRect(424, 57, 11, 13, "#7ca68a");
+
+      // Teppich im Zimmer
+      drawRect(350, 385, 260, 80, "#8d5d75");
+      drawRect(358, 393, 244, 64, "#c68da8");
+      drawRect(368, 403, 224, 44, "#e0b3c4");
+      drawRect(385, 414, 190, 22, "#c68da8");
+
+      // Zimmerkanten
+      drawRect(0, 120, 8, HEIGHT - 120, "#9e6d49");
+      drawRect(WIDTH - 8, 120, 8, HEIGHT - 120, "#9e6d49");
+    }
+
+    function drawBed() {
+      // Schatten
+      drawRect(60, 326, 205, 116, "#9e6d49");
+
+      // Bettgestell
+      drawRect(53, 310, 205, 122, "#79543b");
+      drawRect(58, 315, 195, 112, "#b9895e");
+
+      // Matratze
+      drawRect(67, 321, 177, 98, "#f0e7d8");
+      drawRect(67, 321, 177, 12, "#d7c7b0");
+
+      // Decke
+      drawRect(72, 354, 166, 58, "#7199c5");
+      drawRect(72, 354, 166, 7, "#9ebbdc");
+      drawRect(78, 366, 154, 39, "#527eae");
+
+      // Kissen
+      drawRect(78, 328, 58, 23, "#ffffff");
+      drawRect(82, 332, 50, 15, "#f8f1e4");
+      drawRect(145, 328, 58, 23, "#ffffff");
+      drawRect(149, 332, 50, 15, "#f8f1e4");
+
+      // Füße
+      drawRect(58, 426, 14, 12, "#62452f");
+      drawRect(238, 426, 14, 12, "#62452f");
+    }
+
+    function drawWardrobe() {
+      drawRect(105, 185, 103, 145, "#67442e");
+      drawRect(111, 190, 91, 135, "#a9774c");
+      drawRect(155, 192, 3, 131, "#714a30");
+      drawRect(118, 201, 31, 105, "#b9895f");
+      drawRect(165, 201, 30, 105, "#b9895f");
+      drawRect(145, 250, 5, 5, "#e3c18b");
+      drawRect(166, 250, 5, 5, "#e3c18b");
+      drawRect(118, 195, 77, 4, "#d7ac78");
+      drawRect(115, 317, 83, 6, "#68462e");
+    }
+
+    function drawDesk() {
+      // Tischplatte
+      drawRect(500, 310, 205, 15, "#80563a");
+      drawRect(504, 310, 197, 6, "#bd8959");
+
+      // Tischbeine
+      drawRect(514, 325, 12, 55, "#80563a");
+      drawRect(679, 325, 12, 55, "#80563a");
+
+      // Schublade
+      drawRect(548, 328, 54, 25, "#a8764d");
+      drawRect(552, 332, 46, 17, "#c08a59");
+      drawRect(572, 339, 7, 3, "#60452f");
+
+      // Stuhl
+      drawRect(557, 380, 75, 12, "#79543b");
+      drawRect(564, 392, 10, 37, "#79543b");
+      drawRect(614, 392, 10, 37, "#79543b");
+      drawRect(558, 358, 73, 10, "#986b48");
+      drawRect(558, 358, 73, 4, "#c08c5d");
+    }
+
+    function drawComputer() {
+      // Monitor
+      drawRect(553, 244, 103, 65, "#403a3a");
+      drawRect(559, 250, 91, 53, "#82b9c7");
+      drawRect(565, 256, 79, 41, "#426f88");
+
+      // Pixel-Landschaft auf dem Bildschirm
+      drawRect(565, 280, 79, 17, "#75a978");
+      drawRect(565, 274, 20, 9, "#a5cf8c");
+      drawRect(603, 267, 18, 15, "#a5cf8c");
+      drawRect(580, 263, 7, 7, "#f3d88d");
+      drawRect(585, 261, 7, 7, "#f3d88d");
+
+      // Monitorfuß
+      drawRect(597, 309, 16, 10, "#403a3a");
+      drawRect(583, 318, 45, 5, "#403a3a");
+
+      // Tastatur
+      drawRect(565, 326, 80, 12, "#4a4544");
+      drawRect(570, 329, 70, 2, "#b8b8b0");
+      drawRect(570, 333, 70, 2, "#b8b8b0");
+
+      // Maus
+      drawRect(650, 325, 12, 12, "#eee8dc");
+      drawRect(655, 327, 2, 5, "#9b9992");
+
+      // Bücherstapel
+      drawRect(667, 284, 26, 8, "#c97869");
+      drawRect(670, 276, 23, 8, "#e3c36c");
+      drawRect(665, 268, 28, 8, "#83b49a");
+    }
+
+    function drawSink() {
+      drawRect(755, 290, 110, 70, "#9b6b49");
+      drawRect(760, 295, 100, 60, "#d0b18c");
+      drawRect(771, 302, 78, 42, "#e7e3d9");
+      drawRect(779, 309, 62, 28, "#a5d0d8");
+      drawRect(785, 314, 50, 18, "#d5eef0");
+
+      // Wasserhahn
+      drawRect(801, 282, 8, 20, "#a3b1b5");
+      drawRect(801, 282, 25, 7, "#a3b1b5");
+      drawRect(821, 287, 5, 12, "#a3b1b5");
+
+      // Unterschrank
+      drawRect(765, 360, 90, 35, "#926342");
+      drawRect(770, 365, 80, 25, "#bd8959");
+      drawRect(808, 374, 5, 5, "#e5c28e");
+    }
+
+    function drawDoor() {
+      drawRect(849, 181, 76, 220, "#80563b");
+      drawRect(855, 187, 64, 208, "#bd895b");
+      drawRect(861, 193, 52, 196, "#d4a16b");
+      drawRect(868, 200, 38, 85, "#bd895b");
+      drawRect(868, 294, 38, 88, "#bd895b");
+      drawRect(896, 293, 7, 7, "#f0d079");
+      drawRect(865, 197, 3, 190, "#e8bc83");
+    }
+
+    function drawPlant(x, y, scale = 1) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(scale, scale);
+
+      // Topf
+      drawRect(-13, -4, 26, 16, "#b96e50");
+      drawRect(-15, -6, 30, 5, "#d28a62");
+      drawRect(-10, 12, 20, 3, "#8e503d");
+
+      // Stängel
+      drawRect(-2, -31, 4, 28, "#557e4e");
+
+      // Blätter
+      drawRect(-18, -34, 18, 9, "#5b9a65");
+      drawRect(-21, -31, 13, 8, "#77b879");
+      drawRect(0, -42, 17, 9, "#4c8d59");
+      drawRect(4, -39, 13, 8, "#6bb16f");
+      drawRect(-12, -47, 13, 9, "#78b77b");
+      drawRect(-10, -44, 10, 6, "#8dc88c");
+      drawRect(-4, -52, 10, 13, "#4b8652");
+
+      ctx.restore();
+    }
+
+    function drawPlacedItems() {
+      for (const item of save.placed) {
+        const x = item.x;
+        const y = item.y;
+
+        if (item.type === "plant") {
+          drawPlant(x, y, 1);
+
+          if (item.watered) {
+            drawRect(x - 7, y - 55, 14, 3, "#6a9e58");
+            drawRect(x - 2, y - 60, 4, 5, "#8bc27a");
+          }
+        } else if (item.type === "lamp") {
+          drawRect(x - 15, y - 5, 30, 5, "#49424a");
+          drawRect(x - 3, y - 45, 6, 41, "#49424a");
+          drawRect(x - 17, y - 51, 34, 10, "#d7b65f");
+          drawRect(x - 12, y - 48, 24, 4, "#f4db8e");
+
+          if (item.on !== false) {
+            ctx.save();
+            ctx.globalAlpha = 0.15;
+            drawRect(x - 37, y - 75, 74, 70, "#ffe69a");
+            ctx.restore();
+          }
+        } else if (item.type === "teddy") {
+          drawRect(x - 15, y - 26, 30, 27, "#a9754d");
+          drawRect(x - 17, y - 35, 11, 11, "#a9754d");
+          drawRect(x + 6, y - 35, 11, 11, "#a9754d");
+          drawRect(x - 10, y - 21, 20, 18, "#c89468");
+          drawRect(x - 8, y - 25, 4, 4, "#46372e");
+          drawRect(x + 4, y - 25, 4, 4, "#46372e");
+          drawRect(x - 3, y - 17, 6, 4, "#f0d0a3");
+          drawRect(x - 5, y - 2, 10, 5, "#85573a");
+        } else if (item.type === "poster") {
+          drawRect(x - 21, y - 40, 42, 45, "#78543b");
+          drawRect(x - 17, y - 36, 34, 37, "#d9e8dc");
+          drawRect(x - 12, y - 30, 24, 23, "#83b6a0");
+          drawRect(x - 7, y - 25, 14, 13, "#f1d17d");
+          drawRect(x - 3, y - 21, 6, 6, "#fff0b6");
+        } else if (item.type === "rug") {
+          drawRect(x - 42, y - 9, 84, 18, "#527ba0");
+          drawRect(x - 36, y - 6, 72, 12, "#a5bfd7");
+          drawRect(x - 27, y - 4, 54, 8, "#527ba0");
+        } else if (item.type === "star") {
+          drawRect(x - 2, y - 18, 4, 22, "#a58a63");
+          drawRect(x - 12, y - 25, 24, 14, "#e5c76b");
+          drawRect(x - 7, y - 30, 14, 24, "#e5c76b");
+          drawRect(x - 4, y - 24, 8, 10, "#fff0a5");
+        }
       }
     }
 
-    player.vy+=900*dt;
-    player.y+=player.vy*dt;
-    if(player.y+player.h>=FLOOR) {
-      player.y=FLOOR-player.h;
-      player.vy=0;
-      player.grounded=true;
-    }
+    function drawPlayer() {
+      const player = save.player;
+      const x = player.x;
+      const y = player.y;
+      const moving = keys.w || keys.a || keys.s || keys.d ||
+        keys.ArrowUp || keys.ArrowDown || keys.ArrowLeft || keys.ArrowRight;
 
-    if(carrying==="bucket") {
-      bucket.x=player.x+player.w/2-bucket.w/2+player.facing*18;
-      bucket.y=player.y+34;
-    }
-  } else {
-    player.vx=0;
-  }
+      const bob = moving ? Math.sin(animationTime * 12) * 2 : 0;
 
-  if(save.faucetOn) {
-    const under=bucket.x+bucket.w>805&&bucket.x<855&&
-      bucket.y+bucket.h>315&&bucket.y<405;
-    if(under&&save.bucketWater<1) {
-      faucetTimer+=dt;
-      if(faucetTimer>=1) {
-        save.bucketWater=Math.min(1,save.bucketWater+.05);
-        faucetTimer=0;
-        persist();
+      // Schatten
+      drawRect(x + 4, y + 43, 25, 7, "#996c4d");
+
+      // Beine
+      const pantsColor = COLORS.pants;
+      drawRect(x + 6, y + 27 + bob, 8, 15, pantsColor);
+      drawRect(x + 17, y + 27 - bob, 8, 15, pantsColor);
+
+      // Schuhe
+      drawRect(x + 3, y + 40 + bob, 12, 5, COLORS.shoes);
+      drawRect(x + 16, y + 40 - bob, 12, 5, COLORS.shoes);
+
+      // Oberkörper
+      const jacket = save.equipped.jacket;
+      const shirtColor = jacket ? "#4e9365" : COLORS.shirt;
+
+      drawRect(x + 4, y + 13 + bob, 24, 17, shirtColor);
+      drawRect(x + 1, y + 15 + bob, 6, 14, shirtColor);
+      drawRect(x + 25, y + 15 + bob, 6, 14, shirtColor);
+
+      // Hände
+      drawRect(x + 1, y + 28 + bob, 6, 5, COLORS.skin);
+      drawRect(x + 25, y + 28 - bob, 6, 5, COLORS.skin);
+
+      // Kopf
+      drawRect(x + 6, y - 2, 20, 18, COLORS.skin);
+
+      // Haare
+      drawRect(x + 4, y - 5, 24, 8, COLORS.hair);
+      drawRect(x + 4, y - 1, 4, 8, COLORS.hair);
+      drawRect(x + 24, y - 1, 4, 6, COLORS.hair);
+
+      // Gesicht
+      drawRect(x + 10, y + 6, 3, 3, COLORS.outline);
+      drawRect(x + 20, y + 6, 3, 3, COLORS.outline);
+      drawRect(x + 14, y + 11, 6, 2, "#a76b55");
+
+      // Mütze
+      if (save.equipped.hat === "hat") {
+        drawRect(x + 3, y - 7, 26, 6, "#477fc0");
+        drawRect(x + 7, y - 13, 19, 8, "#477fc0");
+        drawRect(x + 22, y - 5, 11, 3, "#315d91");
+      }
+
+      // Sonnenbrille
+      if (save.equipped.glasses === "glasses") {
+        drawRect(x + 8, y + 5, 8, 5, "#252b33");
+        drawRect(x + 18, y + 5, 8, 5, "#252b33");
+        drawRect(x + 15, y + 6, 4, 2, "#252b33");
+        drawRect(x + 10, y + 6, 4, 2, "#8bc6db");
+        drawRect(x + 20, y + 6, 4, 2, "#8bc6db");
       }
     }
-  } else {
-    faucetTimer=0;
-  }
 
-  for(const order of save.orders) {
-    if(order.status==="ordered") {
-      order.remaining-=dt;
-      if(order.remaining<=0) {
-        order.remaining=0;
-        order.status="arrived";
-        playTone(740,.15,"triangle");
-        showHint("Ding-dong! Eine Lieferung ist angekommen.");
+    function drawPostman() {
+      if (!save.orders.some(order => order.status === "arrived")) return;
+
+      const x = 902;
+      const y = 320;
+
+      // Kleiner Lieferbote
+      drawRect(x - 12, y + 30, 24, 30, "#4779ad");
+      drawRect(x - 17, y + 33, 7, 21, "#4779ad");
+      drawRect(x + 10, y + 33, 7, 21, "#4779ad");
+      drawRect(x - 10, y + 58, 8, 14, "#38475a");
+      drawRect(x + 3, y + 58, 8, 14, "#38475a");
+      drawRect(x - 10, y + 5, 20, 24, "#edc29b");
+      drawRect(x - 12, y + 1, 24, 7, "#394b61");
+      drawRect(x - 12, y - 3, 24, 6, "#394b61");
+      drawRect(x - 5, y + 14, 3, 3, "#47352e");
+      drawRect(x + 3, y + 14, 3, 3, "#47352e");
+
+      // Paket
+      drawRect(x - 24, y + 37, 14, 13, "#b98b5b");
+      drawRect(x - 19, y + 37, 3, 13, "#e2c58b");
+    }
+
+    function getNearby() {
+      const player = save.player;
+      const px = player.x + 16;
+      const py = player.y + 24;
+
+      // Der Postbote hat Vorrang, wenn ein Paket angekommen ist.
+      const arrivedOrder = save.orders.find(order => order.status === "arrived");
+      if (arrivedOrder && Math.abs(px - 902) < 72 && Math.abs(py - 360) < 105) {
+        return { id: "postman", order: arrivedOrder };
+      }
+
+      let nearest = null;
+      let bestDistance = Infinity;
+
+      const targets = [
+        { id: "wardrobe", x: 157, y: 257, label: "Kleiderschrank" },
+        { id: "bed", x: 160, y: 372, label: "Bett" },
+        { id: "computer", x: 604, y: 282, label: "Computer" },
+        { id: "sink", x: 806, y: 327, label: "Waschbecken" },
+        { id: "door", x: 886, y: 335, label: "Zimmertür" }
+      ];
+
+      for (const target of targets) {
+        const distance = Math.hypot(px - target.x, py - target.y);
+        if (distance < 72 && distance < bestDistance) {
+          nearest = target;
+          bestDistance = distance;
+        }
+      }
+
+      for (const item of save.placed) {
+        const distance = Math.hypot(px - item.x, py - item.y);
+        if (distance < 64 && distance < bestDistance) {
+          nearest = { id: "placed", item };
+          bestDistance = distance;
+        }
+      }
+
+      return nearest;
+    }
+
+    function updateInteractionHint() {
+      nearbyInteraction = getNearby();
+
+      if (selectedItemForPlacement) {
+        interactionHint.classList.remove("hidden");
+        interactionText.textContent =
+          `${getItemData(selectedItemForPlacement).name} platzieren`;
+        return;
+      }
+
+      if (!nearbyInteraction) {
+        interactionHint.classList.add("hidden");
+        return;
+      }
+
+      interactionHint.classList.remove("hidden");
+
+      const labels = {
+        postman: "Paket annehmen",
+        wardrobe: "Kleiderschrank öffnen",
+        bed: "Aufs Bett setzen",
+        computer: "Computer benutzen",
+        sink: "Waschbecken benutzen",
+        door: "Tür öffnen",
+        placed: "Gegenstand benutzen"
+      };
+
+      interactionText.textContent = labels[nearbyInteraction.id] || "Interagieren";
+    }
+
+    function interactPlaced(item) {
+      const data = getItemData(item.type);
+
+      if (item.type === "plant") {
+        if (countInventoryItem("bucket") > 0) {
+          openDialog(
+            "Zimmerpflanze",
+            item.watered
+              ? "Die Pflanze sieht schon gut versorgt aus."
+              : "Deine Pflanze braucht etwas Wasser.",
+            [
+              {
+                label: item.watered ? "Fertig" : "Pflanze gießen",
+                callback: () => {
+                  if (item.watered) {
+                    closePanel(dialogPanel);
+                    return;
+                  }
+
+                  item.watered = true;
+                  createWaterParticles(item.x, item.y - 20);
+                  saveGame();
+                  closePanel(dialogPanel);
+                  showToast("Deine Pflanze wurde gegossen!");
+                }
+              },
+              {
+                label: "Aufheben",
+                secondary: true,
+                callback: () => pickupPlacedItem(item)
+              }
+            ]
+          );
+        } else {
+          openDialog(
+            "Zimmerpflanze",
+            "Eine kleine Pflanze bringt etwas Grün in dein Zimmer.",
+            [
+              {
+                label: "Aufheben",
+                callback: () => pickupPlacedItem(item)
+              },
+              {
+                label: "Schließen",
+                secondary: true,
+                callback: () => closePanel(dialogPanel)
+              }
+            ]
+          );
+        }
+        return;
+      }
+
+      if (item.type === "lamp") {
+        item.on = item.on === false;
+        saveGame();
+        showToast(item.on ? "Die Lampe ist an." : "Die Lampe ist aus.");
+        return;
+      }
+
+      const messages = {
+        teddy: "Der Teddybär sitzt gemütlich an seinem Platz.",
+        poster: "Das Poster macht die Wand etwas persönlicher.",
+        rug: "Der Teppich passt gut in dein Zimmer.",
+        star: "Die kleine Sternendeko funkelt im Licht."
+      };
+
+      openDialog(data.name, messages[item.type] || data.description, [
+        {
+          label: "Aufheben",
+          callback: () => pickupPlacedItem(item)
+        },
+        {
+          label: "Schließen",
+          secondary: true,
+          callback: () => closePanel(dialogPanel)
+        }
+      ]);
+    }
+
+    function pickupPlacedItem(item) {
+      const index = save.placed.findIndex(placed => placed.id === item.id);
+
+      if (index < 0) {
+        closePanel(dialogPanel);
+        return;
+      }
+
+      const [removed] = save.placed.splice(index, 1);
+      addToInventory(removed.type);
+      closePanel(dialogPanel);
+      saveGame();
+      showToast(`${getItemData(removed.type).name} wurde aufgehoben.`);
+    }
+
+    function interact() {
+      if (activePanel) return;
+
+      if (selectedItemForPlacement) {
+        placeSelectedItem();
+        return;
+      }
+
+      const target = getNearby();
+      if (!target) return;
+
+      if (target.id === "postman") {
+        const order = save.orders.find(item => item.id === target.order.id);
+        if (!order) return;
+
+        const item = getItemData(order.itemId);
+
+        openDialog(
+          "Der Postbote ist da!",
+          `Deine Bestellung "${item.name}" ist angekommen. Möchtest du dein Paket annehmen?`,
+          [
+            {
+              label: "Paket annehmen",
+              callback: () => {
+                addToInventory(order.itemId);
+                save.orders = save.orders.filter(item => item.id !== order.id);
+                saveGame();
+                closePanel(dialogPanel);
+                showToast(`${item.name} wurde geliefert!`);
+              }
+            },
+            {
+              label: "Später",
+              secondary: true,
+              callback: () => closePanel(dialogPanel)
+            }
+          ],
+          "PAKETLIEFERUNG"
+        );
+        return;
+      }
+
+      if (target.id === "placed") {
+        interactPlaced(target.item);
+        return;
+      }
+
+      if (target.id === "computer") {
+        openPanel(computerPanel);
+        return;
+      }
+
+      if (target.id === "wardrobe") {
+        renderWardrobePanel();
+        openPanel(wardrobePanel);
+        return;
+      }
+
+      if (target.id === "bed") {
+        openDialog("Dein Bett", "Du hast einen langen Tag hinter dir.", [
+          {
+            label: "Schlafen",
+            callback: () => {
+              save.day += 1;
+              save.orders.forEach(order => {
+                if (order.status === "ordered") {
+                  order.secondsLeft = Math.max(0, (order.secondsLeft || 20) - 20);
+                  if (order.secondsLeft <= 0) order.status = "arrived";
+                }
+              });
+              saveGame();
+              closePanel(dialogPanel);
+              showToast(`Guten Morgen! Es ist Tag ${save.day}.`);
+            }
+          },
+          {
+            label: "Doch nicht",
+            secondary: true,
+            callback: () => closePanel(dialogPanel)
+          }
+        ]);
+        return;
+      }
+
+      if (target.id === "sink") {
+        openDialog("Waschbecken", "Das Wasser läuft. Alles ist sauber!", [
+          {
+            label: "Fertig",
+            callback: () => closePanel(dialogPanel)
+          }
+        ]);
+        return;
+      }
+
+      if (target.id === "door") {
+        if (save.orders.some(order => order.status === "arrived")) {
+          showToast("Der Postbote wartet mit deinem Paket!");
+          return;
+        }
+
+        openPanel(doorPanel);
       }
     }
-  }
 
-  updateWaterParticles(dt);
-  if(saveTimer>=1) {
-    saveTimer=0;
-    persist();
-  }
-}
+    function renderWardrobePanel() {
+      wardrobeItems.innerHTML = "";
 
-function setupControls() {
-  window.addEventListener("keydown",event=>{
-    const key=event.key.toLowerCase();
+      const clothingIds = [...new Set([
+        ...save.inventory.filter(id => getItemData(id).equipType),
+        ...save.clothing
+      ])];
 
-    if(["arrowleft","arrowright","arrowup"," "].includes(key))event.preventDefault();
+      if (!clothingIds.length) {
+        wardrobeItems.innerHTML =
+          '<p class="empty-message">Du hast noch keine Kleidung gekauft.</p>';
+        return;
+      }
 
-    if(key==="escape") {
-      if(!panel.classList.contains("hidden"))closePanel();
-      else if(carrying)interact();
-      return;
+      clothingIds.forEach(id => {
+        const item = getItemData(id);
+        const card = document.createElement("article");
+        card.className = "inventory-card";
+
+        const icon = document.createElement("span");
+        icon.className = "inventory-icon";
+        icon.textContent = item.icon;
+
+        const info = document.createElement("div");
+        info.className = "inventory-info";
+
+        const name = document.createElement("strong");
+        name.textContent = item.name;
+
+        const detail = document.createElement("small");
+        detail.textContent = Object.values(save.equipped).includes(id)
+          ? "Gerade angezogen"
+          : item.description;
+
+        info.append(name, detail);
+
+        const button = document.createElement("button");
+        button.className = "small-button";
+        button.textContent = Object.values(save.equipped).includes(id)
+          ? "Ablegen"
+          : "Anziehen";
+        button.addEventListener("click", () => toggleEquip(id));
+
+        card.append(icon, info, button);
+        wardrobeItems.appendChild(card);
+      });
     }
 
-    if(key==="i") {
-      if(!panel.classList.contains("hidden"))closePanel();
-      else openPanel("inventory");
-      return;
+    function renderShopPanel() {
+      shopItems.innerHTML = "";
+
+      Object.entries(ITEM_DATA).forEach(([id, item]) => {
+        if (item.category === "clothing") return;
+
+        const card = document.createElement("article");
+        card.className = "inventory-card";
+
+        const icon = document.createElement("span");
+        icon.className = "inventory-icon";
+        icon.textContent = item.icon;
+
+        const info = document.createElement("div");
+        info.className = "inventory-info";
+
+        const name = document.createElement("strong");
+        name.textContent = item.name;
+
+        const description = document.createElement("small");
+        description.textContent = item.description;
+
+        info.append(name, description);
+
+        const button = document.createElement("button");
+        button.className = "small-button";
+        button.textContent = `${item.price} Münzen`;
+        button.addEventListener("click", () => {
+          if (save.money < item.price) {
+            showToast("Du hast nicht genug Münzen.");
+            return;
+          }
+
+          save.money -= item.price;
+          addToInventory(id);
+          saveGame();
+          showToast(`${item.name} gekauft!`);
+          renderShopPanel();
+        });
+
+        card.append(icon, info, button);
+        shopItems.appendChild(card);
+      });
     }
 
-    if(/^[1-9]$/.test(key)) {
-      selectedSlot=Number(key)-1;
-      renderHotbar();
-      const id=getHotbarItems()[selectedSlot];
-      const item=shopItems.find(i=>i.id===id);
-      if(item)showHint(`${item.name} ausgewählt.`);
-      return;
+    function renderOrdersPanel() {
+      ordersList.innerHTML = "";
+
+      if (!save.orders.length) {
+        ordersList.innerHTML =
+          '<p class="empty-message">Du hast gerade keine offenen Bestellungen.</p>';
+        return;
+      }
+
+      save.orders.forEach(order => {
+        const item = getItemData(order.itemId);
+        const card = document.createElement("article");
+        card.className = "inventory-card";
+
+        const icon = document.createElement("span");
+        icon.className = "inventory-icon";
+        icon.textContent = item.icon;
+
+        const info = document.createElement("div");
+        info.className = "inventory-info";
+
+        const name = document.createElement("strong");
+        name.textContent = item.name;
+
+        const detail = document.createElement("small");
+        detail.textContent = order.status === "arrived"
+          ? "Angekommen – der Postbote wartet an der Tür."
+          : `Unterwegs – noch ungefähr ${Math.ceil(order.secondsLeft || 0)} Sekunden.`;
+
+        info.append(name, detail);
+        card.append(icon, info);
+        ordersList.appendChild(card);
+      });
     }
 
-    if(key==="e") {
-      if(!panel.classList.contains("hidden"))return;
-      interact();
-      return;
+    function updateOrders(delta) {
+      let changed = false;
+
+      for (const order of save.orders) {
+        if (order.status !== "ordered") continue;
+
+        order.secondsLeft = Math.max(0, (order.secondsLeft || 20) - delta);
+
+        if (order.secondsLeft <= 0) {
+          order.status = "arrived";
+          changed = true;
+          showToast("Der Postbote ist angekommen!");
+        }
+      }
+
+      if (changed) saveGame();
     }
 
-    if(!panel.classList.contains("hidden"))return;
-    keys.add(key);
-  });
+    function movePlayer(delta) {
+      if (activePanel) return;
 
-  window.addEventListener("keyup",event=>keys.delete(event.key.toLowerCase()));
-  window.addEventListener("blur",()=>keys.clear());
-  $("closePanel").addEventListener("click",closePanel);
+      const player = save.player;
+      const speed = 145;
+      let dx = 0;
+      let dy = 0;
 
-  $("soundButton").addEventListener("click",()=>{
-    soundOn=!soundOn;
-    $("soundButton").textContent=soundOn?"♫":"♪";
-    if(soundOn)playTone(540,.08,"triangle");
-    showHint(soundOn?"Sound eingeschaltet.":"Sound ausgeschaltet.");
-  });
+      if (keys.w || keys.ArrowUp) dy -= 1;
+      if (keys.s || keys.ArrowDown) dy += 1;
+      if (keys.a || keys.ArrowLeft) dx -= 1;
+      if (keys.d || keys.ArrowRight) dx += 1;
 
-  canvas.addEventListener("pointerdown",event=>{
-    if(!panel.classList.contains("hidden"))return;
-    const r=canvas.getBoundingClientRect();
-    const x=(event.clientX-r.left)*W/r.width;
-    const y=(event.clientY-r.top)*H/r.height;
-    if(x>=player.x-5&&x<=player.x+player.w+5&&y>=player.y-5&&y<=player.y+player.h+5) {
-      dragging=true;
-      dragOffset.x=x-player.x;
-      dragOffset.y=y-player.y;
-      player.dragging=true;
-      canvas.setPointerCapture(event.pointerId);
+      if (dx === 0 && dy === 0) return;
+
+      const length = Math.hypot(dx, dy) || 1;
+      dx = dx / length * speed * delta;
+      dy = dy / length * speed * delta;
+
+      player.x = Math.max(15, Math.min(WIDTH - 48, player.x + dx));
+      player.y = Math.max(135, Math.min(HEIGHT - 105, player.y + dy));
+
+      if (Math.abs(dx) > Math.abs(dy)) {
+        player.direction = dx < 0 ? "left" : "right";
+      } else {
+        player.direction = dy < 0 ? "up" : "down";
+      }
+
+      player.frame += delta * 10;
     }
-  });
 
-  canvas.addEventListener("pointermove",event=>{
-    if(!dragging)return;
-    const r=canvas.getBoundingClientRect();
-    const x=(event.clientX-r.left)*W/r.width;
-    const y=(event.clientY-r.top)*H/r.height;
-    player.x=Math.max(8,Math.min(W-player.w-8,x-dragOffset.x));
-    player.y=Math.max(0,Math.min(FLOOR-player.h,y-dragOffset.y));
-    player.grounded=player.y+player.h>=FLOOR;
-  });
+    function gameLoop(timestamp) {
+      const delta = Math.min((timestamp - lastFrameTime) / 1000 || 0, 0.05);
+      lastFrameTime = timestamp;
+      animationTime += delta;
 
-  function stopDragging() {
-    if(!dragging)return;
-    dragging=false;
-    player.dragging=false;
-    if(player.y+player.h>=FLOOR) {
-      player.y=FLOOR-player.h;
-      player.grounded=true;
+      movePlayer(delta);
+      updateOrders(delta);
+      updateInteractionHint();
+      draw();
+
+      requestAnimationFrame(gameLoop);
     }
-  }
-  canvas.addEventListener("pointerup",stopDragging);
-  canvas.addEventListener("pointercancel",stopDragging);
-  canvas.addEventListener("lostpointercapture",stopDragging);
-}
+        function draw() {
+      ctx.clearRect(0, 0, WIDTH, HEIGHT);
 
-function frame(now) {
-  const dt=Math.min((now-lastTime)/1000,.04);
-  lastTime=now;
-  if(panel.classList.contains("hidden"))update(dt);
-  draw();
-  requestAnimationFrame(frame);
-}
+      drawRoom();
+      drawBed();
+      drawWardrobe();
+      drawDesk();
+      drawComputer();
+      drawSink();
+      drawDoor();
+      drawPlacedItems();
+      drawPostman();
+      drawPlayer();
+      drawWaterParticles(0.016);
+      drawHotbar();
 
-function init() {
-  persist();
-  setupControls();
-  panel.classList.add("hidden");
-  requestAnimationFrame(frame);
-}
+      if (selectedItemForPlacement) {
+        ctx.save();
+        ctx.globalAlpha = 0.8;
+        ctx.strokeStyle = "#f5d36b";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 4]);
+        ctx.strokeRect(
+          Math.round(save.player.x - 8),
+          Math.round(save.player.y + 4),
+          48,
+          48
+        );
+        ctx.restore();
+      }
+    }
 
-init();
-})();
-</script>
+    function openShop() {
+      renderShopPanel();
+      openPanel(shopPanel);
+    }
+
+    function openOrders() {
+      renderOrdersPanel();
+      openPanel(ordersPanel);
+    }
+
+    function orderItem(id) {
+      const item = getItemData(id);
+
+      if (save.money < item.price) {
+        showToast("Du hast nicht genug Münzen.");
+        return;
+      }
+
+      save.money -= item.price;
+
+      save.orders.push({
+        id: save.nextOrderId++,
+        itemId: id,
+        status: "ordered",
+        secondsLeft: 30
+      });
+
+      saveGame();
+      showToast(`${item.name} bestellt! Der Postbote kommt bald.`);
+      renderShopPanel();
+    }
+
+    function renderShopPanel() {
+      const container = document.getElementById("shopItems");
+      container.innerHTML = "";
+
+      Object.entries(ITEM_DATA).forEach(([id, item]) => {
+        if (
+          activeShopCategory !== "all" &&
+          item.category !== activeShopCategory
+        ) {
+          return;
+        }
+
+        const card = document.createElement("article");
+        card.className = "inventory-card";
+
+        const icon = document.createElement("span");
+        icon.className = "inventory-icon";
+        icon.textContent = item.icon;
+
+        const info = document.createElement("div");
+        info.className = "inventory-info";
+
+        const name = document.createElement("strong");
+        name.textContent = item.name;
+
+        const description = document.createElement("small");
+        description.textContent = item.description;
+
+        info.append(name, description);
+
+        const button = document.createElement("button");
+        button.className = "small-button";
+        button.textContent = `${item.price} Münzen`;
+
+        button.addEventListener("click", () => {
+          if (item.category === "clothing") {
+            if (ownsItem(id)) {
+              showToast("Diesen Gegenstand besitzt du bereits.");
+              return;
+            }
+
+            if (save.money < item.price) {
+              showToast("Du hast nicht genug Münzen.");
+              return;
+            }
+
+            save.money -= item.price;
+            save.clothing.push(id);
+            saveGame();
+            showToast(`${item.name} gekauft!`);
+            renderShopPanel();
+            return;
+          }
+
+          orderItem(id);
+        });
+
+        card.append(icon, info, button);
+        container.appendChild(card);
+      });
+
+      if (!container.children.length) {
+        container.innerHTML =
+          '<p class="empty-message">In dieser Kategorie gibt es gerade nichts.</p>';
+      }
+    }
+
+    function setupShopTabs() {
+      document.querySelectorAll(".shop-tab").forEach(button => {
+        button.addEventListener("click", () => {
+          document.querySelectorAll(".shop-tab").forEach(tab => {
+            tab.classList.remove("active");
+          });
+
+          button.classList.add("active");
+          activeShopCategory = button.dataset.category || "all";
+          renderShopPanel();
+        });
+      });
+    }
+
+    function setupControls() {
+      document.addEventListener("keydown", event => {
+        const key = event.key.toLowerCase();
+
+        if (
+          ["arrowup", "arrowdown", "arrowleft", "arrowright", " "]
+            .includes(key)
+        ) {
+          event.preventDefault();
+        }
+
+        if (
+          event.repeat &&
+          ["e", "i", "escape"].includes(key)
+        ) {
+          return;
+        }
+
+        if (key === "escape") {
+          if (activePanel) {
+            hideAllPanels();
+          } else if (selectedItemForPlacement) {
+            selectedItemForPlacement = null;
+            updateHUD();
+            showToast("Platzieren abgebrochen.");
+          }
+          return;
+        }
+
+        if (activePanel) return;
+
+        keys[key] = true;
+
+        if (key === "e") {
+          interact();
+          return;
+        }
+
+        if (key === "i") {
+          toggleInventory();
+          return;
+        }
+
+        if (/^[1-9]$/.test(key)) {
+          save.selectedHotbar = Number(key) - 1;
+          const items = getHotbarItems();
+          const selected = items[save.selectedHotbar];
+
+          if (selected && getItemData(selected).placeable) {
+            selectedItemForPlacement = selected;
+            showToast(`${getItemData(selected).name} ausgewählt.`);
+          } else {
+            selectedItemForPlacement = null;
+          }
+
+          saveGame();
+        }
+      });
+
+      document.addEventListener("keyup", event => {
+        keys[event.key.toLowerCase()] = false;
+      });
+
+      window.addEventListener("blur", () => {
+        keys = {};
+      });
+
+      canvas.addEventListener("click", event => {
+        if (activePanel) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = WIDTH / rect.width;
+        const scaleY = HEIGHT / rect.height;
+
+        const mouseX = (event.clientX - rect.left) * scaleX;
+        const mouseY = (event.clientY - rect.top) * scaleY;
+
+        const slotSize = 42;
+        const gap = 5;
+        const totalWidth = slotSize * 9 + gap * 8;
+        const startX = Math.floor((WIDTH - totalWidth) / 2);
+        const barY = HEIGHT - 57;
+
+        if (
+          mouseY >= barY &&
+          mouseY <= barY + slotSize &&
+          mouseX >= startX &&
+          mouseX <= startX + totalWidth
+        ) {
+          const index = Math.floor(
+            (mouseX - startX) / (slotSize + gap)
+          );
+
+          if (index >= 0 && index < 9) {
+            save.selectedHotbar = index;
+            const items = getHotbarItems();
+            const selected = items[index];
+
+            if (selected && getItemData(selected).placeable) {
+              selectedItemForPlacement = selected;
+              showToast(`${getItemData(selected).name} ausgewählt.`);
+            } else {
+              selectedItemForPlacement = null;
+            }
+
+            saveGame();
+          }
+        }
+      });
+    }
+
+    function setupButtons() {
+      document.getElementById("closeDialog").addEventListener("click", () => {
+        closePanel(dialogPanel);
+      });
+
+      document.getElementById("closeInventory").addEventListener("click", () => {
+        closePanel(inventoryPanel);
+      });
+
+      document.getElementById("closeComputer").addEventListener("click", () => {
+        closePanel(computerPanel);
+      });
+
+      document.getElementById("closeShop").addEventListener("click", () => {
+        closePanel(shopPanel);
+      });
+
+      document.getElementById("closeOrders").addEventListener("click", () => {
+        closePanel(ordersPanel);
+      });
+
+      document.getElementById("closeWardrobe").addEventListener("click", () => {
+        closePanel(wardrobePanel);
+      });
+
+      document.getElementById("closeDoor").addEventListener("click", () => {
+        closePanel(doorPanel);
+      });
+
+      document.getElementById("openShop").addEventListener("click", openShop);
+      document.getElementById("openOrders").addEventListener("click", openOrders);
+
+      document.getElementById("openWardrobe").addEventListener("click", () => {
+        renderWardrobePanel();
+        openPanel(wardrobePanel);
+      });
+
+      document.getElementById("goToCity").addEventListener("click", () => {
+        window.location.href = "Stadt.html";
+      });
+
+      document.getElementById("stayHome").addEventListener("click", () => {
+        closePanel(doorPanel);
+      });
+
+      setupShopTabs();
+    }
+
+    function initializeGame() {
+      setupControls();
+      setupButtons();
+      updateHUD();
+
+      showToast("Willkommen in deinem Zimmer!");
+      requestAnimationFrame(gameLoop);
+    }
+
+    initializeGame();
+  </script>
 </body>
 </html>
