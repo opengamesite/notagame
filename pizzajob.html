@@ -1,0 +1,751 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La Piccola Pizza – Pizza Job</title>
+<style>
+:root {
+  --cream:#fff3d8;
+  --paper:#f8e7bd;
+  --red:#bd3e35;
+  --darkred:#792a27;
+  --green:#39784c;
+  --dark:#30271f;
+  --gold:#e7ae48;
+  --shadow:#a8794c;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:#29251f;color:var(--dark);
+  font-family:"Courier New",monospace;
+  image-rendering:pixelated;
+}
+button{font:inherit;cursor:pointer}
+button:focus-visible{outline:3px solid #2679bd;outline-offset:3px}
+.pixel{
+  box-shadow:4px 0 #0002,-4px 0 #0002,0 4px #0002,0 -4px #fff2;
+}
+.topbar{
+  display:flex;justify-content:space-between;align-items:center;gap:12px;
+  flex-wrap:wrap;background:#f9e9c6;border-bottom:5px solid #c9a36d;
+  padding:12px max(16px,calc((100% - 1200px)/2));
+}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-icon{font-size:34px}
+.brand h1{font-size:20px;margin:0;color:#a8342d}
+.brand small{display:block;color:#6b5741;font-size:11px;margin-top:4px}
+.stats{display:flex;gap:8px;flex-wrap:wrap}
+.stat{background:#fff9e9;border:2px solid #d8bc8b;padding:8px 11px;font-size:12px}
+.stat strong{color:#a8342d}
+.page{max-width:1200px;margin:auto;padding:16px}
+.intro{
+  background:#f8e7bd;border:4px solid #c69a5d;padding:14px 16px;
+  margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;
+  gap:12px;flex-wrap:wrap;
+}
+.intro h2{margin:0 0 5px;font-size:18px}
+.intro p{margin:0;font-size:12px;line-height:1.6}
+.day-tag{background:#39784c;color:white;padding:9px 12px;font-size:11px}
+.restaurant{
+  border:5px solid #a8794c;background:#e4c18b;
+  box-shadow:0 8px 0 #171411;overflow:hidden;
+}
+.scene{
+  min-height:340px;position:relative;overflow:hidden;
+  background:#f0d9a9;
+  background-image:
+    linear-gradient(90deg,#d9b77b 1px,transparent 1px),
+    linear-gradient(#d9b77b 1px,transparent 1px);
+  background-size:32px 32px;
+}
+.awning{
+  height:42px;display:flex;border-bottom:5px solid #8b4b34;
+  background:repeating-linear-gradient(90deg,#b63b35 0 54px,#fff0d5 54px 108px);
+}
+.awning::after{
+  content:"";position:absolute;top:40px;left:0;right:0;height:12px;
+  background:repeating-linear-gradient(90deg,#b63b35 0 54px,#fff0d5 54px 108px);
+  clip-path:polygon(0 0,100% 0,100% 50%,95% 100%,90% 50%,85% 100%,80% 50%,75% 100%,70% 50%,65% 100%,60% 50%,55% 100%,50% 50%,45% 100%,40% 50%,35% 100%,30% 50%,25% 100%,20% 50%,15% 100%,10% 50%,5% 100%,0 50%);
+}
+.shop-name{
+  position:absolute;top:65px;left:50%;transform:translateX(-50%);
+  white-space:nowrap;background:#fff2d6;border:4px solid #9b4032;
+  padding:8px 18px;color:#a4322c;font-weight:bold;letter-spacing:2px;
+  box-shadow:4px 4px 0 #895c36;font-size:14px;
+}
+.wall-decoration{position:absolute;top:118px;left:18px;width:76px;height:91px;
+  background:#fff3d7;border:4px solid #9b4032;text-align:center;padding:7px 3px;
+  color:#39784c;font-weight:bold;font-size:10px;line-height:1.6}
+.wall-decoration span{font-size:24px;display:block}
+.window{
+  position:absolute;top:116px;right:18px;width:102px;height:92px;
+  border:7px solid #92583a;background:#b7d9d4;
+  background-image:linear-gradient(90deg,transparent 46%,#92583a 46% 53%,transparent 53%),
+    linear-gradient(transparent 46%,#92583a 46% 53%,transparent 53%);
+}
+.window:after{
+  content:"";position:absolute;left:0;right:0;bottom:0;height:22px;
+  background:linear-gradient(160deg,transparent 20%,#6d9a66 21% 42%,transparent 43%),
+    linear-gradient(20deg,transparent 25%,#4f8553 26% 55%,transparent 56%);
+}
+.plant{position:absolute;bottom:52px;left:24px;font-size:30px}
+.shelf{
+  position:absolute;right:140px;top:119px;width:150px;height:49px;
+  background:#9c613a;border:4px solid #70432d;
+}
+.shelf:before{
+  content:"";position:absolute;left:-5px;right:-5px;bottom:-7px;height:8px;background:#70432d
+}
+.jar{position:absolute;bottom:5px;width:18px;height:27px;border:3px solid #f5e7bd;
+  background:#71975b}
+.jar:nth-child(1){left:8px}.jar:nth-child(2){left:35px;background:#c64b3e}
+.jar:nth-child(3){left:62px;background:#e7b34f}.jar:nth-child(4){left:89px;background:#e9dfc2}
+.jar:nth-child(5){left:116px;background:#4e8657}
+.oven{
+  position:absolute;bottom:51px;left:50%;transform:translateX(-50%);
+  width:184px;height:133px;background:#a34b35;border:8px solid #75402f;
+  box-shadow:inset 0 0 0 5px #d17b4d,5px 5px 0 #8b623a;
+}
+.oven-top{height:22px;background:#e8b46c;border-bottom:5px solid #75402f}
+.oven-mouth{
+  margin:8px auto 0;width:126px;height:66px;border:7px solid #683628;
+  border-radius:50% 50% 4px 4px;background:#2d201c;overflow:hidden;position:relative;
+}
+.oven-fire{
+  position:absolute;bottom:0;left:0;right:0;height:36px;
+  background:linear-gradient(0deg,#f5b62d,#ed652e 50%,transparent);
+  animation:fire .7s infinite alternate;
+}
+.oven-fire:after{content:"";position:absolute;bottom:0;left:30%;width:30px;height:34px;
+  background:#ffe17a;clip-path:polygon(50% 0,100% 65%,75% 100%,25% 100%,0 65%)}
+@keyframes fire{from{opacity:.75}to{opacity:1}}
+.oven-knob{position:absolute;right:9px;bottom:12px;width:12px;height:12px;
+  border-radius:50%;background:#f5d5a0;border:3px solid #633729}
+.counter{
+  position:absolute;bottom:0;left:0;right:0;height:55px;
+  background:repeating-linear-gradient(90deg,#b67b49 0 55px,#c68b54 55px 110px);
+  border-top:7px solid #f0d3a1;
+}
+.counter:after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:#75472e}
+.pizza-display{
+  position:absolute;bottom:55px;right:22px;width:100px;height:58px;
+  background:#a77b48;border:5px solid #80502f;
+}
+.pizza-display:before{content:"";position:absolute;left:10px;top:5px;width:62px;height:35px;
+  background:#e4b45f;border:5px solid #f4dc99;border-radius:50%;
+  box-shadow:inset 0 0 0 5px #c84b35}
+.pizza-display:after{content:"";position:absolute;left:28px;top:14px;width:7px;height:7px;
+  border-radius:50%;background:#39784c;box-shadow:18px 7px #39784c,8px 14px #b93c32}
+.customer{
+  position:absolute;bottom:48px;left:calc(50% + 115px);width:48px;height:87px;
+  display:none;z-index:2;transition:left .3s;
+}
+.customer.show{display:block}
+.customer .head{position:absolute;top:0;left:7px;width:34px;height:32px;
+  background:#e7b789;border:4px solid #49362a;box-shadow:inset 0 -5px #d99b70}
+.customer .hair{position:absolute;top:-4px;left:5px;width:38px;height:12px;background:#51372b}
+.customer .eyes{position:absolute;top:13px;left:10px;width:5px;height:5px;background:#33251d;
+  box-shadow:13px 0 #33251d}
+.customer .body{position:absolute;top:31px;left:1px;width:46px;height:42px;
+  background:#39784c;border:4px solid #2a5136}
+.customer .legs{position:absolute;top:70px;left:8px;width:12px;height:16px;
+  background:#574b58;box-shadow:18px 0 #574b58}
+.customer-bubble{
+  position:absolute;bottom:145px;left:calc(50% + 95px);max-width:180px;
+  background:#fff7e5;border:3px solid #754b30;padding:8px;font-size:10px;
+  z-index:3;display:none;box-shadow:3px 3px #0002;
+}
+.customer-bubble.show{display:block}
+.floor{
+  height:23px;background:repeating-linear-gradient(90deg,#bb9662 0 48px,#d0ad78 48px 96px);
+  border-top:4px solid #8c603d;
+}
+.game-layout{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(270px,1fr);gap:14px;margin-top:14px}
+.panel{background:var(--cream);border:4px solid #c49a63;box-shadow:4px 4px 0 #171411}
+.panel-title{background:#39784c;color:white;padding:10px 12px;font-weight:bold;font-size:13px}
+.panel-content{padding:13px}
+.order-card{background:#fffaf0;border:3px dashed #caa56c;padding:12px;margin-bottom:12px}
+.order-head{display:flex;justify-content:space-between;gap:8px;font-size:12px;font-weight:bold}
+.order-items{font-size:12px;line-height:1.9;margin:10px 0}
+.order-reward{color:#39784c;font-weight:bold;font-size:12px}
+.progress-row{display:flex;justify-content:space-between;font-size:11px;margin-bottom:6px}
+.progress{height:13px;background:#dbc9a5;border:2px solid #b69a6b;margin-bottom:13px}
+.progress-fill{height:100%;width:0;background:#39784c;transition:width .25s}
+.section-label{font-size:11px;font-weight:bold;color:#79502e;margin:12px 0 7px}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.step{
+  background:#fff9e8;border:2px solid #d6bd8c;padding:8px 4px;
+  text-align:center;font-size:10px;min-height:65px;color:#594533;
+}
+.step .emoji{font-size:21px;display:block;margin-bottom:5px}
+.step.active{border-color:#39784c;background:#e2f0d8;box-shadow:inset 0 -4px #39784c}
+.step.done{background:#d4e7c9;border-color:#39784c}
+.ingredients{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.ingredient{
+  background:#fff9e8;border:2px solid #d6bd8c;padding:9px 4px;
+  text-align:center;font-size:10px;min-height:69px;color:#594533;
+}
+.ingredient .emoji{font-size:23px;display:block;margin-bottom:4px}
+.ingredient.selected{border-color:#b63b35;background:#ffdfce;box-shadow:inset 0 -3px #b63b35}
+.ingredient:disabled{opacity:.4;cursor:not-allowed;filter:grayscale(1)}
+.actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+.btn{
+  background:#b83d34;color:white;border:0;border-bottom:4px solid #792a27;
+  padding:11px 13px;font-size:11px;font-weight:bold;
+}
+.btn:hover:not(:disabled){filter:brightness(1.08);transform:translateY(-1px)}
+.btn.green{background:#39784c;border-bottom-color:#245433}
+.btn.gold{background:#d59a30;border-bottom-color:#9a681d;color:#30271f}
+.btn.dark{background:#4b4238;border-bottom-color:#30271f}
+.btn:disabled{opacity:.42;cursor:not-allowed;transform:none}
+.recipe{
+  background:#fffaf0;border:3px dashed #caa56c;padding:12px;min-height:110px;
+  font-size:11px;line-height:1.8;
+}
+.recipe strong{color:#a8342d}
+.pizza-preview{
+  width:142px;height:142px;border-radius:50%;border:9px solid #c78d4b;
+  background:#f5d998;box-shadow:inset 0 0 0 5px #f9e9b8,4px 4px 0 #b99a65;
+  position:relative;margin:13px auto;overflow:hidden;
+}
+.pizza-preview .sauce{
+  position:absolute;inset:13px;border-radius:50%;background:#c74732;display:none;
+}
+.pizza-preview .cheese{
+  position:absolute;inset:18px;border-radius:50%;background:#f0d16e;display:none;
+}
+.pizza-preview .topping{
+  position:absolute;font-size:21px;display:none;z-index:2;
+}
+.pizza-preview .t1{top:28px;left:27px}.pizza-preview .t2{top:64px;left:72px}
+.pizza-preview .t3{top:82px;left:31px}.pizza-preview .t4{top:31px;left:77px}
+.pizza-preview .t5{top:49px;left:48px}.pizza-preview .t6{top:83px;left:76px}
+.message{
+  background:#fff9e8;border-left:5px solid #d59a30;padding:10px;
+  font-size:11px;line-height:1.6;min-height:39px;margin-top:10px;
+}
+.message.good{border-color:#39784c}
+.message.bad{border-color:#b83d34}
+.timer-wrap{margin-top:10px;display:none}
+.timer-wrap.show{display:block}
+.timer-bar{height:18px;background:#d8c5a1;border:2px solid #a88757}
+.timer-fill{height:100%;width:0;background:#39784c;transition:width .25s linear}
+.timer-fill.hot{background:#c53b2e}
+.shop-row{display:flex;justify-content:space-between;gap:10px;align-items:center;
+  padding:9px 0;border-bottom:1px solid #dfcba5;font-size:11px}
+.shop-row:last-child{border:0}
+.shop-row button{padding:7px 9px;font-size:10px}
+.shop-row button:disabled{opacity:.4}
+.log{font-size:10px;line-height:1.8;max-height:125px;overflow:auto;padding:0 0 0 17px}
+.footer{text-align:center;color:#c7b59c;font-size:10px;padding:18px 10px}
+.hidden{display:none!important}
+@media(max-width:760px){
+  .game-layout{grid-template-columns:1fr}
+  .scene{min-height:300px}
+  .oven{left:48%;width:154px;height:122px}
+  .wall-decoration{left:8px;transform:scale(.8);transform-origin:top left}
+  .window{right:8px;width:75px}
+  .shelf{right:88px;width:105px}
+  .shop-name{font-size:11px;top:62px}
+  .customer{left:calc(50% + 85px);transform:scale(.8);transform-origin:bottom left}
+  .customer-bubble{left:calc(50% + 60px)}
+  .page{padding:10px}
+}
+@media(max-width:380px){
+  .steps{grid-template-columns:repeat(2,1fr)}
+  .ingredients{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-icon">🍕</div>
+    <div>
+      <h1>LA PICCOLA PIZZA</h1>
+      <small>La tua piccola avventura italiana · Pizza Job</small>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="stat">Geld: <strong id="money">0 €</strong></div>
+    <div class="stat">Ruf: <strong id="reputation">0</strong></div>
+    <div class="stat">Pizzen: <strong id="served">0</strong></div>
+    <div class="stat">Tag: <strong id="day">1</strong></div>
+  </div>
+</header>
+
+<main class="page">
+  <section class="intro">
+    <div>
+      <h2>Benvenuto in deiner Pizzeria!</h2>
+      <p>Teig ausrollen, belegen, backen und servieren. Zufriedene Gäste geben mehr Trinkgeld.</p>
+    </div>
+    <div class="day-tag">APERTO · GEÖFFNET</div>
+  </section>
+
+  <section class="restaurant">
+    <div class="scene">
+      <div class="awning"></div>
+      <div class="shop-name">✦ LA PICCOLA PIZZA ✦</div>
+      <div class="wall-decoration"><span>🍅</span>FATTO CON<br>AMORE</div>
+      <div class="window"></div>
+      <div class="shelf">
+        <div class="jar"></div><div class="jar"></div><div class="jar"></div>
+        <div class="jar"></div><div class="jar"></div>
+      </div>
+      <div class="oven">
+        <div class="oven-top"></div>
+        <div class="oven-mouth"><div class="oven-fire"></div></div>
+        <div class="oven-knob"></div>
+      </div>
+      <div class="pizza-display"></div>
+      <div class="plant">🪴</div>
+      <div class="customer" id="customer">
+        <div class="head"><div class="hair"></div><div class="eyes"></div></div>
+        <div class="body"></div><div class="legs"></div>
+      </div>
+      <div class="customer-bubble" id="bubble">Buongiorno! Eine Pizza, bitte!</div>
+      <div class="counter"></div>
+    </div>
+    <div class="floor"></div>
+  </section>
+
+  <div class="game-layout">
+    <section class="panel">
+      <div class="panel-title">✦ DEINE KÜCHE · PIZZA-WERKSTATT</div>
+      <div class="panel-content">
+        <div class="order-card">
+          <div class="order-head">
+            <span id="orderTitle">BESTELLUNG #001</span>
+            <span id="orderStatus">WARTET</span>
+          </div>
+          <div class="order-items" id="orderText">Ein Kunde wartet auf seine Pizza.</div>
+          <div class="order-reward" id="orderReward">Verdienst: 18 € + Trinkgeld</div>
+        </div>
+
+        <div class="progress-row">
+          <span>Fortschritt der Bestellung</span>
+          <strong id="progressText">0 / 4</strong>
+        </div>
+        <div class="progress"><div class="progress-fill" id="progressFill"></div></div>
+
+        <div class="section-label">01 — ARBEITSSCHRITTE</div>
+        <div class="steps">
+          <div class="step active" id="step0"><span class="emoji">🫓</span>Teig</div>
+          <div class="step" id="step1"><span class="emoji">🍅</span>Tomatensoße</div>
+          <div class="step" id="step2"><span class="emoji">🧀</span>Belegen</div>
+          <div class="step" id="step3"><span class="emoji">🔥</span>Backen</div>
+        </div>
+
+        <div class="section-label">02 — ZUTATEN AUSWÄHLEN</div>
+        <div class="ingredients" id="ingredients">
+          <button class="ingredient" data-id="cheese"><span class="emoji">🧀</span>Mozzarella</button>
+          <button class="ingredient" data-id="basil"><span class="emoji">🌿</span>Basilikum</button>
+          <button class="ingredient" data-id="pepperoni"><span class="emoji">🍕</span>Salami</button>
+          <button class="ingredient" data-id="mushroom"><span class="emoji">🍄</span>Pilze</button>
+          <button class="ingredient" data-id="olive"><span class="emoji">🫒</span>Oliven</button>
+          <button class="ingredient" data-id="pepper"><span class="emoji">🫑</span>Paprika</button>
+          <button class="ingredient" data-id="ham" disabled><span class="emoji">🥓</span>Schinken · 🔒</button>
+          <button class="ingredient" data-id="pineapple" disabled><span class="emoji">🍍</span>Ananas · 🔒</button>
+          <button class="ingredient" data-id="chili" disabled><span class="emoji">🌶️</span>Chili · 🔒</button>
+        </div>
+
+        <div class="section-label">03 — DEINE PIZZA</div>
+        <div class="recipe">
+          <div><strong>Rezept:</strong> <span id="recipeText">Noch kein Teig vorbereitet.</span></div>
+          <div class="pizza-preview" id="pizzaPreview">
+            <div class="sauce" id="previewSauce"></div>
+            <div class="cheese" id="previewCheese"></div>
+            <span class="topping t1" id="top0"></span>
+            <span class="topping t2" id="top1"></span>
+            <span class="topping t3" id="top2"></span>
+            <span class="topping t4" id="top3"></span>
+            <span class="topping t5" id="top4"></span>
+            <span class="topping t6" id="top5"></span>
+          </div>
+          <div id="selectedText">Wähle Zutaten passend zur Bestellung.</div>
+        </div>
+
+        <div class="timer-wrap" id="timerWrap">
+          <div class="progress-row"><span>Backofen</span><strong id="timerText">0 Sekunden</strong></div>
+          <div class="timer-bar"><div class="timer-fill" id="timerFill"></div></div>
+        </div>
+
+        <div class="actions">
+          <button class="btn" id="mainAction">Teig ausrollen</button>
+          <button class="btn green" id="ovenAction" disabled>Pizza in den Ofen</button>
+          <button class="btn gold" id="serveAction" disabled>Pizza servieren</button>
+          <button class="btn dark" id="resetAction">Rezept zurücksetzen</button>
+        </div>
+        <div class="message" id="message">Benvenuto! Bereite zuerst den Pizzateig vor.</div>
+      </div>
+    </section>
+
+    <aside>
+      <section class="panel">
+        <div class="panel-title">✦ KASSE & TRINKGELD</div>
+        <div class="panel-content">
+          <div class="order-items">
+            Heute verdient: <strong id="earnedToday">0 €</strong><br>
+            Trinkgeld: <strong id="tipsToday">0 €</strong><br>
+            Zufriedene Kunden: <strong id="happyCustomers">0</strong>
+          </div>
+          <div class="section-label">LETZTE BESTELLUNGEN</div>
+          <ol class="log" id="log"><li>Die Pizzeria öffnet ihre Türen.</li></ol>
+        </div>
+      </section>
+
+      <section class="panel" style="margin-top:14px">
+        <div class="panel-title">✦ MERCATO · ZUTATENLADEN</div>
+        <div class="panel-content">
+          <p style="font-size:11px;line-height:1.7;margin-top:0">
+            Investiere deinen Verdienst in neue Zutaten. Neue Rezepte bringen Abwechslung!
+          </p>
+          <div class="shop-row">
+            <div><strong>Schinken</strong><br><span>25 € · Herzhaft</span></div>
+            <button class="btn green" id="buyHam">25 €</button>
+          </div>
+          <div class="shop-row">
+            <div><strong>Ananas</strong><br><span>35 € · Süß & umstritten</span></div>
+            <button class="btn green" id="buyPineapple">35 €</button>
+          </div>
+          <div class="shop-row">
+            <div><strong>Chili</strong><br><span>45 € · Extra scharf</span></div>
+            <button class="btn green" id="buyChili">45 €</button>
+          </div>
+          <div class="message" id="shopMessage">Tipp: Exakt die gewünschten Zutaten auswählen, damit der Kunde zufrieden ist.</div>
+        </div>
+      </section>
+
+      <section class="panel" style="margin-top:14px">
+        <div class="panel-title">✦ STEUERUNG</div>
+        <div class="panel-content" style="font-size:11px;line-height:1.9">
+          <strong>1.</strong> Teig ausrollen<br>
+          <strong>2.</strong> Tomatensoße auftragen<br>
+          <strong>3.</strong> Zutaten auswählen<br>
+          <strong>4.</strong> Backen und rechtzeitig herausnehmen<br>
+          <strong>5.</strong> Bestellung servieren
+          <hr style="border:0;border-top:1px dashed #c7a779;margin:10px 0">
+          <strong>Tastatur:</strong><br>
+          <kbd>Leertaste</kbd> Nächster Arbeitsschritt<br>
+          <kbd>Enter</kbd> Pizza servieren
+        </div>
+      </section>
+    </aside>
+  </div>
+</main>
+
+<footer class="footer">LA PICCOLA PIZZA · PICCOLE PIZZE, GRANDI SOGNI · PIXEL JOB</footer>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+
+  const state = {
+    money: 0, earned: 0, tips: 0, reputation: 0, served: 0,
+    happy: 0, day: 1, orderNo: 1, step: 0, baked: false,
+    baking: false, burnt: false, dough: false, sauce: false,
+    unlocked: { cheese:true, basil:true, pepperoni:true, mushroom:true,
+      olive:true, pepper:true, ham:false, pineapple:false, chili:false },
+    selected: new Set(), timer: 0, interval: null, order: null
+  };
+
+  const ingredientInfo = {
+    cheese:{name:"Mozzarella",emoji:"🧀"},
+    basil:{name:"Basilikum",emoji:"🌿"},
+    pepperoni:{name:"Salami",emoji:"🍕"},
+    mushroom:{name:"Pilze",emoji:"🍄"},
+    olive:{name:"Oliven",emoji:"🫒"},
+    pepper:{name:"Paprika",emoji:"🫑"},
+    ham:{name:"Schinken",emoji:"🥓"},
+    pineapple:{name:"Ananas",emoji:"🍍"},
+    chili:{name:"Chili",emoji:"🌶️"}
+  };
+
+  const recipes = [
+    {name:"Margherita",items:["cheese","basil"],price:18},
+    {name:"Salami",items:["cheese","pepperoni"],price:22},
+    {name:"Vegetariana",items:["cheese","mushroom","olive","pepper"],price:25},
+    {name:"Funghi",items:["cheese","mushroom"],price:21},
+    {name:"Verde",items:["cheese","basil","olive"],price:23},
+    {name:"Prosciutto",items:["cheese","ham"],price:26},
+    {name:"Piccante",items:["cheese","pepperoni","chili"],price:29},
+    {name:"Tropicale",items:["cheese","ham","pineapple"],price:28}
+  ];
+
+  function say(text,type=""){
+    $("message").textContent=text;
+    $("message").className="message "+type;
+  }
+
+  function log(text){
+    const li=document.createElement("li");
+    li.textContent=text;
+    $("log").prepend(li);
+    while($("log").children.length>8) $("log").lastElementChild.remove();
+  }
+
+  function updateStats(){
+    $("money").textContent=state.money+" €";
+    $("earnedToday").textContent=state.earned+" €";
+    $("tipsToday").textContent=state.tips+" €";
+    $("reputation").textContent=state.reputation;
+    $("served").textContent=state.served;
+    $("happyCustomers").textContent=state.happy;
+    $("day").textContent=state.day;
+    ["ham","pineapple","chili"].forEach(id=>{
+      const price={ham:25,pineapple:35,chili:45}[id];
+      const btn=$("buy"+id[0].toUpperCase()+id.slice(1));
+      btn.disabled=state.unlocked[id] || state.money<price;
+      btn.textContent=state.unlocked[id]?"Gekauft":price+" €";
+      const ingredient=document.querySelector('[data-id="'+id+'"]');
+      ingredient.disabled=!state.unlocked[id];
+      ingredient.innerHTML='<span class="emoji">'+ingredientInfo[id].emoji+'</span>'+
+        ingredientInfo[id].name+(state.unlocked[id]?"":" · 🔒");
+    });
+  }
+
+  function newOrder(){
+    stopTimer();
+    state.orderNo++;
+    const available=recipes.filter(r=>r.items.every(id=>state.unlocked[id]));
+    const recipe=available[Math.floor(Math.random()*available.length)];
+    state.order={...recipe};
+    state.step=0;state.dough=false;state.sauce=false;
+    state.baked=false;state.baking=false;state.burnt=false;
+    state.selected.clear();state.timer=0;
+    $("orderTitle").textContent="BESTELLUNG #"+String(state.orderNo).padStart(3,"0");
+    $("orderStatus").textContent="WARTET";
+    $("orderText").textContent="Einmal "+recipe.name+" bitte! Zutaten: "+
+      recipe.items.map(id=>ingredientInfo[id].name).join(", ")+".";
+    $("orderReward").textContent="Verdienst: "+recipe.price+" € + Trinkgeld";
+    $("customer").classList.add("show");
+    $("bubble").classList.add("show");
+    $("bubble").textContent="Buongiorno! Eine "+recipe.name+", per favore!";
+    $("mainAction").textContent="Teig ausrollen";
+    $("mainAction").disabled=false;
+    $("ovenAction").disabled=true;
+    $("serveAction").disabled=true;
+    $("timerWrap").classList.remove("show");
+    $("recipeText").textContent="Noch kein Teig vorbereitet.";
+    $("selectedText").textContent="Wähle Zutaten passend zur Bestellung.";
+    $("previewSauce").style.display="none";
+    $("previewCheese").style.display="none";
+    for(let i=0;i<6;i++) $("top"+i).style.display="none";
+    updateIngredients();
+    updateProgress();
+    say("Ein neuer Gast ist da! Bereite den Teig vor.");
+  }
+
+  function updateProgress(){
+    let p=state.dough?1:0;
+    if(state.sauce)p++;
+    if(state.step>=3)p++;
+    if(state.baked)p++;
+    $("progressText").textContent=p+" / 4";
+    $("progressFill").style.width=(p/4*100)+"%";
+    for(let i=0;i<4;i++){
+      $("step"+i).classList.toggle("active",i===state.step);
+      $("step"+i).classList.toggle("done",
+        [state.dough,state.sauce,state.selected.size>0,state.baked][i]);
+    }
+  }
+
+  function updateIngredients(){
+    document.querySelectorAll(".ingredient").forEach(btn=>{
+      const id=btn.dataset.id;
+      if(!id)return;
+      btn.classList.toggle("selected",state.selected.has(id));
+      btn.disabled=!state.unlocked[id]||state.baking||state.baked||state.step<2||state.step>2;
+    });
+    const names=[...state.selected].map(id=>ingredientInfo[id].name);
+    $("selectedText").textContent=names.length?"Ausgewählt: "+names.join(", "):
+      "Wähle die Zutaten aus der Bestellung.";
+    $("recipeText").textContent=
+      (state.dough?"Teig":"Teig fehlt")+" · "+
+      (state.sauce?"Tomatensoße":"Soße fehlt")+" · "+
+      (names.length?names.join(", "):"Belag fehlt")+
+      (state.baked?" · gebacken":"");
+    updatePreview();
+  }
+
+  function updatePreview(){
+    $("previewSauce").style.display=state.sauce?"block":"none";
+    $("previewCheese").style.display=state.selected.has("cheese")?"block":"none";
+    const positions=["pepperoni","basil","mushroom","olive","pepper","ham","pineapple","chili"];
+    const topIds=["top0","top1","top2","top3","top4","top5"];
+    topIds.forEach((id,i)=>{
+      const el=$(id);
+      const selected=positions.filter(x=>state.selected.has(x));
+      if(i<selected.length){
+        el.textContent=ingredientInfo[selected[i]].emoji;
+        el.style.display="block";
+      }else el.style.display="none";
+    });
+  }
+
+  function nextStep(){
+    if(state.baking||state.baked){
+      say("Die Pizza ist bereits im Ofen oder fertig. Du kannst sie servieren, sobald sie gebacken ist.");
+      return;
+    }
+    if(state.step===0){
+      state.dough=true;state.step=1;
+      $("mainAction").textContent="Tomatensoße auftragen";
+      say("Perfetto! Der Teig ist ausgerollt. Jetzt kommt die Tomatensoße.","good");
+    }else if(state.step===1){
+      if(!state.dough){say("Erst den Teig ausrollen!");return}
+      state.sauce=true;state.step=2;
+      $("mainAction").textContent="Belag fertig";
+      say("Die Soße ist drauf. Wähle jetzt die Zutaten aus der Bestellung.","good");
+    }else if(state.step===2){
+      if(!state.selected.size){say("Wähle zuerst mindestens eine Zutat aus.");return}
+      const required=state.order.items;
+      const missing=required.filter(id=>!state.selected.has(id));
+      const extra=[...state.selected].filter(id=>!required.includes(id));
+      if(missing.length||extra.length){
+        let text="";
+        if(missing.length) text+="Es fehlt: "+missing.map(id=>ingredientInfo[id].name).join(", ")+". ";
+        if(extra.length) text+="Zu viel: "+extra.map(id=>ingredientInfo[id].name).join(", ")+".";
+        say(text,"bad");return;
+      }
+      state.step=3;
+      $("mainAction").disabled=true;
+      $("ovenAction").disabled=false;
+      say("Bellissimo! Genau die richtige Bestellung. Schiebe die Pizza in den Ofen.","good");
+    }
+    updateIngredients();updateProgress();
+  }
+
+  function startBaking(){
+    if(state.step!==3||state.baking||state.baked)return;
+    state.baking=true;state.timer=0;
+    $("ovenAction").disabled=true;
+    $("timerWrap").classList.add("show");
+    $("timerText").textContent="0 Sekunden";
+    $("timerFill").style.width="0%";
+    $("customer").classList.remove("show");
+    $("bubble").classList.remove("show");
+    say("Die Pizza backt! Nach 8 Sekunden ist sie perfekt. Nicht zu lange warten!");
+    state.interval=setInterval(()=>{
+      state.timer++;
+      $("timerText").textContent=state.timer+" Sekunden";
+      $("timerFill").style.width=Math.min(100,state.timer/12*100)+"%";
+      if(state.timer>=9)$("timerFill").classList.add("hot");
+      if(state.timer===8){
+        state.baked=true;
+        $("serveAction").disabled=false;
+        $("orderStatus").textContent="FERTIG";
+        say("Perfetta! Die Pizza ist perfekt gebacken. Jetzt schnell servieren!","good");
+        updateIngredients();updateProgress();
+      }
+      if(state.timer>=13){
+        state.burnt=true;
+        state.baked=true;
+        $("serveAction").disabled=false;
+        $("orderStatus").textContent="ANGEbrannt".toUpperCase();
+        say("Oh no! Die Pizza ist angebrannt. Du kannst sie noch servieren, aber der Kunde wird nicht begeistert sein.","bad");
+        stopTimer();
+        updateIngredients();updateProgress();
+      }
+    },1000);
+  }
+
+  function stopTimer(){
+    if(state.interval){clearInterval(state.interval);state.interval=null}
+    state.baking=false;
+  }
+
+  function servePizza(){
+    if(!state.baked)return;
+    stopTimer();
+    const perfect=!state.burnt&&state.timer>=6&&state.timer<=9;
+    const base=state.order.price;
+    const tip=perfect?Math.floor(5+Math.random()*6):state.burnt?0:2;
+    const paid=state.burnt?Math.floor(base*.45):perfect?base:Math.floor(base*.8);
+    state.money+=paid+tip;
+    state.earned+=paid+tip;
+    state.tips+=tip;
+    state.served++;
+    if(perfect){state.reputation+=2;state.happy++}
+    else state.reputation++;
+    updateStats();
+    $("orderStatus").textContent="SERVIERT";
+    $("serveAction").disabled=true;
+    $("ovenAction").disabled=true;
+    $("mainAction").disabled=true;
+    $("customer").classList.add("show");
+    $("bubble").classList.add("show");
+    $("bubble").textContent=state.burnt?"È un po' bruciata...":perfect?"Mamma mia! Deliziosa!":"Grazie mille!";
+    if(perfect){
+      say("Fantastico! "+paid+" € Umsatz + "+tip+" € Trinkgeld. Der Kunde ist begeistert!","good");
+      log("Pizza perfekt · +"+(paid+tip)+" € · Trinkgeld "+tip+" €");
+    }else if(state.burnt){
+      say("Die Pizza war angebrannt. Du bekommst "+paid+" €, aber kein Trinkgeld.","bad");
+      log("Pizza angebrannt · +"+paid+" €");
+    }else{
+      say("Pizza serviert. Du erhältst "+paid+" € und "+tip+" € Trinkgeld.","good");
+      log("Pizza serviert · +"+(paid+tip)+" €");
+    }
+    $("mainAction").textContent="Nächster Kunde";
+    $("mainAction").disabled=false;
+    $("mainAction").onclick=()=>newOrder();
+  }
+
+  function resetRecipe(){
+    if(state.baking){say("Die Pizza ist gerade im Ofen! Warte, bis sie fertig ist.");return}
+    if(state.baked){say("Diese Pizza ist fertig. Serviere sie zuerst oder beginne mit dem nächsten Kunden.");return}
+    state.step=0;state.dough=false;state.sauce=false;state.selected.clear();
+    $("mainAction").textContent="Teig ausrollen";
+    $("mainAction").disabled=false;
+    $("ovenAction").disabled=true;
+    updateIngredients();updateProgress();
+    say("Rezept zurückgesetzt. Du kannst von vorne anfangen.");
+  }
+
+  function buy(id,price){
+    if(state.unlocked[id])return;
+    if(state.money<price){$("shopMessage").textContent="Dafür fehlen dir noch "+(price-state.money)+" €.";return}
+    state.money-=price;state.unlocked[id]=true;
+    $("shopMessage").textContent=ingredientInfo[id].name+" freigeschaltet! Ab jetzt kannst du es verwenden.";
+    updateStats();updateIngredients();
+  }
+
+  document.querySelectorAll(".ingredient").forEach(btn=>{
+    btn.addEventListener("click",()=>{
+      const id=btn.dataset.id;
+      if(!state.unlocked[id]||state.step!==2||state.baking||state.baked)return;
+      if(state.selected.has(id))state.selected.delete(id);
+      else state.selected.add(id);
+      updateIngredients();
+      say(ingredientInfo[id].name+(state.selected.has(id)?" hinzugefügt.":" entfernt."));
+    });
+  });
+
+  $("mainAction").addEventListener("click",()=>{
+    if($("mainAction").textContent==="Nächster Kunde"){newOrder();return}
+    nextStep();
+  });
+  $("ovenAction").addEventListener("click",startBaking);
+  $("serveAction").addEventListener("click",servePizza);
+  $("resetAction").addEventListener("click",resetRecipe);
+  $("buyHam").addEventListener("click",()=>buy("ham",25));
+  $("buyPineapple").addEventListener("click",()=>buy("pineapple",35));
+  $("buyChili").addEventListener("click",()=>buy("chili",45));
+
+  document.addEventListener("keydown",e=>{
+    if(e.code==="Space"&&!e.repeat){
+      e.preventDefault();
+      if(!state.baking&&!state.baked)nextStep();
+    }
+    if(e.code==="Enter"&&!e.repeat&&state.baked)servePizza();
+  });
+
+  updateStats();
+  newOrder();
+})();
+</script>
+</body>
+</html>
