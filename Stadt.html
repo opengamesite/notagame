@@ -52,7 +52,7 @@ const canvas=document.getElementById("world"),ctx=canvas.getContext("2d");
 ctx.imageSmoothingEnabled=false;
 const W=960,H=540,FLOOR=440,STORAGE_KEY="mein-zimmer-save-v1";
 const $=id=>document.getElementById(id);
-const WORLD=9000;
+const WORLD=2350;
 let save={money:120,equipped:{head:null,face:null,clothes:null,back:null,pants:null}};
 try{
  const s=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
@@ -65,7 +65,7 @@ window.addEventListener("storage",e=>{
  }
 });
 let camera=0,gameTime=0,last=performance.now(),keys=new Set(),soundOn=true,audio=null;
-let activePanel=false,nearby=null,hintTarget=null;
+let activePanel=false,nearby=null;
 const player={x:100,y:FLOOR-78,vx:0,vy:0,w:34,h:78,grounded:true,facing:1,walk:0};
 function rect(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))}
 function line(x,y,x2,y2,c,w=2){ctx.strokeStyle=c;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(Math.round(x),Math.round(y));ctx.lineTo(Math.round(x2),Math.round(y2));ctx.stroke()}
@@ -80,49 +80,24 @@ function star(x,y,r,c){
  ctx.closePath();ctx.fill();
 }
 const shops=[
- {x:180,w:230,name:"KONDITOREI",sub:"Kuchen & Kaffee",color:"#d99c8b",type:"cake"},
- {x:510,w:210,name:"BLUMENLADEN",sub:"Blumen für dich",color:"#91aa8b",type:"flower"},
- {x:850,w:230,name:"BUCHLADEN",sub:"Kleine Geschichten",color:"#9b9db8",type:"book"},
- {x:1230,w:220,name:"CAFÉ ROSÉ",sub:"Kaffee & Gebäck",color:"#d6ad82",type:"cafe"},
- {x:1600,w:250,name:"SPIELZEUGLADEN",sub:"Kleine Schätze",color:"#c78c80",type:"toy"},
- {x:2010,w:250,name:"LEERSTAND",sub:"Zu vermieten",color:"#a7a6a0",type:"empty"},
- {x:2410,w:250,name:"LEERSTAND",sub:"Hier entsteht etwas",color:"#a7a6a0",type:"empty"},
- {x:2830,w:240,name:"PIZZERIA",sub:"Hier kannst du arbeiten!",color:"#c96e50",type:"pizza"},
- {x:3240,w:220,name:"BLUMEN & MEHR",sub:"Ein bisschen Grün",color:"#8fae91",type:"flower"},
- {x:3610,w:250,name:"KLEINE BÄCKEREI",sub:"Frisch aus dem Ofen",color:"#d6ad82",type:"cake"},
- {x:4030,w:240,name:"LEERSTAND",sub:"Bald geöffnet",color:"#a7a6a0",type:"empty"},
- {x:4440,w:240,name:"ANTIQUITÄTEN",sub:"Alte schöne Dinge",color:"#a78e72",type:"antique"},
- {x:4840,w:230,name:"TEELADEN",sub:"Eine kleine Pause",color:"#91a99b",type:"tea"},
- {x:5230,w:250,name:"KUNSTLADEN",sub:"Farben & Ideen",color:"#b58ca9",type:"art"},
- {x:5660,w:250,name:"LEERSTAND",sub:"Zu vermieten",color:"#aaa69b",type:"empty"},
- {x:6080,w:230,name:"KIOSK",sub:"Zeitungen & Süßes",color:"#d6b36f",type:"kiosk"},
- {x:6470,w:250,name:"KLEINES CAFÉ",sub:"Willkommen!",color:"#d6a58c",type:"cafe"},
- {x:6900,w:250,name:"LEERSTAND",sub:"Ein neuer Anfang",color:"#aaa69b",type:"empty"},
- {x:7320,w:250,name:"KONDITOREI",sub:"Törtchen & mehr",color:"#d99c8b",type:"cake"},
- {x:7740,w:250,name:"BLUMENLADEN",sub:"Frische Blumen",color:"#91aa8b",type:"flower"},
- {x:8170,w:250,name:"KLEINE BUCHSTUBE",sub:"Stöbern erlaubt",color:"#9b9db8",type:"book"}
+ {x:230,w:250,name:"KONDITOREI",sub:"Kuchen & Kaffee",color:"#d99c8b",type:"cake"},
+ {x:570,w:250,name:"LEERSTAND",sub:"Zu vermieten",color:"#aaa69b",type:"empty"},
+ {x:850,w:250,name:"LEERSTAND",sub:"Bald eröffnet",color:"#aaa69b",type:"empty"},
+ {x:1190,w:260,name:"PIZZERIA",sub:"Hier kannst du arbeiten!",color:"#c96e50",type:"pizza"}
 ];
 const platforms=[
- {x:950,y:345,w:100},{x:1080,y:300,w:90},{x:1195,y:350,w:110},
- {x:1740,y:350,w:95},{x:1860,y:300,w:90},{x:1980,y:345,w:110},
- {x:2500,y:350,w:100},{x:2630,y:300,w:100},{x:2760,y:350,w:100},
- {x:3860,y:350,w:100},{x:3990,y:300,w:100},{x:4120,y:350,w:100},
- {x:5400,y:350,w:100},{x:5530,y:300,w:100},{x:5660,y:350,w:100},
- {x:7100,y:350,w:100},{x:7230,y:300,w:100},{x:7360,y:350,w:100}
+ {x:1650,y:350,w:110},{x:1780,y:300,w:100},{x:1900,y:350,w:110}
 ];
-const lamps=[];
-for(let x=100;x<WORLD;x+=330)lamps.push(x);
+const lamps=[100,520,930,1510,1780,2110];
 const parkedDetails=[];
-for(let x=0;x<WORLD;x+=180){
- parkedDetails.push({x:x+45,type:Math.floor(x/180)%5});
-}
-function drawSky(){
+for(let x=0;x<WORLD;x+=180)parkedDetails.push({x:x+45,type:Math.floor(x/180)%5});
+ function drawSky(){
  const g=ctx.createLinearGradient(0,0,0,440);g.addColorStop(0,"#b9d9df");g.addColorStop(.7,"#e8d8c1");g.addColorStop(1,"#f1d9b8");ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
- for(let i=0;i<12;i++){
+ for(let i=0;i<8;i++){
   let x=((i*173-camera*.12)%(W+180)+W+180)%(W+180)-60,y=55+(i%4)*34;
   rect(x,y,44,8,"#f3e9d8");rect(x+10,y-5,40,8,"#f3e9d8");rect(x+25,y+5,40,6,"#f3e9d8");
  }
- for(let i=0;i<18;i++){
+ for(let i=0;i<12;i++){
   let x=((i*91-camera*.25)%(W+80)+W+80)%(W+80)-30;
   rect(x,290+(i%3)*18,42,150,"#c6b7a7");
  }
@@ -133,41 +108,35 @@ function drawStreet(){
  for(let x=-(camera%80);x<W;x+=80){rect(x,390,2,50,"#bba58c");rect(x+4,395,1,40,"#d8c5ad")}
  rect(0,440,W,100,"#817b78");
  rect(0,440,W,8,"#e8dfd2");
- for(let x=-(camera%90);x<W;x+=90){
-  rect(x,465,48,3,"#a9a29a");
- }
+ for(let x=-(camera%90);x<W;x+=90)rect(x,465,48,3,"#a9a29a");
  rect(0,525,W,15,"#655e5a");
 }
 function drawBuilding(shop){
  const x=shop.x-camera,w=shop.w;
  if(x+w< -30||x>W+30)return;
- const top=125+(Math.floor(shop.x/400)%3)*18;
- const h=315-top;
+ const top=135,h=315-top;
  rect(x-8,top-12,w+16,13,"#735d51");
  rect(x,top,w,h,"#d7c4aa");
  rect(x+5,top+5,w-10,h-8,shop.color);
  rect(x-5,top+5,w+10,12,"#f0dfc8");
- // Obergeschoss
  rect(x+14,top+27,52,64,"#8b7668");
  rect(x+18,top+31,44,55,"#b9d4d4");
  rect(x+21,top+34,38,48,"#d4e4dc");
- rect(x+shop.w-67,top+27,52,64,"#8b7668");
- rect(x+shop.w-63,top+31,44,55,"#b9d4d4");
- rect(x+shop.w-60,top+34,38,48,"#d4e4dc");
+ rect(x+w-67,top+27,52,64,"#8b7668");
+ rect(x+w-63,top+31,44,55,"#b9d4d4");
+ rect(x+w-60,top+34,38,48,"#d4e4dc");
  rect(x+8,top+105,w-16,8,"#8b6d56");
- // Markise
  for(let i=0;i<Math.floor(w/26);i++){
   rect(x+8+i*26,top+117,24,22,i%2?"#f7e9d5":"#f4d9c9");
   rect(x+8+i*26,top+136,24,4,"#b58c78");
  }
- // Schaufenster
  const winX=x+15,winY=top+153,winW=w-30,winH=116;
  rect(winX-4,winY-4,winW+8,winH+8,"#6c5141");
  rect(winX,winY,winW,winH,"#b9d5d4");
  rect(winX+4,winY+4,winW-8,winH-8,"#d8e8df");
  rect(winX+winW/2-2,winY,4,winH,"#8c725f");
- // Einblicke
  if(shop.type==="empty"){
+  // Sichtbarer, noch nicht eingerichteter Laden
   rect(winX+12,winY+winH-28,winW-24,5,"#927b68");
   rect(winX+25,winY+25,7,65,"#8b765e");rect(winX+45,winY+35,7,55,"#8b765e");
   for(let yy=winY+37;yy<winY+88;yy+=15)rect(winX+22,yy,33,3,"#b49a7b");
@@ -176,21 +145,24 @@ function drawBuilding(shop){
   rect(winX+winW/2-5,winY+18,10,9,"#fff0a9");
   rect(winX+winW/2-2,winY+27,4,24,"#b29b75");
   rect(winX+winW/2-20,winY+winH-14,40,4,"#c1a77e");
+  // Eimer und Werkzeug im Leerstand
+  rect(winX+75,winY+winH-24,18,17,"#d1a45e");
+  rect(winX+78,winY+winH-27,12,4,"#8b765e");
+  rect(winX+105,winY+winH-48,5,24,"#8b765e");
+  rect(winX+111,winY+winH-48,5,24,"#8b765e");
+  line(winX+105,winY+winH-42,winX+116,winY+winH-42,"#b49a7b",2);
  }else{
   drawShopInterior(shop,winX,winY,winW,winH);
  }
  rect(winX-4,winY+winH+2,winW+8,7,"#8b6d56");
- // Eingang und Tür
  rect(x+w-52,top+148,39,151,"#634b3d");
  rect(x+w-47,top+153,29,140,"#a5c5c2");
  rect(x+w-44,top+157,23,130,"#cce0d7");
  rect(x+w-25,top+220,4,5,"#e9c47d");
- // Ladenschild
  rect(x+w/2-70,top+8,140,29,"#f3e5cf");
  rect(x+w/2-66,top+11,132,23,shop.type==="empty"?"#c7bcb0":"#f8ecd9");
  text(shop.name,x+w/2-ctx.measureText(shop.name).width/2,top+27,"#59483c",11);
  text(shop.sub,x+w/2-ctx.measureText(shop.sub).width/2,top+52,"#59483c",8);
- // Absperrband vor einigen Leerständen
  if(shop.type==="empty"){
   const bx=x+20,by=top+294;
   rect(bx,by,8,45,"#70645a");rect(bx+winW-30,by,8,45,"#70645a");
@@ -201,11 +173,10 @@ function drawBuilding(shop){
 }
 function drawShopInterior(shop,x,y,w,h){
  const base=y+h-15;
- // warme Innenbeleuchtung
  rect(x+5,y+5,w-10,h-10,"#e5dfc7");
  rect(x+12,y+10,8,8,"#fff4bc");
  rect(x+w-20,y+10,8,8,"#fff4bc");
- if(shop.type==="cake"||shop.type==="pizza"||shop.type==="cafe"){
+ if(shop.type==="cake"||shop.type==="pizza"){
   rect(x+15,base-34,w-30,9,"#8c6146");
   for(let i=0;i<4;i++){
    rect(x+22+i*30,base-48,19,13,"#f2d4b0");
@@ -214,22 +185,16 @@ function drawShopInterior(shop,x,y,w,h){
   }
   rect(x+w-45,y+23,25,43,"#d9b76d");
   rect(x+w-39,y+28,13,32,"#fff0bd");
- }else if(shop.type==="flower"){
-  for(let i=0;i<4;i++){rect(x+20+i*34,base-34,20,22,"#b57a58");line(x+30+i*34,base-34,x+30+i*34,base-65,"#4e8958",3);star(x+30+i*34,base-68,8,["#d98ca0","#e8c46d","#b18cc6"][i%3])}
- }else if(shop.type==="book"){
-  rect(x+15,y+22,8,70,"#80634c");
-  for(let i=0;i<6;i++)rect(x+25+i*13,y+35+(i%2)*4,10,55,["#b56e62","#8c9eaf","#d5b36b","#79977d"][i%4]);
  }else{
   rect(x+15,base-35,w-30,7,"#8a674f");
   for(let i=0;i<5;i++){rect(x+22+i*25,base-57,16,20,["#c58c73","#8a9eae","#d2b26d","#7b9b7e"][i%4]);rect(x+25+i*25,base-63,10,7,"#f3e5c9")}
  }
- // Hängeleuchte
  rect(x+w/2-2,y+3,4,15,"#75675a");
  rect(x+w/2-9,y+16,18,6,"#e6c77d");
  rect(x+w/2-5,y+22,10,7,"#fff2b7");
 }
-  function drawLamp(worldX){
- const x=worldX-camera,y=0;
+function drawLamp(worldX){
+ const x=worldX-camera;
  if(x< -30||x>W+30)return;
  rect(x-3,245,6,195,"#514c49");
  rect(x-11,245,22,5,"#514c49");
@@ -262,6 +227,21 @@ function drawStreetDetails(){
   }
  }
 }
+function drawBins(){
+ for(const bx of [650,930]){
+  const x=bx-camera;
+  if(x< -80||x>W+80)continue;
+  // Müllcontainer
+  rect(x,397,38,43,"#55756d");
+  rect(x-3,393,44,7,"#3e5b55");
+  rect(x+5,402,28,4,"#78968a");
+  rect(x+6,410,5,22,"#3e5b55");
+  rect(x+27,410,5,22,"#3e5b55");
+  rect(x+12,416,14,3,"#d5e0d1");
+  rect(x+12,421,14,3,"#d5e0d1");
+  rect(x+7,440,5,4,"#343b3c");rect(x+27,440,5,4,"#343b3c");
+ }
+}
 function drawParcours(){
  for(const p of platforms){
   const x=p.x-camera;if(x+p.w<0||x>W)continue;
@@ -271,37 +251,28 @@ function drawParcours(){
   rect(x+p.w-15,p.y+10,7,FLOOR-p.y-10,"#89664c");
   for(let q=0;q<p.w;q+=18)rect(x+q,p.y+2,7,2,"#d3ad7c");
  }
- // Leitern an ausgewählten Hauswänden
- for(const lx of [1030,1810,2550,3930,5460,7180]){
+ for(const lx of [1680,1810]){
   const x=lx-camera;if(x< -40||x>W+40)continue;
   line(x,440,x,280,"#a47b52",5);line(x+22,440,x+22,280,"#a47b52",5);
   for(let y=290;y<440;y+=18)line(x,y,x+22,y,"#c69a67",3);
  }
- // Kleine Kisten als Sprunghilfen
- for(const bx of [940,1170,1730,1950,2480,2720,3850,4080,5380,5620,7080,7320]){
-  const x=bx-camera;if(x< -40||x>W+40)continue;
-  rect(x,FLOOR-28,34,28,"#9a704c");rect(x+3,FLOOR-25,28,22,"#bd9162");
-  line(x+3,FLOOR-25,x+31,FLOOR-3,"#81583d",2);
-  line(x+31,FLOOR-25,x+3,FLOOR-3,"#81583d",2);
- }
 }
-function drawCar(){
+ function drawCar(){
  const x=car.x-camera,y=car.y;
  if(x< -180||x>W+180)return;
- // Schatten
  rect(x-55,y+37,116,5,"#514b45");
- // Karosserie
  rect(x-57,y+10,111,25,car.color);
  rect(x-39,y,66,18,car.color);
- rect(x-30,y+3,23,12,"#b9d8d7");rect(x+1,y+3,22,12,"#b9d8d7");
+ rect(x-30,y+3,23,12,"#b9d8d7");rect(x+1,y+3,23,12,"#b9d8d7");
  rect(x-53,y+18,104,4,"#f1d5a2");
  rect(x-59,y+20,6,8,"#fff0b4");rect(x+52,y+20,6,8,"#d77d68");
  rect(x-38,y+31,17,15,"#393b3c");rect(x+27,y+31,17,15,"#393b3c");
  rect(x-34,y+34,9,8,"#aaa49b");rect(x+31,y+34,9,8,"#aaa49b");
 }
-const car={x:-500,y:385,active:false,next:300,color:"#8298a5"};
+const car={x:-500,y:414,active:false,next:18,color:"#8298a5"};
 function scheduleCar(){
- car.active=false;car.x=-170;car.color=["#8298a5","#c77e68","#d2b36d","#718c77"][Math.floor(Math.random()*4)];
+ car.active=false;car.x=-170;
+ car.color=["#8298a5","#c77e68","#d2b36d","#718c77"][Math.floor(Math.random()*4)];
  car.next=300;
 }
 function drawTree(x){
@@ -314,11 +285,12 @@ function drawTree(x){
 }
 function drawWorld(){
  drawSky();drawStreet();
- for(let x=250;x<WORLD;x+=1250)drawTree(x);
+ for(const x of [90,1600,2180])drawTree(x);
  shops.forEach(drawBuilding);
  drawParcours();
  lamps.forEach(drawLamp);
  drawStreetDetails();
+ drawBins();
  if(car.active)drawCar();
 }
 function drawPlayer(){
@@ -398,7 +370,7 @@ function drawPlayer(){
   if(eq.face==="diving"){rect(cx-11,head+7,22,9,"#4b9eae");rect(cx-8,head+9,6,5,"#c7edf0");rect(cx+2,head+9,6,5,"#c7edf0")}
  }
 }
-  function showPanel(title,description,buttons=[]){
+function showPanel(title,description,buttons=[]){
  activePanel=true;keys.clear();
  $("panelTitle").textContent=title;$("panelText").textContent=description;
  const area=$("panelButtons");area.innerHTML="";
@@ -408,38 +380,23 @@ function drawPlayer(){
  }
  $("panel").classList.remove("hidden");tone(520,.07,"triangle");
 }
-function closePanel(){
- activePanel=false;$("panel").classList.add("hidden");keys.clear();
-}
+function closePanel(){activePanel=false;$("panel").classList.add("hidden");keys.clear()}
 $("close").onclick=closePanel;
-function getShopAt(x){
- return shops.find(s=>x>=s.x-35&&x<=s.x+s.w+35);
-}
+function getShopAt(x){return shops.find(s=>x>=s.x-35&&x<=s.x+s.w+35)}
 function interact(){
  const shop=getShopAt(player.x+player.w/2);
  if(!shop)return;
  if(shop.type==="pizza"){
   showPanel("🍕 Pizzeria","Willkommen in der Pizzeria! Hier wartet dein Job auf dich.",[
-   {label:"Pizzeria-Job starten",action:()=>location.href="Pizzajob.html"}
+   {label:"Pizzeria-Job starten",action:()=>location.href="pizzajob.html"}
   ]);
   return;
  }
  if(shop.type==="empty"){
-  showPanel("Leerstand","Dieser Laden ist noch nicht eröffnet. Durch das Schaufenster kannst du schon sehen, was hier vorbereitet wird.");
+  showPanel("Leerstand","Dieser Laden ist noch nicht eröffnet. Hinter dem Fenster stehen noch Werkzeug, Eimer und alte Regale.");
   return;
  }
- const descriptions={
-  cake:"Der Duft von frischem Kuchen liegt in der Luft. Hinter dem Fenster stehen kleine Törtchen und Gebäck.",
-  flower:"Ein kleiner Blumenladen voller Farben. Die Blumen stehen in hübschen Töpfen.",
-  book:"Hier gibt es Geschichten, alte Bücher und gemütliche Leseecken.",
-  cafe:"Ein gemütliches Café. Vielleicht ist später Zeit für eine kleine Pause.",
-  toy:"Ein Spielzeugladen mit vielen kleinen Überraschungen.",
-  antique:"Ein Laden voller alter Schätze und besonderer Fundstücke.",
-  tea:"Hier riecht es nach Kräutern und frisch aufgebrühtem Tee.",
-  art:"Farben, Pinsel und kleine Kunstwerke stehen im Schaufenster.",
-  kiosk:"Ein kleiner Kiosk mit Süßigkeiten und Zeitungen."
- };
- showPanel(shop.name,descriptions[shop.type]||"Ein kleiner Laden in deiner Stadt.");
+ showPanel(shop.name,"Der Duft von frischem Kuchen liegt in der Luft. Hinter dem Fenster stehen kleine Törtchen und Gebäck.");
 }
 function nearestTarget(){
  let best=null,dist=Infinity;
@@ -451,11 +408,10 @@ function nearestTarget(){
  return best;
 }
 function updateHint(){
- const target=nearestTarget();
- nearby=target;
- if(target){
+ nearby=nearestTarget();
+ if(nearby){
   $("hint").style.display="block";
-  $("hint").textContent=target.type==="pizza"?"E – Pizzeria / Job":target.type==="empty"?"E – Schaufenster ansehen":`E – ${target.name}`;
+  $("hint").textContent=nearby.type==="pizza"?"E – Pizzeria / Job":nearby.type==="empty"?"E – Schaufenster ansehen":`E – ${nearby.name}`;
  }else $("hint").style.display="none";
 }
 function platformCollision(oldY){
@@ -494,7 +450,10 @@ function update(dt){
   if(car.x-camera>W+180)scheduleCar();
  }else{
   car.next-=dt;
-  if(car.next<=0){car.active=true;car.x=camera-170;tone(110,.3,"sawtooth")}
+  if(car.next<=0){
+   car.active=true;car.x=camera-170;
+   tone(110,.3,"sawtooth");
+  }
  }
  updateHint();
 }
@@ -503,17 +462,14 @@ function frame(now){
  update(dt);
  camera=Math.max(0,Math.min(WORLD-W,player.x+player.w/2-W*.38));
  ctx.clearRect(0,0,W,H);
- ctx.save();drawWorld();drawPlayer();ctx.restore();
+ drawWorld();drawPlayer();
  requestAnimationFrame(frame);
 }
 window.addEventListener("keydown",e=>{
  const k=e.key.toLowerCase();
  if(["arrowleft","arrowright","arrowup"," "].includes(k))e.preventDefault();
  if(k==="escape"){if(activePanel)closePanel();return}
- if(k==="e"){
-  if(!activePanel&&nearby)interact();
-  return;
- }
+ if(k==="e"){if(!activePanel&&nearby)interact();return}
  if(!activePanel)keys.add(k);
 });
 window.addEventListener("keyup",e=>keys.delete(e.key.toLowerCase()));
