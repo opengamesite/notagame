@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -383,7 +384,6 @@ function interact(){
  if(actionCooldown>0)return;
  actionCooldown=.25;
 
- // Im Toilettenraum wird E zum Reinigen verwendet.
  if(room==="toilet"){
   if(toiletDirty&&!toiletCleaning){
    toiletCleaning=true;
@@ -395,7 +395,6 @@ function interact(){
   return;
  }
 
- // Galerie: Pokale ansehen.
  if(room==="gallery"){
   say("La Piccola – Hall of Fame!");
   sound("ding");
@@ -449,7 +448,6 @@ function jump(){
  }
 }
 
-// Kunden
 function spawnCustomer(){
  const seats=[520,820,1120,1300];
  const x=seats[Math.floor(Math.random()*seats.length)];
@@ -496,8 +494,6 @@ function drawCustomer(c){
  }
 }
 
-// Die Treppe ist eine echte schräge Lauffläche.
-// Der Spieler wird abhängig von seiner X-Position auf die passende Stufenhöhe gesetzt.
 const STAIRS={left:1660,right:1880,top:FLOOR-170};
 const GALLERY={left:1880,right:WORLD-20,y:STAIRS.top};
 
@@ -515,7 +511,6 @@ function drawStairs(){
  const right=STAIRS.right-cameraX;
  const steps=11;
 
- // Stufen
  for(let i=0;i<steps;i++){
   const x=STAIRS.left+i*(STAIRS.right-STAIRS.left)/steps-cameraX;
   const y=FLOOR-(i+1)*(FLOOR-GALLERY.y)/steps;
@@ -525,17 +520,75 @@ function drawStairs(){
   line(x,y+18,x+sw,y+18,"#60412f",2);
  }
 
- // Seitenwange
  line(left,FLOOR-5,right,GALLERY.y+12,"#60412f",8);
  line(left,FLOOR-12,right,GALLERY.y+5,"#d5a36b",3);
-
- // Geländer
  line(left-5,FLOOR-65,right-5,GALLERY.y-55,"#60412f",5);
+
  for(let i=0;i<=steps;i++){
   const p=i/steps;
   const x=left+p*(right-left);
   const y=FLOOR-65-p*(FLOOR-GALLERY.y);
   line(x,y,x,y+30,"#805437",3);
+ }
+}
+
+/* NEU: Toiletten sind jetzt vollständig in Weltkoordinaten.
+   Jede X-Position wird mit cameraX verrechnet – genau wie bei der Treppe. */
+function drawToilets(){
+ const x=0-cameraX;
+ const end=230-cameraX;
+ const doorLeft=145-cameraX;
+ const doorRight=205-cameraX;
+ const wallY=FLOOR-125;
+
+ // Obere Wand mit offenem Durchgang
+ rect(x,wallY,145,8,"#60412f");
+ rect(205-cameraX,wallY,25,8,"#60412f");
+
+ // Äußere Seitenwände
+ rect(x,wallY,8,125,"#60412f");
+ rect(222-cameraX,wallY,8,125,"#60412f");
+
+ // Fliesenflächen
+ rect(8-cameraX,wallY+8,137,117,"#d7e2d9");
+ rect(205-cameraX,wallY+8,17,117,"#d7e2d9");
+
+ // Fliesenfugen
+ for(let wx=12;wx<145;wx+=22)
+  line(wx-cameraX,wallY+8,wx-cameraX,wallY+125,"#b4c7bc",1);
+
+ for(let wx=209;wx<222;wx+=22)
+  line(wx-cameraX,wallY+8,wx-cameraX,wallY+125,"#b4c7bc",1);
+
+ // Beschriftung
+ txt("WC",115-cameraX,wallY-10,"#476b43",12,"center");
+
+ // Waschbecken und Toiletten
+ rect(20-cameraX,FLOOR-62,38,30,"#fff0d2");
+ outline(20-cameraX,FLOOR-62,38,30);
+ rect(25-cameraX,FLOOR-70,28,10,"#eee8dc");
+
+ rect(70-cameraX,FLOOR-55,32,24,"#fff0d2");
+ outline(70-cameraX,FLOOR-55,32,24);
+ rect(74-cameraX,FLOOR-51,24,14,"#b9d4d4");
+
+ rect(115-cameraX,FLOOR-45,14,8,"#9b866d");
+
+ // Verschmutzung bleibt ebenfalls an der Weltposition
+ if(toiletDirty){
+  rect(120-cameraX,FLOOR-31,12,8,"#9b866d");
+  rect(137-cameraX,FLOOR-35,10,6,"#9b866d");
+ }
+
+ // Reinigungsanzeige
+ if(toiletCleaning){
+  rect(60-cameraX,FLOOR-105,100,7,"#60412f");
+  rect(62-cameraX,FLOOR-103,96*clamp(cleanProgress/4,0,1),3,"#8ebd76");
+ }
+
+ if(room==="toilet"){
+  rect(8-cameraX,wallY+8,214,117,"rgba(255,255,255,.08)");
+  txt("TOILETTEN",115-cameraX,wallY-20,"#476b43",12,"center");
  }
 }
 
@@ -567,6 +620,9 @@ function drawRestaurant(){
  rect(0,FLOOR-8,W,12,"#744a32");
  rect(0,FLOOR-4,W,4,"#b48252");
 
+ // Toiletten zuerst zeichnen: feste Position in der Spielwelt
+ drawToilets();
+
  // Tische
  for(const tx of [500,820,1120,1300]){
   const x=tx-cameraX;
@@ -578,35 +634,6 @@ function drawRestaurant(){
   rect(x+45,FLOOR-35,12,25,"#a94132");
   rect(x-5,FLOOR-53,10,10,"#fff0d2");
  }
-
- // Toilettenbereich links: feste Trennwand mit offenem Durchgang.
- const bathroomEnd=230;
- const doorLeft=145;
- const doorRight=205;
- const wallY=FLOOR-125;
-
- rect(0,wallY,doorLeft,8,"#60412f");
- rect(doorRight,wallY,bathroomEnd-doorRight,8,"#60412f");
- rect(0,wallY,8,125,"#60412f");
- rect(bathroomEnd-8,wallY,8,125,"#60412f");
-
- // Trennwand mit Fliesen
- rect(8,wallY+8,doorLeft-8,117,"#d7e2d9");
- rect(doorRight,wallY+8,bathroomEnd-doorRight-8,117,"#d7e2d9");
-
- for(let x=12;x<doorLeft;x+=22)line(x,wallY+8,x,wallY+125,"#b4c7bc",1);
- for(let x=doorRight+4;x<bathroomEnd-8;x+=22)line(x,wallY+8,x,wallY+125,"#b4c7bc",1);
-
- txt("WC",115,wallY-10,"#476b43",12,"center");
-
- // Toilette innen
- rect(20,FLOOR-62,38,30,"#fff0d2");
- outline(20,FLOOR-62,38,30);
- rect(25,FLOOR-70,28,10,"#eee8dc");
- rect(70,FLOOR-55,32,24,"#fff0d2");
- outline(70,FLOOR-55,32,24);
- rect(74,FLOOR-51,24,14,"#b9d4d4");
- rect(115,FLOOR-45,14,8,"#9b866d");
 
  // Galerieplattform
  rect(STAIRS.right-cameraX,GALLERY.y,WORLD-STAIRS.right,12,"#60412f");
@@ -636,20 +663,6 @@ function drawRestaurant(){
  }
 
  drawStairs();
-
- if(room==="toilet"){
-  // Visuelle Hervorhebung, wenn man sich im Toilettenbereich befindet.
-  rect(8,wallY+8,220,117,"rgba(255,255,255,.08)");
-  txt("TOILETTEN",115,wallY-20,"#476b43",12,"center");
-  if(toiletDirty){
-   rect(120,FLOOR-31,12,8,"#9b866d");
-   rect(137,FLOOR-35,10,6,"#9b866d");
-  }
-  if(toiletCleaning){
-   rect(60,FLOOR-105,100,7,"#60412f");
-   rect(62,FLOOR-103,96*clamp(cleanProgress/4,0,1),3,"#8ebd76");
-  }
- }
 
  if(room==="gallery"){
   txt("LE MIGLIORI PIZZE",W/2,65,"#fff0d2",18,"center");
@@ -725,7 +738,6 @@ function drawPlayer(){
  const skin="#d5b18a",edge="#805b3c",wood="#b98552",light="#dfb47b";
  const eq=cosmetics();
 
- // Rucksack / Rücken
  const back=eq.back;
  if(back){
   const colors={
@@ -777,7 +789,6 @@ function drawPlayer(){
   rect(cx+4,hip-5,4,8,"#4b7091");
  }
 
- // Arme
  const le={x:cx-15-swing*.55,y:y+43+lift};
  const re={x:cx+15+swing*.55,y:y+43+lift};
  const lh={x:cx-14-swing,y:y+54+lift};
@@ -831,7 +842,6 @@ function drawPlayer(){
   if(eq.clothes==="wintercoat")rect(cx-12,shoulder-4,24,5,"#e2e7e8");
  }
 
- // Kopf
  rect(cx-4,shoulder-7,8,7,edge);
  rect(cx-3,shoulder-6,6,6,wood);
  rect(cx-11,head,22,23,edge);
@@ -843,7 +853,6 @@ function drawPlayer(){
  rect(cx+4,head+10,3,3,"#43362c");
  rect(cx-2,head+16,5,2,"#8c5944");
 
- // Kopfbedeckungen
  const hats={
   cap:["#3977bd","#79a9e3"],
   traffic_hat:["#e99a36","#fff0c7"],
@@ -887,7 +896,6 @@ function drawPlayer(){
   }
  }
 
- // Gesichtsaccessoires
  if(eq.face){
   if(["glasses","sunglasses","heart_glasses","monocle","star_glasses"].includes(eq.face)){
    const c=eq.face==="sunglasses"?"#17212b":"#29323c";
@@ -916,7 +924,6 @@ function drawPlayer(){
   }
  }
 
- // Pizza tragen
  if(carriedPizza){
   const px=cx+player.facing*22,py=y+35;
   rect(px-15,py+4,30,5,"#9b5b32");
@@ -961,7 +968,6 @@ function draw(){
  }
 }
 
-// Automatischer Raumwechsel beim Durchlaufen der offenen Toilettentür.
 function updateRoom(){
  const center=player.x+player.w/2;
  const inDoor=center>145&&center<205;
@@ -975,7 +981,6 @@ function updateRoom(){
  }
 }
 
-// Physische Treppe und obere Ebene.
 function update(dt){
  gameTime+=dt;
  if(actionCooldown>0)actionCooldown-=dt;
@@ -1001,7 +1006,6 @@ function update(dt){
 
  player.x=clamp(player.x,10,WORLD-player.w-10);
 
- // Höhenberechnung anhand der Treppe:
  const footX=player.x+player.w/2;
  const targetFloor=floorAt(footX);
 
@@ -1009,7 +1013,6 @@ function update(dt){
   player.y=targetFloor-player.h;
  }
 
- // Sprung und Schwerkraft
  if(!player.grounded){
   player.vy+=980*dt;
   player.y+=player.vy*dt;
@@ -1020,7 +1023,6 @@ function update(dt){
   }
  }
 
- // Bodenhöhe nach Bewegung aktualisieren.
  if(player.grounded){
   player.y=targetFloor-player.h;
  }
