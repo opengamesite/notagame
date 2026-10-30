@@ -6,438 +6,429 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>MEIN ZIMMER – Kleiderschrank</title>
 <style>
-:root{
-  --paper:#f5eddf;--ink:#292e35;--accent:#d9b46c;
-  --blue:#587e96;--border:#c8b69e;
-}
+:root{--paper:#f5eddf;--ink:#292e35;--accent:#d9b46c;--border:#c8b69e}
 *{box-sizing:border-box}
-body{
-  margin:0;background:#252a30;color:var(--ink);
-  font-family:"Courier New",monospace;height:100vh;overflow:hidden
-}
+body{margin:0;background:#252a30;color:var(--ink);font-family:"Courier New",monospace;height:100vh;overflow:hidden}
 button{font:inherit;cursor:pointer}
-header{
-  height:62px;background:var(--paper);border-bottom:3px solid #a88c6b;
-  display:flex;align-items:center;justify-content:space-between;padding:0 22px
-}
+header{height:62px;background:var(--paper);border-bottom:3px solid #a88c6b;display:flex;align-items:center;justify-content:space-between;padding:0 22px}
 header strong{font-size:17px;letter-spacing:2px}
-.back{
-  background:#292e35;color:white;border:2px solid #111;
-  padding:9px 14px;font-weight:bold
-}
-main{
-  height:calc(100vh - 62px);
-  display:grid;grid-template-columns:minmax(0,1fr) 340px
-}
-.preview{
-  position:relative;display:flex;align-items:center;justify-content:center;
-  background-color:#d9cbb6;
-  background-image:
-  linear-gradient(45deg,#d1c1aa 25%,transparent 25%),
-  linear-gradient(-45deg,#d1c1aa 25%,transparent 25%),
-  linear-gradient(45deg,transparent 75%,#d1c1aa 75%),
-  linear-gradient(-45deg,transparent 75%,#d1c1aa 75%);
-  background-size:36px 36px;
-  background-position:0 0,0 18px,18px -18px,-18px 0
-}
-.preview:after{
-  content:"";position:absolute;bottom:10%;left:50%;
-  transform:translateX(-50%);width:220px;height:14px;
-  background:#6b5742;border-radius:50%;opacity:.25;filter:blur(5px)
-}
-.preview-label{
-  position:absolute;top:25px;left:30px;
-  color:#766b5d;font-size:11px;letter-spacing:3px
-}
-#skin{
-  width:min(72%,480px);height:min(83%,420px);
-  image-rendering:pixelated;position:relative;z-index:1
-}
-.right{
-  background:var(--paper);border-left:4px solid #a88c6b;
-  display:flex;flex-direction:column;min-height:0
-}
-.panel-head{
-  padding:20px 19px 13px;border-bottom:2px solid var(--border)
-}
+.back{background:#292e35;color:white;border:2px solid #111;padding:9px 14px;font-weight:bold}
+main{height:calc(100vh - 62px);display:grid;grid-template-columns:minmax(0,1fr) 360px}
+.preview{position:relative;display:flex;align-items:center;justify-content:center;background-color:#d9cbb6;background-image:linear-gradient(45deg,#d1c1aa 25%,transparent 25%),linear-gradient(-45deg,#d1c1aa 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#d1c1aa 75%),linear-gradient(-45deg,transparent 75%,#d1c1aa 75%);background-size:36px 36px;background-position:0 0,0 18px,18px -18px,-18px 0}
+.preview:after{content:"";position:absolute;bottom:10%;left:50%;transform:translateX(-50%);width:220px;height:14px;background:#6b5742;border-radius:50%;opacity:.25;filter:blur(5px)}
+.preview-label{position:absolute;top:25px;left:30px;color:#766b5d;font-size:11px;letter-spacing:3px}
+#skin{width:min(72%,480px);height:min(83%,420px);image-rendering:pixelated;position:relative;z-index:1}
+.right{background:var(--paper);border-left:4px solid #a88c6b;display:flex;flex-direction:column;min-height:0}
+.panel-head{padding:20px 19px 13px;border-bottom:2px solid var(--border)}
 .panel-head small{font-size:10px;color:#88765f;letter-spacing:2px}
 .panel-head h2{font-size:19px;margin:7px 0 0}
-.categories{
-  display:grid;grid-template-columns:repeat(3,1fr);
-  gap:8px;padding:15px 15px 12px
-}
-.category{
-  height:65px;background:#e8dcc9;border:2px solid #c8b69e;
-  color:#51483e;display:grid;place-items:center;
-  font-size:25px;position:relative
-}
-.category.active{
-  background:#292e35;color:#f5eddf;border-color:#292e35;
-  box-shadow:inset 0 -4px var(--accent)
-}
-.category span{
-  position:absolute;bottom:5px;font-size:8px;letter-spacing:1px
-}
-.items-head{
-  padding:5px 17px 10px;display:flex;justify-content:space-between;
-  align-items:center;font-size:11px;color:#766b5d
-}
-.items{
-  overflow-y:auto;padding:0 15px 15px;
-  display:grid;grid-template-columns:repeat(3,1fr);gap:9px
-}
-.item{
-  height:91px;position:relative;display:grid;place-items:center;
-  background:#fffaf1;border:2px solid #d8c9b5;
-  box-shadow:2px 2px 0 #6b50301a;color:#292e35
-}
+.categories{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:14px 12px 12px}
+.category{height:62px;background:#e8dcc9;border:2px solid #c8b69e;color:#51483e;display:grid;place-items:center;font-size:23px;position:relative}
+.category.active{background:#292e35;color:#f5eddf;border-color:#292e35;box-shadow:inset 0 -4px var(--accent)}
+.category span{position:absolute;bottom:5px;font-size:7px;letter-spacing:.5px}
+.items-head{padding:5px 17px 10px;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#766b5d}
+.items{overflow-y:auto;padding:0 13px 15px;display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.item{height:91px;position:relative;display:grid;place-items:center;background:#fffaf1;border:2px solid #d8c9b5;box-shadow:2px 2px 0 #6b50301a;color:#292e35}
 .item:hover{background:#f1e4cf;transform:translateY(-2px)}
-.item.selected{
-  border:3px solid #587e96;background:#e4eceb;
-  box-shadow:inset 0 0 0 2px #fff
-}
-.item.locked{opacity:.7}
+.item.selected{border:3px solid #587e96;background:#e4eceb;box-shadow:inset 0 0 0 2px #fff}
+.item.locked{opacity:.78}
 .item .symbol{font-size:34px;filter:drop-shadow(2px 2px 0 #0002)}
-.item .check{
-  position:absolute;right:4px;top:3px;font-size:12px;
-  color:#416d5b;font-weight:bold
-}
-.item .price{
-  position:absolute;bottom:5px;right:5px;font-size:9px;
-  color:#80653c;background:#f5eddf;padding:2px 4px
-}
-.item .tooltip{
-  position:absolute;bottom:100%;left:50%;transform:translateX(-50%);
-  background:#292e35;color:white;padding:5px 7px;font-size:9px;
-  white-space:nowrap;opacity:0;pointer-events:none;z-index:5
-}
+.item .check{position:absolute;right:4px;top:3px;font-size:12px;color:#416d5b;font-weight:bold}
+.item .price{position:absolute;bottom:5px;right:5px;font-size:9px;color:#80653c;background:#f5eddf;padding:2px 4px}
+.item .tooltip{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#292e35;color:white;padding:5px 7px;font-size:9px;white-space:nowrap;opacity:0;pointer-events:none;z-index:5}
 .item:hover .tooltip{opacity:1}
-.footer{
-  margin-top:auto;padding:13px 16px;border-top:2px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;gap:8px
-}
+.footer{margin-top:auto;padding:13px 16px;border-top:2px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px}
 .balance{font-size:12px;color:#766b5d}
 .balance b{color:#292e35}
-.remove{
-  background:#e8dcc9;border:2px solid #c8b69e;
-  padding:9px 10px;font-size:10px;color:#51483e
-}
-#status{
-  min-height:22px;text-align:center;padding:4px;
-  font-size:10px;color:#71877b
-}
+.remove{background:#e8dcc9;border:2px solid #c8b69e;padding:9px 10px;font-size:10px;color:#51483e}
+#status{min-height:22px;text-align:center;padding:4px;font-size:10px;color:#71877b}
 @media(max-width:700px){
-  body{height:auto;min-height:100vh;overflow:auto}
-  main{height:auto;min-height:calc(100vh - 62px);grid-template-columns:1fr}
-  .preview{height:390px}
-  #skin{width:340px;height:340px}
-  .right{border-left:0;border-top:4px solid #a88c6b;min-height:460px}
+ body{height:auto;min-height:100vh;overflow:auto}
+ main{height:auto;min-height:calc(100vh - 62px);grid-template-columns:1fr}
+ .preview{height:390px}
+ #skin{width:340px;height:340px}
+ .right{border-left:0;border-top:4px solid #a88c6b;min-height:500px}
 }
 </style>
 </head>
 <body>
-
 <header>
-  <button class="back" onclick="location.href='index.html'">← ZURÜCK</button>
-  <strong>KLEIDERSCHRANK</strong>
-  <span>♫</span>
+ <button class="back" onclick="location.href='index.html'">← ZURÜCK</button>
+ <strong>KLEIDERSCHRANK</strong>
+ <span>♫</span>
 </header>
 
 <main>
-  <section class="preview">
-    <div class="preview-label">DEIN CHARAKTER · VORSCHAU</div>
-    <canvas id="skin" width="480" height="420"></canvas>
-  </section>
-
-  <aside class="right">
-    <div class="panel-head">
-      <small>CHARAKTER EDITOR</small>
-      <h2>Dein Outfit</h2>
-    </div>
-
-    <div class="categories">
-      <button class="category active" data-type="Kopf" title="Kopf">♛<span>KOPF</span></button>
-      <button class="category" data-type="Gesicht" title="Gesicht">◉<span>GESICHT</span></button>
-      <button class="category" data-type="Kleidung" title="Kleidung">▣<span>STYLE</span></button>
-    </div>
-
-    <div class="items-head">
-      <b id="categoryName">KOPF-ITEMS</b>
-      <span>ITEMS</span>
-    </div>
-
-    <div class="items" id="items"></div>
-
-    <div class="footer">
-      <div class="balance">¢ <b id="money">120</b></div>
-      <button class="remove" id="remove">OUTFIT-TEIL ABLEGEN</button>
-    </div>
-    <div id="status">Änderungen werden automatisch gespeichert.</div>
-  </aside>
+ <section class="preview">
+  <div class="preview-label">DEIN CHARAKTER · VORSCHAU</div>
+  <canvas id="skin" width="480" height="420"></canvas>
+ </section>
+ <aside class="right">
+  <div class="panel-head"><small>CHARAKTER EDITOR</small><h2>Dein Outfit</h2></div>
+  <div class="categories">
+   <button class="category active" data-type="Kopf" title="Kopf">♛<span>KOPF</span></button>
+   <button class="category" data-type="Gesicht" title="Gesicht">◉<span>GESICHT</span></button>
+   <button class="category" data-type="Rücken" title="Rücken">▣<span>RÜCKEN</span></button>
+   <button class="category" data-type="Oberteil" title="Oberteil">▤<span>OBEN</span></button>
+   <button class="category" data-type="Hose" title="Hose">▥<span>HOSE</span></button>
+  </div>
+  <div class="items-head"><b id="categoryName">KOPF-ITEMS</b><span id="itemCount">ITEMS</span></div>
+  <div class="items" id="items"></div>
+  <div class="footer">
+   <div class="balance">¢ <b id="money">120</b></div>
+   <button class="remove" id="remove">ABLEGEN</button>
+  </div>
+  <div id="status">Änderungen werden automatisch gespeichert.</div>
+ </aside>
 </main>
 
 <script>
 "use strict";
-
 const STORAGE_KEY="mein-zimmer-save-v1";
-
 const defaults={
-  money:120,unlocked:[],
-  equipped:{head:null,face:null,clothes:null},
-  inventory:[],placed:[],orders:[],received:[],
-  faucetOn:false,bucketWater:0
+ money:120,unlocked:[],
+ equipped:{head:null,face:null,clothes:null,back:null,pants:null},
+ inventory:[],placed:[],orders:[],received:[],faucetOn:false,bucketWater:0
 };
 
 function loadSave(){
-  try{
-    const s=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
-    if(!s)return structuredClone(defaults);
-    return {
-      ...structuredClone(defaults),...s,
-      equipped:{...defaults.equipped,...(s.equipped||{})},
-      unlocked:Array.isArray(s.unlocked)?s.unlocked:[]
-    };
-  }catch{return structuredClone(defaults)}
+ try{
+  const s=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
+  if(!s)return structuredClone(defaults);
+  return {...structuredClone(defaults),...s,
+   equipped:{...defaults.equipped,...(s.equipped||{})},
+   unlocked:Array.isArray(s.unlocked)?s.unlocked:[]
+  };
+ }catch{return structuredClone(defaults)}
 }
-
 let save=loadSave();
+if(!save.equipped.back)save.equipped.back=null;
+if(!save.equipped.pants)save.equipped.pants=null;
 
 const cosmetics=[
-  {id:"cap",name:"Blaue Cap",type:"Kopf",price:25,symbol:"🧢"},
-  {id:"crown",name:"Goldene Krone",type:"Kopf",price:80,symbol:"👑"},
-  {id:"glasses",name:"Pixelbrille",type:"Gesicht",price:35,symbol:"👓"},
-  {id:"scarf",name:"Grüner Schal",type:"Kleidung",price:30,symbol:"🧣"},
-  {id:"shirt",name:"Rotes Shirt",type:"Kleidung",price:45,symbol:"👕"},
-  {id:"hoodie",name:"Blauer Hoodie",type:"Kleidung",price:65,symbol:"🧥"}
+/* KOPF – 12 neue */
+{id:"cap",name:"Blaue Cap",type:"Kopf",price:25,symbol:"🧢"},
+{id:"crown",name:"Goldene Krone",type:"Kopf",price:80,symbol:"👑"},
+{id:"tp_hat",name:"Toilettenpapier",type:"Kopf",price:20,symbol:"🧻"},
+{id:"traffic_hat",name:"Baustellenhütchen",type:"Kopf",price:35,symbol:"🚧"},
+{id:"gold_helmet",name:"Goldhelm",type:"Kopf",price:100,symbol:"⛑️"},
+{id:"cowboy",name:"Cowboyhut",type:"Kopf",price:55,symbol:"🤠"},
+{id:"viking",name:"Wikingerhelm",type:"Kopf",price:75,symbol:"🪖"},
+{id:"chef",name:"Kochmütze",type:"Kopf",price:40,symbol:"👨‍🍳"},
+{id:"paper_crown",name:"Pappkrone",type:"Kopf",price:15,symbol:"♛"},
+{id:"frog_hat",name:"Froschhut",type:"Kopf",price:60,symbol:"🐸"},
+{id:"wizard",name:"Zauberhut",type:"Kopf",price:70,symbol:"🧙"},
+{id:"bucket_hat",name:"Eimer-Kopf",type:"Kopf",price:45,symbol:"🪣"},
+{id:"party_hat",name:"Partyhut",type:"Kopf",price:20,symbol:"🎉"},
+/* GESICHT – 8 neue */
+{id:"glasses",name:"Pixelbrille",type:"Gesicht",price:35,symbol:"👓"},
+{id:"sunglasses",name:"Sonnenbrille",type:"Gesicht",price:40,symbol:"🕶️"},
+{id:"heart_glasses",name:"Herzbrille",type:"Gesicht",price:45,symbol:"💖"},
+{id:"monocle",name:"Monokel",type:"Gesicht",price:50,symbol:"🧐"},
+{id:"mustache",name:"Schnurrbart",type:"Gesicht",price:25,symbol:"🥸"},
+{id:"big_nose",name:"Riesennase",type:"Gesicht",price:20,symbol:"👃"},
+{id:"eyepatch",name:"Augenklappe",type:"Gesicht",price:30,symbol:"🏴"},
+{id:"diving",name:"Taucherbrille",type:"Gesicht",price:65,symbol:"🥽"},
+{id:"star_glasses",name:"Sternenbrille",type:"Gesicht",price:55,symbol:"⭐"},
+/* RÜCKEN – 8 neue */
+{id:"backpack",name:"Rucksack",type:"Rücken",price:45,symbol:"🎒"},
+{id:"schoolbag",name:"Schulranzen",type:"Rücken",price:35,symbol:"🎒"},
+{id:"hikingbag",name:"Wanderrucksack",type:"Rücken",price:65,symbol:"🎒"},
+{id:"jetpack",name:"Jetpack",type:"Rücken",price:120,symbol:"🚀"},
+{id:"wings",name:"Flügel",type:"Rücken",price:100,symbol:"🪽"},
+{id:"guitarbag",name:"Gitarrentasche",type:"Rücken",price:75,symbol:"🎸"},
+{id:"parachute",name:"Fallschirm",type:"Rücken",price:90,symbol:"🪂"},
+{id:"toolbox",name:"Werkzeugkiste",type:"Rücken",price:60,symbol:"🧰"},
+/* OBERTEILE – 10 neue */
+{id:"scarf",name:"Grüner Schal",type:"Oberteil",price:30,symbol:"🧣"},
+{id:"shirt",name:"Rotes Shirt",type:"Oberteil",price:45,symbol:"👕"},
+{id:"hoodie",name:"Blauer Hoodie",type:"Oberteil",price:65,symbol:"🧥"},
+{id:"leather",name:"Lederjacke",type:"Oberteil",price:85,symbol:"🧥"},
+{id:"raincoat",name:"Regenjacke",type:"Oberteil",price:55,symbol:"🌧️"},
+{id:"football",name:"Fußballtrikot",type:"Oberteil",price:50,symbol:"⚽"},
+{id:"suit",name:"Anzug",type:"Oberteil",price:100,symbol:"🤵"},
+{id:"pajamas",name:"Schlafanzug",type:"Oberteil",price:40,symbol:"🌙"},
+{id:"vest",name:"Warnweste",type:"Oberteil",price:35,symbol:"🦺"},
+{id:"astronaut",name:"Astronautenanzug",type:"Oberteil",price:150,symbol:"🚀"},
+{id:"armor",name:"Ritterrüstung",type:"Oberteil",price:130,symbol:"🛡️"},
+{id:"hawaii",name:"Hawaiihemd",type:"Oberteil",price:60,symbol:"🌺"},
+{id:"wintercoat",name:"Wintermantel",type:"Oberteil",price:90,symbol:"🧥"},
+/* HOSEN – 12 neue */
+{id:"jeans",name:"Jeans",type:"Hose",price:45,symbol:"👖"},
+{id:"joggers",name:"Jogginghose",type:"Hose",price:35,symbol:"👖"},
+{id:"cargo",name:"Cargo-Hose",type:"Hose",price:60,symbol:"👖"},
+{id:"shorts",name:"Shorts",type:"Hose",price:25,symbol:"🩳"},
+{id:"sleep_pants",name:"Schlafanzughose",type:"Hose",price:35,symbol:"🌙"},
+{id:"baggy",name:"Baggy-Hose",type:"Hose",price:55,symbol:"👖"},
+{id:"knight_pants",name:"Ritterhose",type:"Hose",price:80,symbol:"⚔️"},
+{id:"rain_pants",name:"Regenhose",type:"Hose",price:50,symbol:"🌧️"},
+{id:"camo",name:"Tarnhose",type:"Hose",price:65,symbol:"🌲"},
+{id:"gold_pants",name:"Goldhose",type:"Hose",price:110,symbol:"✨"},
+{id:"ski_pants",name:"Skihose",type:"Hose",price:70,symbol:"❄️"},
+{id:"overalls",name:"Latzhose",type:"Hose",price:55,symbol:"👖"}
 ];
 
-let currentCategory="Kopf";
-let gameTime=0;
-let soundOn=true;
-let audio=null;
-
-const canvas=document.getElementById("skin");
-const ctx=canvas.getContext("2d");
+let currentCategory="Kopf",audio=null;
+const canvas=document.getElementById("skin"),ctx=canvas.getContext("2d");
 ctx.imageSmoothingEnabled=false;
-
-const player={
-  x:43,y:18,w:34,h:78,vx:0,vy:0,
-  grounded:true,facing:1,walk:0
+const player={x:43,y:18,w:34,h:78,vx:0,vy:0,grounded:true,facing:1,walk:0};
+const FLOOR=100;
+const categorySlot={
+ "Kopf":"head","Gesicht":"face","Rücken":"back","Oberteil":"clothes","Hose":"pants"
 };
 
-const FLOOR=100;
-const carrying=null;
-
 function rect(x,y,w,h,color){
-  ctx.fillStyle=color;
-  ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h));
+ ctx.fillStyle=color;ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h));
 }
 function line(x1,y1,x2,y2,color,width=2){
-  ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineCap="square";
-  ctx.beginPath();ctx.moveTo(Math.round(x1),Math.round(y1));
-  ctx.lineTo(Math.round(x2),Math.round(y2));ctx.stroke();
+ ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineCap="square";
+ ctx.beginPath();ctx.moveTo(Math.round(x1),Math.round(y1));ctx.lineTo(Math.round(x2),Math.round(y2));ctx.stroke();
+}
+function playSound(kind="click"){
+ try{
+  audio=audio||new(window.AudioContext||window.webkitAudioContext)();
+  if(audio.state==="suspended")audio.resume();
+  const osc=audio.createOscillator(),gain=audio.createGain();
+  osc.connect(gain);gain.connect(audio.destination);
+  const now=audio.currentTime;
+  const settings={click:[520,.055,"square"],select:[680,.09,"sine"],buy:[880,.13,"triangle"],error:[180,.15,"sawtooth"]}[kind];
+  osc.type=settings[2];osc.frequency.setValueAtTime(settings[0],now);
+  if(kind==="buy")osc.frequency.exponentialRampToValueAtTime(1250,now+.12);
+  if(kind==="error")osc.frequency.exponentialRampToValueAtTime(100,now+.14);
+  gain.gain.setValueAtTime(.055,now);gain.gain.exponentialRampToValueAtTime(.001,now+settings[1]);
+  osc.start(now);osc.stop(now+settings[1]);
+ }catch{}
 }
 
-/* Originaler Charakter-Zeichenstil aus dem Spiel */
+function drawBack(cx,y){
+ const id=save.equipped.back;
+ if(!id)return;
+ const colors={
+ backpack:"#a66b3c",schoolbag:"#d45c45",hikingbag:"#547d57",
+ jetpack:"#8c969b",wings:"#e9e5d9",guitarbag:"#553b31",
+ parachute:"#d95b4b",toolbox:"#b37a38"
+ };
+ const c=colors[id]||"#986b49";
+ if(id==="wings"){
+  rect(cx-24,y+28,12,24,"#eee9dc");rect(cx+12,y+28,12,24,"#eee9dc");
+  rect(cx-28,y+22,8,12,"#d4c8b2");rect(cx+20,y+22,8,12,"#d4c8b2");
+  rect(cx-20,y+34,8,13,"#fff");
+ }else if(id==="jetpack"){
+  rect(cx-20,y+34,8,25,c);rect(cx+12,y+34,8,25,c);
+  rect(cx-18,y+37,5,13,"#b4c2c9");rect(cx+13,y+37,5,13,"#b4c2c9");
+  rect(cx-17,y+60,5,8,"#e8a64d");rect(cx+12,y+60,5,8,"#e8a64d");
+ }else{
+  rect(cx-22,y+34,12,28,c);rect(cx+10,y+34,12,28,c);
+  rect(cx-20,y+37,40,24,c);
+  rect(cx-13,y+40,26,3,"#ffffff55");
+  rect(cx-4,y+46,8,8,"#4c4c4c");
+  if(id==="toolbox")rect(cx-17,y+32,34,6,"#d7a34e");
+  if(id==="guitarbag")rect(cx-7,y+35,14,29,"#d3b27c");
+  if(id==="parachute"){rect(cx-23,y+17,46,8,"#e4d8be");line(cx-20,y+25,cx-9,y+36,"#766");line(cx+20,y+25,cx+9,y+36,"#766")}
+ }
+}
+
+function drawHeadItem(cx,head){
+ const id=save.equipped.head;
+ if(!id)return;
+ if(id==="cap"){
+  rect(cx-13,head+1,26,5,"#3977bd");rect(cx-10,head-5,20,7,"#3977bd");rect(cx+4,head+4,10,3,"#285a91");rect(cx-7,head-3,9,2,"#79a9e3");
+ }else if(id==="crown"||id==="gold_helmet"||id==="paper_crown"){
+  const c=id==="paper_crown"?"#c7a76e":"#f4c64e";
+  rect(cx-12,head-4,24,5,c);rect(cx-12,head-11,5,8,c);rect(cx-4,head-14,6,11,c);rect(cx+5,head-10,6,7,c);
+ }else if(id==="tp_hat"){
+  rect(cx-9,head-12,18,14,"#fffaf1");rect(cx-11,head-7,22,7,"#e8e2d7");
+  rect(cx-5,head-10,10,10,"#d6d0c4");rect(cx+8,head-5,5,4,"#fff");
+ }else if(id==="traffic_hat"){
+  rect(cx-12,head-3,24,4,"#f3a52e");rect(cx-8,head-13,16,11,"#ef8e23");
+  rect(cx-6,head-10,12,3,"#fff0c9");
+ }else if(id==="cowboy"){
+  rect(cx-16,head-4,32,5,"#8a542d");rect(cx-9,head-12,18,10,"#9d6336");rect(cx-8,head-11,16,2,"#e2bd70");
+ }else if(id==="viking"){
+  rect(cx-13,head-4,26,5,"#999b9c");rect(cx-10,head-11,20,8,"#b7babc");
+  rect(cx-16,head-13,5,11,"#e8e1d0");rect(cx+11,head-13,5,11,"#e8e1d0");
+ }else if(id==="chef"){
+  rect(cx-11,head-5,22,7,"#fff");rect(cx-9,head-14,18,10,"#fff");rect(cx-5,head-17,10,4,"#fff");
+ }else if(id==="frog_hat"){
+  rect(cx-13,head-5,26,9,"#4b9d56");rect(cx-10,head-12,8,8,"#5cbf65");rect(cx+2,head-12,8,8,"#5cbf65");
+  rect(cx-8,head-10,3,3,"#111");rect(cx+4,head-10,3,3,"#111");
+ }else if(id==="wizard"){
+  rect(cx-15,head-3,30,5,"#483e75");rect(cx-10,head-11,20,8,"#51468c");rect(cx-5,head-19,10,9,"#51468c");rect(cx-3,head-17,3,3,"#f6d56c");
+ }else if(id==="bucket_hat"){
+  rect(cx-13,head-8,26,13,"#8b969a");rect(cx-16,head+2,32,3,"#657277");rect(cx-8,head-12,16,5,"#b9c2c4");
+ }else if(id==="party_hat"){
+  rect(cx-3,head-16,6,14,"#e95e70");rect(cx-5,head-8,10,3,"#f3ce63");rect(cx-9,head-3,18,3,"#f1e0c0");
+ }
+}
+
+function drawFaceItem(cx,head){
+ const id=save.equipped.face;
+ if(!id)return;
+ if(["glasses","sunglasses","heart_glasses","star_glasses","diving"].includes(id)){
+  const color=id==="sunglasses"?"#17232c":id==="diving"?"#6ba9bd":"#29323c";
+  rect(cx-10,head+9,9,6,color);rect(cx+1,head+9,9,6,color);
+  rect(cx-1,head+11,2,2,color);
+  if(id==="diving"){rect(cx-12,head+7,25,10,"#4b8fa8");rect(cx-8,head+9,16,5,"#a9dbe0")}
+  if(id==="heart_glasses"){rect(cx-9,head+8,7,7,"#d94d6c");rect(cx+2,head+8,7,7,"#d94d6c")}
+  if(id==="star_glasses"){rect(cx-9,head+8,7,7,"#e9bd46");rect(cx+2,head+8,7,7,"#e9bd46")}
+ }else if(id==="monocle"){
+  rect(cx+2,head+8,8,8,"#d6a94d");rect(cx+4,head+10,4,4,"#b8d2d9");line(cx+7,head+16,cx+9,head+23,"#9b793d");
+ }else if(id==="mustache"){
+  rect(cx-8,head+15,7,4,"#493328");rect(cx+1,head+15,7,4,"#493328");rect(cx-2,head+16,4,3,"#493328");
+ }else if(id==="big_nose"){
+  rect(cx-3,head+11,7,9,"#e6a77c");rect(cx-5,head+17,11,4,"#c88962");
+ }else if(id==="eyepatch"){
+  rect(cx-10,head+8,9,8,"#25252a");line(cx-10,head+9,cx+10,head+2,"#25252a",2);
+ }
+}
+
+function drawClothes(cx,shoulder,hip){
+ const id=save.equipped.clothes;
+ const colors={
+ scarf:"#4d995f",shirt:"#c64c48",hoodie:"#3977bd",
+ leather:"#513a31",raincoat:"#e3b83c",football:"#eee7dc",
+ suit:"#293c55",pajamas:"#8c83b4",vest:"#e9bd37",
+ astronaut:"#d9e0e4",armor:"#89969e",hawaii:"#d96b5b",wintercoat:"#587f9d"
+ };
+ const c=colors[id]||"#b98552";
+ rect(cx-10,shoulder-3,20,22,c);
+ rect(cx-14,shoulder,5,15,c);rect(cx+9,shoulder,5,15,c);
+ if(id==="scarf"){rect(cx-10,shoulder-2,20,6,"#4d995f");rect(cx+3,shoulder+2,5,14,"#4d995f")}
+ if(id==="hoodie"){rect(cx-7,shoulder-7,14,7,"#28578b");rect(cx-3,shoulder+13,6,3,"#244f7e")}
+ if(id==="leather"){rect(cx-9,shoulder,4,18,"#76513d");rect(cx+5,shoulder,4,18,"#76513d")}
+ if(id==="raincoat"||id==="vest"){rect(cx-2,shoulder,4,20,"#fff1b8");rect(cx-12,shoulder+7,24,3,"#fff1b8")}
+ if(id==="football"){rect(cx-7,shoulder+4,14,5,"#b83f3f");rect(cx-2,shoulder+5,4,3,"#fff")}
+ if(id==="suit"){rect(cx-2,shoulder,4,18,"#eee");rect(cx-4,shoulder+1,8,5,"#a84747")}
+ if(id==="astronaut"){rect(cx-7,shoulder+4,14,8,"#7f9ba8");rect(cx-5,shoulder+5,10,5,"#b6d8e1")}
+ if(id==="armor"){rect(cx-10,shoulder-2,20,21,"#8c9ba3");rect(cx-8,shoulder,16,3,"#d6dadd");rect(cx-2,shoulder+5,4,10,"#d6b85e")}
+ if(id==="hawaii"){rect(cx-8,shoulder+4,4,4,"#f6d36d");rect(cx+3,shoulder+10,4,4,"#6d9a64")}
+ if(id==="wintercoat"){rect(cx-10,shoulder-3,20,4,"#d5e4ed");rect(cx-3,shoulder+4,6,16,"#e3e8e9")}
+}
+
+function drawPants(cx,hip,y){
+ const id=save.equipped.pants;
+ if(!id)return;
+ const colors={
+ jeans:"#426e9a",joggers:"#686b76",cargo:"#78805a",shorts:"#bd704c",
+ sleep_pants:"#7f76a8",baggy:"#42658b",knight_pants:"#929ca4",
+ rain_pants:"#4d7e87",camo:"#65734c",gold_pants:"#c5a13c",
+ ski_pants:"#e4e9ef",overalls:"#487e9a"
+ };
+ const c=colors[id]||"#343c52";
+ if(id==="shorts"){
+  rect(cx-10,hip-2,20,13,c);rect(cx-9,hip+9,8,9,c);rect(cx+1,hip+9,8,9,c);
+ }else{
+  rect(cx-10,hip-2,9,29,c);rect(cx+1,hip-2,9,29,c);
+  if(id==="cargo"){rect(cx-12,hip+10,5,7,"#566343");rect(cx+7,hip+10,5,7,"#566343")}
+  if(id==="overalls"){rect(cx-8,hip-7,16,7,"#487e9a");rect(cx-6,hip-10,3,9,"#487e9a");rect(cx+3,hip-10,3,9,"#487e9a")}
+  if(id==="gold_pants"){rect(cx-8,hip+3,4,3,"#f4db80");rect(cx+3,hip+3,4,3,"#f4db80")}
+  if(id==="camo"){rect(cx-8,hip+4,5,5,"#414d38");rect(cx+3,hip+14,5,5,"#414d38")}
+  if(id==="knight_pants"){rect(cx-9,hip,18,4,"#c3cbd0");rect(cx-5,hip+9,10,3,"#c3cbd0")}
+ }
+}
+
 function drawPlayer(){
-  const x=player.x,y=player.y,cx=x+player.w/2;
-  const lift=player.grounded?0:Math.sin(gameTime*12)*1.5;
-  const swing=player.grounded&&Math.abs(player.vx)>.1?Math.sin(player.walk)*7:0;
-  const shoulder=y+31+lift,hip=y+52+lift,head=y+7+lift;
-  const skin="#d5b18a",edge="#805b3c",wood="#b98552",light="#dfb47b";
+ const x=player.x,y=player.y,cx=x+player.w/2;
+ const lift=player.grounded?0:Math.sin(Date.now()/90)*1.5;
+ const shoulder=y+31+lift,hip=y+52+lift,head=y+7+lift;
+ const skin="#d5b18a",edge="#805b3c",wood="#b98552",light="#dfb47b";
+ rect(cx-20,FLOOR-3,40,4,"#99754f");
 
-  rect(cx-20,FLOOR-3,40,4,"#99754f");
+ drawBack(cx,y);
 
-  const legs=[
-    {x:cx-6-swing*.35,y:hip+12},
-    {x:cx+6+swing*.35,y:hip+12}
-  ];
-  const feet=[
-    {x:cx-7-swing,y:y+70+lift},
-    {x:cx+7+swing,y:y+70+lift}
-  ];
+ const pants=save.equipped.pants;
+ const legColor=pants?({
+  jeans:"#426e9a",joggers:"#686b76",cargo:"#78805a",shorts:"#bd704c",
+  sleep_pants:"#7f76a8",baggy:"#42658b",knight_pants:"#929ca4",
+  rain_pants:"#4d7e87",camo:"#65734c",gold_pants:"#c5a13c",
+  ski_pants:"#e4e9ef",overalls:"#487e9a"
+ }[pants]||"#343c52"):"#343c52";
 
-  legs.forEach((p,i)=>{
-    line(p.x,p.y,feet[i].x,feet[i].y,edge,8);
-    line(p.x,p.y,feet[i].x,feet[i].y,wood,5);
-    rect(feet[i].x-5,feet[i].y-1,10,5,edge);
-    rect(feet[i].x-4,feet[i].y,8,3,wood);
-  });
+ line(cx-6,hip+12,cx-7,y+70+lift,edge,8);
+ line(cx+6,hip+12,cx+7,y+70+lift,edge,8);
+ line(cx-6,hip+12,cx-7,y+70+lift,legColor,5);
+ line(cx+6,hip+12,cx+7,y+70+lift,legColor,5);
+ rect(cx-12,y+69+lift,10,6,edge);rect(cx+2,y+69+lift,10,6,edge);
+ rect(cx-11,y+70+lift,8,3,wood);rect(cx+3,y+70+lift,8,3,wood);
 
-  const holding=carrying!==null;
-  const le=holding?{x:cx-13,y:y+39+lift}:{x:cx-15-swing*.55,y:y+43+lift};
-  const re=holding?{x:cx+13,y:y+39+lift}:{x:cx+15+swing*.55,y:y+43+lift};
-  const lh=holding?{x:cx-7,y:y+36+lift}:{x:cx-14-swing,y:y+54+lift};
-  const rh=holding?{x:cx+7,y:y+36+lift}:{x:cx+14+swing,y:y+54+lift};
+ drawPants(cx,hip,y);
 
-  line(cx-10,shoulder,le.x,le.y,wood,6);
-  line(le.x,le.y,lh.x,lh.y,wood,5);
-  line(cx+10,shoulder,re.x,re.y,wood,6);
-  line(re.x,re.y,rh.x,rh.y,wood,5);
+ line(cx-10,shoulder,cx-15,y+54+lift,wood,6);
+ line(cx+10,shoulder,cx+15,y+54+lift,wood,6);
+ rect(cx-11,shoulder-3,22,24,edge);
+ rect(cx-8,shoulder,16,18,wood);
+ rect(cx-6,shoulder+2,4,13,light);
+ rect(cx-5,hip-1,10,5,edge);rect(cx-4,hip,8,3,wood);
 
-  rect(cx-11,shoulder-3,22,24,edge);
-  rect(cx-8,shoulder,16,18,wood);
-  rect(cx-6,shoulder+2,4,13,light);
-  rect(cx-5,hip-1,10,5,edge);
-  rect(cx-4,hip,8,3,wood);
+ drawClothes(cx,shoulder,hip);
 
-  if(save.equipped.clothes==="scarf"){
-    rect(cx-10,shoulder-2,20,6,"#4d995f");
-    rect(cx+3,shoulder+1,5,15,"#4d995f");
-    rect(cx+4,shoulder+2,2,11,"#78b27c");
-  }else if(save.equipped.clothes==="shirt"||save.equipped.clothes==="hoodie"){
-    const c=save.equipped.clothes==="shirt"?"#c64c48":"#3977bd";
-    rect(cx-10,shoulder-2,20,20,c);
-    rect(cx-4,shoulder+1,3,14,save.equipped.clothes==="shirt"?"#e1786b":"#6697d2");
-    if(save.equipped.clothes==="hoodie"){
-      rect(cx-7,shoulder-5,14,6,"#28578b");
-      rect(cx-3,shoulder+13,6,3,"#244f7e");
-    }
-  }
+ rect(cx-4,shoulder-7,8,7,edge);rect(cx-3,shoulder-6,6,6,wood);
+ rect(cx-11,head,22,23,edge);rect(cx-9,head+2,18,19,skin);
+ rect(cx-7,head+4,14,15,wood);rect(cx-6,head+5,4,11,light);
+ rect(cx-1,head+5,8,11,"#c99a64");
+ rect(cx-6,head+10,3,3,"#43362c");rect(cx+4,head+10,3,3,"#43362c");
+ rect(cx-2,head+16,5,2,"#8c5944");
 
-  rect(cx-4,shoulder-7,8,7,edge);
-  rect(cx-3,shoulder-6,6,6,wood);
-  rect(cx-11,head,22,23,edge);
-  rect(cx-9,head+2,18,19,skin);
-  rect(cx-7,head+4,14,15,wood);
-  rect(cx-6,head+5,4,11,light);
-  rect(cx-1,head+5,8,11,"#c99a64");
-  rect(cx-6,head+10,3,3,"#43362c");
-  rect(cx+4,head+10,3,3,"#43362c");
-  rect(cx-2,head+16,5,2,"#8c5944");
-
-  if(save.equipped.head==="cap"){
-    rect(cx-13,head+1,26,5,"#3977bd");
-    rect(cx-10,head-5,20,7,"#3977bd");
-    rect(cx+4,head+4,10,3,"#285a91");
-    rect(cx-7,head-3,9,2,"#79a9e3");
-  }else if(save.equipped.head==="crown"){
-    rect(cx-12,head-4,24,5,"#d8a92e");
-    rect(cx-12,head-11,5,8,"#f4c64e");
-    rect(cx-4,head-14,6,11,"#f4c64e");
-    rect(cx+5,head-10,6,7,"#f4c64e");
-    rect(cx-9,head-3,18,2,"#fff0a4");
-  }
-
-  if(save.equipped.face==="glasses"){
-    rect(cx-9,head+9,8,6,"#29323c");
-    rect(cx+1,head+9,8,6,"#29323c");
-    rect(cx-1,head+11,2,2,"#29323c");
-    rect(cx-7,head+10,4,2,"#9fc9d6");
-    rect(cx+3,head+10,4,2,"#9fc9d6");
-  }
+ drawFaceItem(cx,head);
+ drawHeadItem(cx,head);
 }
 
 function drawSkin(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.save();
-  ctx.scale(4,4);
-  drawPlayer();
-  ctx.restore();
+ ctx.clearRect(0,0,canvas.width,canvas.height);
+ ctx.save();ctx.scale(4,4);drawPlayer();ctx.restore();
 }
 
-function playSound(kind="click"){
-  if(!soundOn)return;
-  try{
-    audio=audio||new(window.AudioContext||window.webkitAudioContext)();
-    if(audio.state==="suspended")audio.resume();
-    const osc=audio.createOscillator();
-    const gain=audio.createGain();
-    osc.connect(gain);gain.connect(audio.destination);
-    const now=audio.currentTime;
-    const settings={
-      click:[520,.055,"square"],
-      select:[680,.09,"sine"],
-      buy:[880,.13,"triangle"],
-      error:[180,.15,"sawtooth"]
-    }[kind]||[520,.06,"sine"];
-    osc.type=settings[2];
-    osc.frequency.setValueAtTime(settings[0],now);
-    if(kind==="buy")osc.frequency.exponentialRampToValueAtTime(1250,now+.12);
-    if(kind==="error")osc.frequency.exponentialRampToValueAtTime(100,now+.14);
-    gain.gain.setValueAtTime(.055,now);
-    gain.gain.exponentialRampToValueAtTime(.001,now+settings[1]);
-    osc.start(now);osc.stop(now+settings[1]);
-  }catch{}
-}
-
+function slotFor(type){return categorySlot[type]}
 function persist(){
-  localStorage.setItem(STORAGE_KEY,JSON.stringify(save));
-  document.getElementById("money").textContent=save.money;
-  document.getElementById("status").textContent="✓ Gespeichert";
-}
-
-function categoryKey(type){
-  return type==="Kopf"?"head":type==="Gesicht"?"face":"clothes";
+ localStorage.setItem(STORAGE_KEY,JSON.stringify(save));
+ document.getElementById("money").textContent=save.money;
+ document.getElementById("status").textContent="✓ Gespeichert";
 }
 
 function renderItems(){
-  const list=document.getElementById("items");
-  list.innerHTML="";
-  document.getElementById("categoryName").textContent=currentCategory.toUpperCase()+"-ITEMS";
-
-  cosmetics.filter(i=>i.type===currentCategory).forEach(item=>{
-    const unlocked=save.unlocked.includes(item.id);
-    const selected=save.equipped[categoryKey(item.type)]===item.id;
-
-    const button=document.createElement("button");
-    button.className="item"+(selected?" selected":"")+(unlocked?"":" locked");
-    button.title=item.name;
-    button.innerHTML=`
-      <span class="symbol">${item.symbol}</span>
-      ${selected?'<span class="check">✓</span>':""}
-      ${!unlocked?'<span class="price">¢ '+item.price+'</span>':""}
-      <span class="tooltip">${item.name}</span>
-    `;
-    button.addEventListener("click",()=>chooseItem(item));
-    list.appendChild(button);
-  });
+ const list=document.getElementById("items");list.innerHTML="";
+ document.getElementById("categoryName").textContent=currentCategory.toUpperCase()+"-ITEMS";
+ const filtered=cosmetics.filter(i=>i.type===currentCategory);
+ document.getElementById("itemCount").textContent=filtered.length+" ITEMS";
+ filtered.forEach(item=>{
+  const unlocked=save.unlocked.includes(item.id);
+  const selected=save.equipped[slotFor(item.type)]===item.id;
+  const button=document.createElement("button");
+  button.className="item"+(selected?" selected":"")+(unlocked?"":" locked");
+  button.title=item.name;
+  button.innerHTML=`<span class="symbol">${item.symbol}</span>${selected?'<span class="check">✓</span>':""}${!unlocked?'<span class="price">¢ ${item.price}</span>':""}<span class="tooltip">${item.name}</span>`;
+  button.addEventListener("click",()=>chooseItem(item));
+  list.appendChild(button);
+ });
 }
 
 function chooseItem(item){
-  const key=categoryKey(item.type);
-  const unlocked=save.unlocked.includes(item.id);
-
-  if(!unlocked){
-    if(save.money<item.price){
-      playSound("error");
-      document.getElementById("status").textContent="Nicht genug Münzen!";
-      return;
-    }
-    save.money-=item.price;
-    save.unlocked.push(item.id);
-    playSound("buy");
-  }else{
-    playSound("select");
+ const slot=slotFor(item.type),unlocked=save.unlocked.includes(item.id);
+ if(!unlocked){
+  if(save.money<item.price){
+   playSound("error");document.getElementById("status").textContent="Nicht genug Münzen!";return;
   }
-
-  save.equipped[key]=item.id;
-  persist();
-  renderItems();
-  drawSkin();
+  save.money-=item.price;save.unlocked.push(item.id);playSound("buy");
+ }else playSound("select");
+ save.equipped[slot]=item.id;
+ persist();renderItems();drawSkin();
 }
 
 document.querySelectorAll(".category").forEach(button=>{
-  button.addEventListener("click",()=>{
-    document.querySelectorAll(".category").forEach(b=>b.classList.remove("active"));
-    button.classList.add("active");
-    currentCategory=button.dataset.type;
-    playSound("click");
-    renderItems();
-  });
+ button.addEventListener("click",()=>{
+  document.querySelectorAll(".category").forEach(b=>b.classList.remove("active"));
+  button.classList.add("active");currentCategory=button.dataset.type;
+  playSound("click");renderItems();
+ });
 });
 
 document.getElementById("remove").addEventListener("click",()=>{
-  save.equipped[categoryKey(currentCategory)]=null;
-  playSound("click");
-  persist();
-  renderItems();
-  drawSkin();
+ save.equipped[slotFor(currentCategory)]=null;
+ playSound("click");persist();renderItems();drawSkin();
 });
 
 document.getElementById("money").textContent=save.money;
-renderItems();
-drawSkin();
+renderItems();drawSkin();
 </script>
 </body>
 </html>
