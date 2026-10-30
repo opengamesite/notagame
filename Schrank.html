@@ -1,0 +1,437 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mein Zimmer – Kleiderschrank</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  min-height:100vh;
+  background:#171717;
+  color:white;
+  font-family:Arial,sans-serif;
+  overflow:hidden;
+}
+button{font:inherit;cursor:pointer}
+.topbar{
+  height:64px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 25px;
+  background:#222;
+  border-bottom:3px solid #080808;
+}
+.topbar h1{font-size:20px;margin:0}
+.back{
+  background:#e6b94f;
+  border:3px solid #080808;
+  padding:9px 17px;
+  font-weight:bold;
+  color:#171717;
+}
+.layout{
+  height:calc(100vh - 64px);
+  display:grid;
+  grid-template-columns:1fr 350px;
+}
+.preview-area{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+  background:
+    linear-gradient(45deg,#202020 25%,transparent 25%),
+    linear-gradient(-45deg,#202020 25%,transparent 25%),
+    linear-gradient(45deg,transparent 75%,#202020 75%),
+    linear-gradient(-45deg,transparent 75%,#202020 75%);
+  background-size:40px 40px;
+  background-position:0 0,0 20px,20px -20px,-20px 0;
+}
+.preview-title{
+  position:absolute;
+  top:30px;
+  font-size:14px;
+  color:#aaa;
+  letter-spacing:3px;
+}
+canvas{
+  width:min(55vw,390px);
+  height:min(65vh,480px);
+  image-rendering:pixelated;
+  image-rendering:crisp-edges;
+}
+.preview-name{
+  margin-top:15px;
+  color:#e6b94f;
+  font-weight:bold;
+  letter-spacing:2px;
+}
+.panel{
+  background:#242424;
+  border-left:4px solid #080808;
+  padding:20px;
+  overflow-y:auto;
+}
+.panel h2{
+  margin:0 0 18px;
+  font-size:19px;
+}
+.categories{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:9px;
+  margin-bottom:22px;
+}
+.category{
+  min-height:75px;
+  border:3px solid #111;
+  background:#333;
+  color:white;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+}
+.category .symbol{font-size:25px}
+.category.active{
+  background:#e6b94f;
+  color:#171717;
+  border-color:#fff0bd;
+}
+.items-title{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:12px;
+  color:#ddd;
+}
+.items{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:10px;
+}
+.item{
+  background:#333;
+  color:white;
+  border:3px solid #111;
+  padding:12px 7px;
+  min-height:105px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+}
+.item.selected{
+  border-color:#e6b94f;
+  background:#45402f;
+}
+.item-preview{
+  width:42px;
+  height:35px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:28px;
+}
+.item-name{font-size:12px;text-align:center}
+.item-price{font-size:11px;color:#e6b94f}
+.remove{
+  margin-top:18px;
+  width:100%;
+  padding:12px;
+  background:#3a3030;
+  color:#ffb6a9;
+  border:2px solid #111;
+}
+.status{
+  margin-top:14px;
+  text-align:center;
+  font-size:12px;
+  color:#aaa;
+}
+@media(max-width:700px){
+  body{overflow:auto}
+  .layout{
+    height:auto;
+    min-height:calc(100vh - 64px);
+    grid-template-columns:1fr;
+  }
+  .preview-area{min-height:430px}
+  canvas{width:240px;height:300px}
+  .panel{border-left:0;border-top:4px solid #080808}
+}
+</style>
+</head>
+
+<body>
+<header class="topbar">
+  <button class="back" onclick="location.href='index.html'">← ZURÜCK</button>
+  <h1>KLEIDERSCHRANK</h1>
+  <span>👕</span>
+</header>
+
+<main class="layout">
+  <section class="preview-area">
+    <div class="preview-title">DEIN CHARAKTER</div>
+    <canvas id="skin" width="160" height="200"></canvas>
+    <div class="preview-name">MEIN SKIN</div>
+  </section>
+
+  <aside class="panel">
+    <h2>Outfit bearbeiten</h2>
+
+    <div class="categories">
+      <button class="category active" data-category="head">
+        <span class="symbol">🧢</span>
+        <span>Kopf</span>
+      </button>
+      <button class="category" data-category="face">
+        <span class="symbol">👓</span>
+        <span>Gesicht</span>
+      </button>
+      <button class="category" data-category="clothes">
+        <span class="symbol">👕</span>
+        <span>Kleidung</span>
+      </button>
+    </div>
+
+    <div class="items-title">
+      <strong id="category-title">Kopf-Items</strong>
+      <span>Auswahl</span>
+    </div>
+
+    <div class="items" id="items"></div>
+
+    <button class="remove" id="remove-item">Ausgewähltes entfernen</button>
+    <div class="status" id="status">Outfit wird automatisch gespeichert.</div>
+  </aside>
+</main>
+
+<script>
+const STORAGE_KEY = "mein-zimmer-save-v1";
+
+const defaults = {
+  money:120,
+  unlocked:[],
+  equipped:{head:null,face:null,clothes:null},
+  inventory:[],
+  placed:[],
+  orders:[],
+  received:[],
+  faucetOn:false,
+  bucketWater:0
+};
+
+function loadSave(){
+  try{
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if(!stored) return structuredClone(defaults);
+
+    return {
+      ...structuredClone(defaults),
+      ...stored,
+      equipped:{
+        ...defaults.equipped,
+        ...(stored.equipped || {})
+      }
+    };
+  }catch(e){
+    return structuredClone(defaults);
+  }
+}
+
+let save = loadSave();
+
+const cosmetics = [
+  {id:"cap",name:"Blaue Cap",type:"head",price:25,color:"#3977bd",symbol:"🧢"},
+  {id:"crown",name:"Goldene Krone",type:"head",price:80,color:"#f4c64e",symbol:"👑"},
+  {id:"glasses",name:"Pixelbrille",type:"face",price:35,color:"#252c38",symbol:"👓"},
+  {id:"scarf",name:"Grüner Schal",type:"clothes",price:30,color:"#4d995f",symbol:"🧣"},
+  {id:"shirt",name:"Rotes Shirt",type:"clothes",price:45,color:"#c64c48",symbol:"👕"},
+  {id:"hoodie",name:"Blauer Hoodie",type:"clothes",price:65,color:"#3977bd",symbol:"🧥"}
+];
+
+let currentCategory = "head";
+
+function persist(){
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(save));
+  document.getElementById("status").textContent = "✓ Outfit gespeichert";
+}
+
+function isUnlocked(id){
+  return save.unlocked.includes(id);
+}
+
+function renderItems(){
+  const container = document.getElementById("items");
+  const title = document.getElementById("category-title");
+
+  const names = {
+    head:"Kopf-Items",
+    face:"Gesicht-Items",
+    clothes:"Kleidungsstücke"
+  };
+
+  title.textContent = names[currentCategory];
+  container.innerHTML = "";
+
+  cosmetics
+    .filter(item => item.type === currentCategory)
+    .forEach(item => {
+      const unlocked = isUnlocked(item.id);
+      const selected = save.equipped[currentCategory] === item.id;
+
+      const button = document.createElement("button");
+      button.className = "item" + (selected ? " selected" : "");
+
+      button.innerHTML = `
+        <span class="item-preview">${item.symbol}</span>
+        <span class="item-name">${item.name}</span>
+        <span class="item-price">
+          ${unlocked ? (selected ? "✓ Wird getragen" : "Freigeschaltet") : item.price + " Münzen"}
+        </span>
+      `;
+
+      button.addEventListener("click",() => selectItem(item));
+      container.appendChild(button);
+    });
+}
+
+function selectItem(item){
+  if(!isUnlocked(item.id)){
+    if((save.money || 0) < item.price){
+      document.getElementById("status").textContent = "Nicht genug Münzen!";
+      return;
+    }
+
+    save.money -= item.price;
+    save.unlocked.push(item.id);
+  }
+
+  save.equipped[item.type] = item.id;
+  persist();
+  renderItems();
+  drawSkin();
+}
+
+function drawSkin(){
+  const canvas = document.getElementById("skin");
+  const ctx = canvas.getContext("2d");
+
+  ctx.clearRect(0,0,160,200);
+  ctx.imageSmoothingEnabled = false;
+
+  // Schatten
+  ctx.fillStyle = "#111";
+  ctx.fillRect(38,185,84,7);
+
+  // Beine
+  ctx.fillStyle = "#343c52";
+  ctx.fillRect(51,139,25,42);
+  ctx.fillRect(84,139,25,42);
+
+  // Schuhe
+  ctx.fillStyle = "#292929";
+  ctx.fillRect(47,177,31,9);
+  ctx.fillRect(82,177,31,9);
+
+  // Körper / Kleidung
+  const clothes = save.equipped.clothes;
+
+  let bodyColor = "#4779a9";
+  if(clothes === "scarf") bodyColor = "#4779a9";
+  if(clothes === "shirt") bodyColor = "#c64c48";
+  if(clothes === "hoodie") bodyColor = "#3977bd";
+
+  ctx.fillStyle = bodyColor;
+  ctx.fillRect(43,83,74,58);
+
+  // Arme
+  ctx.fillStyle = "#e8b78f";
+  ctx.fillRect(32,88,11,48);
+  ctx.fillRect(117,88,11,48);
+
+  // Schal
+  if(clothes === "scarf"){
+    ctx.fillStyle = "#4d995f";
+    ctx.fillRect(62,83,36,12);
+    ctx.fillRect(88,90,11,34);
+  }
+
+  // Kopf
+  ctx.fillStyle = "#e8b78f";
+  ctx.fillRect(48,29,64,54);
+
+  // Haare
+  ctx.fillStyle = "#493328";
+  ctx.fillRect(48,23,64,13);
+  ctx.fillRect(43,30,10,17);
+  ctx.fillRect(107,30,10,17);
+
+  // Augen
+  ctx.fillStyle = "#222";
+  ctx.fillRect(63,49,7,7);
+  ctx.fillRect(91,49,7,7);
+
+  // Mund
+  ctx.fillStyle = "#9b554d";
+  ctx.fillRect(74,68,13,3);
+
+  // Brille
+  if(save.equipped.face === "glasses"){
+    ctx.fillStyle = "#252c38";
+    ctx.fillRect(57,47,23,12);
+    ctx.fillRect(85,47,23,12);
+    ctx.fillRect(79,50,7,3);
+    ctx.fillStyle = "#e8b78f";
+    ctx.fillRect(62,50,13,5);
+    ctx.fillRect(90,50,13,5);
+  }
+
+  // Cap
+  if(save.equipped.head === "cap"){
+    ctx.fillStyle = "#3977bd";
+    ctx.fillRect(43,18,74,13);
+    ctx.fillRect(50,12,60,9);
+    ctx.fillRect(100,28,28,5);
+  }
+
+  // Krone
+  if(save.equipped.head === "crown"){
+    ctx.fillStyle = "#f4c64e";
+    ctx.fillRect(51,12,58,15);
+    ctx.fillRect(51,5,10,12);
+    ctx.fillRect(75,0,10,17);
+    ctx.fillRect(99,5,10,12);
+  }
+}
+
+document.querySelectorAll(".category").forEach(button => {
+  button.addEventListener("click",() => {
+    document.querySelectorAll(".category").forEach(b => b.classList.remove("active"));
+    button.classList.add("active");
+    currentCategory = button.dataset.category;
+    renderItems();
+  });
+});
+
+document.getElementById("remove-item").addEventListener("click",() => {
+  save.equipped[currentCategory] = null;
+  persist();
+  renderItems();
+  drawSkin();
+});
+
+renderItems();
+drawSkin();
+</script>
+</body>
+</html>
