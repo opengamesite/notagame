@@ -96,7 +96,7 @@ const shopItems=[
 {id:"rug",name:"Blauer Teppich",price:50,desc:"Macht den Boden gemütlicher."},
 {id:"star",name:"Sternen-Deko",price:60,desc:"Kleine Sterne für die Wand."}
 ];
-const defaults={money:120,unlocked:[],equipped:{head:null,face:null,clothes:null},inventory:[],placed:[],orders:[],received:[],faucetOn:false,bucketWater:0};
+const defaults={money:120,unlocked:[],equipped:{head:null,face:null,clothes:null,back:null,pants:null},inventory:[],placed:[],orders:[],received:[],faucetOn:false,bucketWater:0};
 function loadSave(){
 try{
 const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
@@ -105,6 +105,13 @@ return {...structuredClone(defaults),...saved,equipped:{...defaults.equipped,...
 }catch{return structuredClone(defaults)}
 }
 let save=loadSave();
+window.addEventListener("storage",event=>{
+ if(event.key!==STORAGE_KEY||!event.newValue)return;
+ try{
+  const latest=JSON.parse(event.newValue);
+  if(latest&&latest.equipped)save.equipped={...save.equipped,...latest.equipped};
+ }catch{}
+});
 function persist(){
 try{localStorage.setItem(STORAGE_KEY,JSON.stringify(save))}catch{}
 $("money").textContent=save.money;
@@ -168,7 +175,7 @@ const under=bucket.x+bucket.w>805&&bucket.x<855&&bucket.y+bucket.h>315&&bucket.y
 const endY=under?bucket.y+5:329,wobble=Math.sin(gameTime*15)*1.5;
 line(850,299,850+wobble,endY,"#8cd9ec",3);
 for(let i=0;i<5;i++){const yy=302+((gameTime*42+i*17)%Math.max(8,endY-302));rect(847+Math.round(Math.sin(gameTime*8+i)*2),yy,3,4,"#d6f5ff")}
-  if(under&&save.bucketWater>0){const fill=Math.min(20,save.bucketWater*20);rect(bucket.x+5,bucket.y+bucket.h-6-fill,bucket.w-10,fill,"#69c9e7")}
+if(under&&save.bucketWater>0){const fill=Math.min(20,save.bucketWater*20);rect(bucket.x+5,bucket.y+bucket.h-6-fill,bucket.w-10,fill,"#69c9e7")}
 }
 function drawBucket(){
 const x=bucket.x,y=bucket.y;
@@ -225,32 +232,107 @@ rect(x-30,y+31,17,18,"#bd8b59");
 rect(x-28,y+31,13,3,"#e0b77c");
 rect(x-22,y+31,3,18,"#e0b77c");
 }
-function drawPlayer(){
-const x=player.x,y=player.y,cx=x+player.w/2;
-const lift=player.grounded?0:Math.sin(gameTime*12)*1.5;
-const swing=player.grounded&&Math.abs(player.vx)>.1?Math.sin(player.walk)*7:0;
-const shoulder=y+31+lift,hip=y+52+lift,head=y+7+lift;
-const skin="#d5b18a",edge="#805b3c",wood="#b98552",light="#dfb47b";
-rect(cx-20,FLOOR-3,40,4,"#99754f");
-const legs=[{x:cx-6-swing*.35,y:hip+12},{x:cx+6+swing*.35,y:hip+12}];
-const feet=[{x:cx-7-swing,y:y+70+lift},{x:cx+7+swing,y:y+70+lift}];
-legs.forEach((p,i)=>{line(p.x,p.y,feet[i].x,feet[i].y,edge,8);line(p.x,p.y,feet[i].x,feet[i].y,wood,5);rect(feet[i].x-5,feet[i].y-1,10,5,edge);rect(feet[i].x-4,feet[i].y,8,3,wood)});
-const holding=carrying!==null||carryingItem!==null;
-const le=holding?{x:cx-13,y:y+39+lift}:{x:cx-15-swing*.55,y:y+43+lift};
-const re=holding?{x:cx+13,y:y+39+lift}:{x:cx+15+swing*.55,y:y+43+lift};
-const lh=holding?{x:cx-7,y:y+36+lift}:{x:cx-14-swing,y:y+54+lift};
-const rh=holding?{x:cx+7,y:y+36+lift}:{x:cx+14+swing,y:y+54+lift};
-line(cx-10,shoulder,le.x,le.y,wood,6);line(le.x,le.y,lh.x,lh.y,wood,5);
-line(cx+10,shoulder,re.x,re.y,wood,6);line(re.x,re.y,rh.x,rh.y,wood,5);
-rect(cx-11,shoulder-3,22,24,edge);rect(cx-8,shoulder,16,18,wood);rect(cx-6,shoulder+2,4,13,light);
-rect(cx-5,hip-1,10,5,edge);rect(cx-4,hip,8,3,wood);
-if(save.equipped.clothes==="scarf"){rect(cx-10,shoulder-2,20,6,"#4d995f");rect(cx+3,shoulder+1,5,15,"#4d995f");rect(cx+4,shoulder+2,2,11,"#78b27c")}
-else if(save.equipped.clothes==="shirt"||save.equipped.clothes==="hoodie"){const c=save.equipped.clothes==="shirt"?"#c64c48":"#3977bd";rect(cx-10,shoulder-2,20,20,c);rect(cx-4,shoulder+1,3,14,save.equipped.clothes==="shirt"?"#e1786b":"#6697d2");if(save.equipped.clothes==="hoodie"){rect(cx-7,shoulder-5,14,6,"#28578b");rect(cx-3,shoulder+13,6,3,"#244f7e")}}
-rect(cx-4,shoulder-7,8,7,edge);rect(cx-3,shoulder-6,6,6,wood);
-rect(cx-11,head,22,23,edge);rect(cx-9,head+2,18,19,skin);rect(cx-7,head+4,14,15,wood);rect(cx-6,head+5,4,11,light);rect(cx-1,head+5,8,11,"#c99a64");rect(cx-6,head+10,3,3,"#43362c");rect(cx+4,head+10,3,3,"#43362c");rect(cx-2,head+16,5,2,"#8c5944");
-if(save.equipped.head==="cap"){rect(cx-13,head+1,26,5,"#3977bd");rect(cx-10,head-5,20,7,"#3977bd");rect(cx+4,head+4,10,3,"#285a91");rect(cx-7,head-3,9,2,"#79a9e3")}
-else if(save.equipped.head==="crown"){rect(cx-12,head-4,24,5,"#d8a92e");rect(cx-12,head-11,5,8,"#f4c64e");rect(cx-4,head-14,6,11,"#f4c64e");rect(cx+5,head-10,6,7,"#f4c64e");rect(cx-9,head-3,18,2,"#fff0a4")}
-if(save.equipped.face==="glasses"){rect(cx-9,head+9,8,6,"#29323c");rect(cx+1,head+9,8,6,"#29323c");rect(cx-1,head+11,2,2,"#29323c");rect(cx-7,head+10,4,2,"#9fc9d6");rect(cx+3,head+10,4,2,"#9fc9d6")}
+  function drawPlayer(){
+ const x=player.x,y=player.y,cx=x+player.w/2;
+ const lift=player.grounded?0:Math.sin(gameTime*12)*1.5;
+ const swing=player.grounded&&Math.abs(player.vx)>.1?Math.sin(player.walk)*7:0;
+ const shoulder=y+31+lift,hip=y+52+lift,head=y+7+lift;
+ const skin="#d5b18a",edge="#805b3c",wood="#b98552",light="#dfb47b";
+ const eq=save.equipped||{};
+ rect(cx-20,FLOOR-3,40,4,"#99754f");
+
+ const back=eq.back;
+ if(back){
+  const colors={backpack:"#8b5b3d",schoolbag:"#527b9b",hikingbag:"#55734d",jetpack:"#929da2",wings:"#e7e2d4",guitarbag:"#754b37",parachute:"#bd6e62",toolbox:"#64727b"};
+  const c=colors[back]||"#8b5b3d";
+  rect(cx-16,shoulder+1,32,24,edge);rect(cx-14,shoulder+3,28,20,c);
+  if(back==="wings"){rect(cx-27,shoulder+1,12,18,"#f0eee5");rect(cx+15,shoulder+1,12,18,"#f0eee5");rect(cx-24,shoulder+5,8,3,"#b8c6c4");rect(cx+16,shoulder+5,8,3,"#b8c6c4")}
+  else if(back==="jetpack"){rect(cx-19,shoulder+4,7,18,"#68757e");rect(cx+12,shoulder+4,7,18,"#68757e");rect(cx-18,shoulder+20,5,5,"#e5a15b");rect(cx+13,shoulder+20,5,5,"#e5a15b")}
+  else if(back==="guitarbag"){rect(cx-11,shoulder+3,22,24,"#754b37");rect(cx-3,shoulder+6,6,17,"#d5b17b")}
+  else if(back==="parachute"){rect(cx-19,shoulder-8,38,12,"#bd6e62");rect(cx-13,shoulder-5,26,3,"#e6c18c")}
+  else if(back==="toolbox"){rect(cx-17,shoulder+7,34,17,"#64727b");rect(cx-7,shoulder+3,14,5,"#424c54")}
+  else {rect(cx-10,shoulder+5,20,3,"#d6b58a");rect(cx-10,shoulder+14,20,3,"#d6b58a")}
+ }
+
+ const pantsColors={
+  jeans:"#42658b",joggers:"#687b83",cargo:"#66724e",shorts:"#b68a55",sleep_pants:"#8295a8",
+  baggy:"#536b87",knight_pants:"#777b80",rain_pants:"#527f91",camo:"#65714c",gold_pants:"#c49b39",
+  ski_pants:"#e6e5df",overalls:"#4b7091"
+ };
+ const legColor=pantsColors[eq.pants]||wood;
+ const legs=[{x:cx-6-swing*.35,y:hip+12},{x:cx+6+swing*.35,y:hip+12}];
+ const feet=[{x:cx-7-swing,y:y+70+lift},{x:cx+7+swing,y:y+70+lift}];
+ legs.forEach((p,i)=>{
+  const shorts=eq.pants==="shorts";
+  line(p.x,p.y,p.x, p.y+(shorts?4:0),edge,8);
+  line(p.x,p.y,feet[i].x,feet[i].y,legColor,shorts?5:8);
+  rect(feet[i].x-5,feet[i].y-1,10,5,edge);rect(feet[i].x-4,feet[i].y,8,3,wood);
+ });
+ if(eq.pants==="overalls"){rect(cx-10,hip-2,20,17,"#4b7091");rect(cx-8,hip-5,4,8,"#4b7091");rect(cx+4,hip-5,4,8,"#4b7091")}
+ if(eq.pants==="knight_pants"){rect(cx-13,hip+2,9,13,"#92999d");rect(cx+4,hip+2,9,13,"#92999d")}
+ if(eq.pants==="ski_pants"){rect(cx-11,hip+2,22,5,"#f6f5ef")}
+
+ const holding=carrying!==null||carryingItem!==null;
+ const le=holding?{x:cx-13,y:y+39+lift}:{x:cx-15-swing*.55,y:y+43+lift};
+ const re=holding?{x:cx+13,y:y+39+lift}:{x:cx+15+swing*.55,y:y+43+lift};
+ const lh=holding?{x:cx-7,y:y+36+lift}:{x:cx-14-swing,y:y+54+lift};
+ const rh=holding?{x:cx+7,y:y+36+lift}:{x:cx+14+swing,y:y+54+lift};
+ line(cx-10,shoulder,le.x,le.y,wood,6);line(le.x,le.y,lh.x,lh.y,wood,5);
+ line(cx+10,shoulder,re.x,re.y,wood,6);line(re.x,re.y,rh.x,rh.y,wood,5);
+ rect(cx-11,shoulder-3,22,24,edge);rect(cx-8,shoulder,16,18,wood);rect(cx-6,shoulder+2,4,13,light);
+ rect(cx-5,hip-1,10,5,edge);rect(cx-4,hip,8,3,wood);
+
+ const tops={
+  scarf:"#4d995f",shirt:"#c64c48",hoodie:"#3977bd",leather:"#694a35",raincoat:"#d5b94c",
+  football:"#f1eee5",suit:"#343b48",pajamas:"#8d9eb7",vest:"#8a6947",astronaut:"#d7dce0",
+  armor:"#78838b",hawaii:"#d26c55",wintercoat:"#5e8195"
+ };
+ if(eq.clothes&&tops[eq.clothes]){
+  const c=tops[eq.clothes];rect(cx-10,shoulder-2,20,20,c);
+  if(eq.clothes==="scarf"){rect(cx-10,shoulder-2,20,6,c);rect(cx+3,shoulder+1,5,15,"#78b27c")}
+  if(eq.clothes==="hoodie"){rect(cx-7,shoulder-5,14,6,"#28578b");rect(cx-3,shoulder+13,6,3,"#244f7e")}
+  if(eq.clothes==="suit"){rect(cx-2,shoulder,4,18,"#e8e4d9");rect(cx-5,shoulder+2,10,5,"#a94f4b")}
+  if(eq.clothes==="football"){rect(cx-10,shoulder+5,20,3,"#d0b76d");rect(cx-3,shoulder+2,6,5,"#c64c48")}
+  if(eq.clothes==="astronaut"){rect(cx-12,shoulder-4,24,25,"#d7dce0");rect(cx-7,shoulder+3,14,8,"#6e9eae");rect(cx-3,shoulder+15,6,3,"#8c9ba2")}
+  if(eq.clothes==="armor"){rect(cx-12,shoulder-4,24,25,"#78838b");rect(cx-8,shoulder+3,16,3,"#b6c0c3");rect(cx-3,shoulder+8,6,7,"#d0b56b")}
+  if(eq.clothes==="hawaii"){for(let i=0;i<4;i++)rect(cx-8+i*5,shoulder+3+(i%2)*6,3,3,"#f1d27d")}
+  if(eq.clothes==="wintercoat"){rect(cx-12,shoulder-4,24,5,"#e2e7e8");rect(cx-2,shoulder,4,18,"#d2d9dd")}
+  if(eq.clothes==="raincoat"){rect(cx-12,shoulder-4,24,5,"#eadb7d");rect(cx-3,shoulder+3,6,3,"#8b793a")}
+  if(eq.clothes==="leather"){rect(cx-10,shoulder-2,20,4,"#493323");rect(cx-2,shoulder+2,4,15,"#b68a55")}
+  if(eq.clothes==="vest"){rect(cx-10,shoulder-2,20,20,"#8a6947");rect(cx-4,shoulder,8,18,"#d7c5a5")}
+  if(eq.clothes==="pajamas"){rect(cx-8,shoulder+4,16,3,"#d9e2ef");rect(cx-8,shoulder+12,16,3,"#d9e2ef")}
+ }
+ rect(cx-4,shoulder-7,8,7,edge);rect(cx-3,shoulder-6,6,6,wood);
+ rect(cx-11,head,22,23,edge);rect(cx-9,head+2,18,19,skin);rect(cx-7,head+4,14,15,wood);rect(cx-6,head+5,4,11,light);rect(cx-1,head+5,8,11,"#c99a64");rect(cx-6,head+10,3,3,"#43362c");rect(cx+4,head+10,3,3,"#43362c");rect(cx-2,head+16,5,2,"#8c5944");
+
+ const hats={
+  cap:["#3977bd","#79a9e3"],tp_hat:["#353b44","#d8e0e5"],traffic_hat:["#e99a36","#fff0c7"],
+  gold_helmet:["#c99d35","#f5d66d"],cowboy:["#8a603d","#c99a64"],viking:["#aeb5b8","#e5e7e4"],
+  chef:["#eee9df","#fffaf0"],paper_crown:["#d6bd82","#f4e3b6"],frog_hat:["#5b9a5c","#9bd276"],
+  wizard:["#514b83","#aaa0dc"],bucket_hat:["#9b9b9a","#d2d7d6"],party_hat:["#d36c8d","#f4d17c"]
+ };
+ if(eq.head==="crown"){rect(cx-12,head-4,24,5,"#d8a92e");rect(cx-12,head-11,5,8,"#f4c64e");rect(cx-4,head-14,6,11,"#f4c64e");rect(cx+5,head-10,6,7,"#f4c64e");rect(cx-9,head-3,18,2,"#fff0a4")}
+ else if(eq.head&&hats[eq.head]){
+  const [c,highlight]=hats[eq.head];rect(cx-13,head+1,26,5,c);rect(cx-10,head-5,20,7,c);rect(cx-7,head-3,9,2,highlight);
+  if(eq.head==="viking"){rect(cx-15,head-2,4,12,"#d8dce0");rect(cx+11,head-2,4,12,"#d8dce0")}
+  if(eq.head==="wizard"){rect(cx-8,head-11,16,8,c);rect(cx-5,head-17,10,7,c)}
+  if(eq.head==="chef"){rect(cx-8,head-10,16,7,c);rect(cx-5,head-15,10,6,c)}
+  if(eq.head==="frog_hat"){rect(cx-12,head-5,8,7,highlight);rect(cx+4,head-5,8,7,highlight)}
+  if(eq.head==="party_hat"){rect(cx-5,head-16,10,12,c);rect(cx-2,head-19,4,4,highlight)}
+ }
+ if(eq.face){
+  if(eq.face==="glasses"||eq.face==="sunglasses"||eq.face==="heart_glasses"||eq.face==="monocle"||eq.face==="star_glasses"){
+   const c=eq.face==="sunglasses"?"#17212b":"#29323c";
+   rect(cx-10,head+9,8,6,c);rect(cx+2,head+9,8,6,c);rect(cx-2,head+11,4,2,c);
+   if(eq.face==="heart_glasses"){rect(cx-8,head+10,4,3,"#df7c88");rect(cx+4,head+10,4,3,"#df7c88")}
+   if(eq.face==="star_glasses"){drawStar(cx-6,head+12,3,"#f2d987");drawStar(cx+6,head+12,3,"#f2d987")}
+   if(eq.face==="monocle"){rect(cx+3,head+8,8,8,"#d6b66e")}
+  }
+  if(eq.face==="mustache"){rect(cx-7,head+17,6,3,"#49362c");rect(cx+1,head+17,6,3,"#49362c")}
+  if(eq.face==="big_nose")rect(cx-2,head+12,5,6,"#bd896e");
+  if(eq.face==="eyepatch"){rect(cx-9,head+8,9,7,"#292323");line(cx-7,head+9,cx+7,head+1,"#292323",1)}
+  if(eq.face==="diving"){rect(cx-11,head+7,22,9,"#4b9eae");rect(cx-8,head+9,6,5,"#c7edf0");rect(cx+2,head+9,6,5,"#c7edf0")}
+ }
 }
 function drawCarriedBucket(){
 const cx=player.x+player.w/2+player.facing*13,y=player.y+34;
@@ -274,7 +356,7 @@ function draw(){
 ctx.clearRect(0,0,W,H);drawRoom();drawDecor();drawBed();drawWardrobe();drawDesk();drawComputer();drawSink();drawDoor();drawPlacedItems();drawFaucetWater();if(carrying!=="bucket")drawBucket();drawPostman();drawPlayer();if(carrying==="bucket")drawCarriedBucket();if(carryingItem)drawCarriedItem();
 ctx.strokeStyle="#6e5745";ctx.lineWidth=4;ctx.strokeRect(2,2,W-4,H-4);
 }
-function getNearby(){
+  function getNearby(){
 const px=player.x+player.w/2,py=player.y+player.h/2;
 let best=null,bestDistance=Infinity;
 const targets={wardrobe:{x:190,y:330},computer:{x:636,y:325},bed:{x:285,y:405},sink:{x:790,y:355},faucet:{x:842,y:310},bucket:{x:bucket.x+bucket.w/2,y:bucket.y+bucket.h/2},door:{x:875,y:390}};
@@ -295,7 +377,6 @@ function makeCard(title,description,detail,actionText,action,disabled=false){
 const card=document.createElement("div");card.className="item-card";
 const info=document.createElement("div");info.className="item-info";
 const name=document.createElement("strong");name.textContent=title;info.append(name);
-
 const small=document.createElement("small");small.textContent=detail;info.append(small);
 card.append(info);const button=makeButton(actionText,action);button.disabled=disabled;card.append(button);return card;
 }
@@ -328,7 +409,6 @@ for(const item of cosmetics){
 const isOwned=owned.includes(item.id),equipped=save.equipped[item.type==="Kopf"?"head":item.type==="Gesicht"?"face":"clothes"]===item.id;
 const card=document.createElement("div");card.className="item-card";card.append(createCosmeticPreview(item));
 const info=document.createElement("div");info.className="item-info";const name=document.createElement("strong");name.textContent=item.name;info.append(name);
-
 const small=document.createElement("small");small.textContent=isOwned?(equipped?"Getragen":"Freigeschaltet"):`${item.price} Münzen`;info.append(small);card.append(info);
 const button=makeButton(isOwned?(equipped?"Ablegen":"Anziehen"):"Kaufen",()=>{
 if(!isOwned){if(save.money<item.price)return;save.money-=item.price;save.unlocked.push(item.id)}
@@ -338,7 +418,7 @@ save.equipped[slot]=save.equipped[slot]===item.id?null:item.id;persist();renderW
 button.disabled=!isOwned&&save.money<item.price;card.append(button);grid.append(card);
 }
 panelContent.append(grid);
-  }
+}
 function renderShop(){
 panelContent.innerHTML="";
 const balance=document.createElement("div");balance.className="balance-line";balance.textContent=`Guthaben: ${save.money} Münzen`;panelContent.append(balance);
