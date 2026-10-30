@@ -3,433 +3,439 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mein Zimmer – Kleiderschrank</title>
-
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MEIN ZIMMER – Kleiderschrank</title>
 <style>
+:root{
+  --paper:#f5eddf;--ink:#292e35;--accent:#d9b46c;
+  --blue:#587e96;--border:#c8b69e;
+}
 *{box-sizing:border-box}
 body{
-  margin:0;
-  min-height:100vh;
-  background:#171717;
-  color:white;
-  font-family:Arial,sans-serif;
-  overflow:hidden;
+  margin:0;background:#252a30;color:var(--ink);
+  font-family:"Courier New",monospace;height:100vh;overflow:hidden
 }
 button{font:inherit;cursor:pointer}
-.topbar{
-  height:64px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:0 25px;
-  background:#222;
-  border-bottom:3px solid #080808;
+header{
+  height:62px;background:var(--paper);border-bottom:3px solid #a88c6b;
+  display:flex;align-items:center;justify-content:space-between;padding:0 22px
 }
-.topbar h1{font-size:20px;margin:0}
+header strong{font-size:17px;letter-spacing:2px}
 .back{
-  background:#e6b94f;
-  border:3px solid #080808;
-  padding:9px 17px;
-  font-weight:bold;
-  color:#171717;
+  background:#292e35;color:white;border:2px solid #111;
+  padding:9px 14px;font-weight:bold
 }
-.layout{
-  height:calc(100vh - 64px);
-  display:grid;
-  grid-template-columns:1fr 350px;
+main{
+  height:calc(100vh - 62px);
+  display:grid;grid-template-columns:minmax(0,1fr) 340px
 }
-.preview-area{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  position:relative;
-  background:
-    linear-gradient(45deg,#202020 25%,transparent 25%),
-    linear-gradient(-45deg,#202020 25%,transparent 25%),
-    linear-gradient(45deg,transparent 75%,#202020 75%),
-    linear-gradient(-45deg,transparent 75%,#202020 75%);
-  background-size:40px 40px;
-  background-position:0 0,0 20px,20px -20px,-20px 0;
+.preview{
+  position:relative;display:flex;align-items:center;justify-content:center;
+  background-color:#d9cbb6;
+  background-image:
+  linear-gradient(45deg,#d1c1aa 25%,transparent 25%),
+  linear-gradient(-45deg,#d1c1aa 25%,transparent 25%),
+  linear-gradient(45deg,transparent 75%,#d1c1aa 75%),
+  linear-gradient(-45deg,transparent 75%,#d1c1aa 75%);
+  background-size:36px 36px;
+  background-position:0 0,0 18px,18px -18px,-18px 0
 }
-.preview-title{
-  position:absolute;
-  top:30px;
-  font-size:14px;
-  color:#aaa;
-  letter-spacing:3px;
+.preview:after{
+  content:"";position:absolute;bottom:10%;left:50%;
+  transform:translateX(-50%);width:220px;height:14px;
+  background:#6b5742;border-radius:50%;opacity:.25;filter:blur(5px)
 }
-canvas{
-  width:min(55vw,390px);
-  height:min(65vh,480px);
-  image-rendering:pixelated;
-  image-rendering:crisp-edges;
+.preview-label{
+  position:absolute;top:25px;left:30px;
+  color:#766b5d;font-size:11px;letter-spacing:3px
 }
-.preview-name{
-  margin-top:15px;
-  color:#e6b94f;
-  font-weight:bold;
-  letter-spacing:2px;
+#skin{
+  width:min(72%,480px);height:min(83%,420px);
+  image-rendering:pixelated;position:relative;z-index:1
 }
-.panel{
-  background:#242424;
-  border-left:4px solid #080808;
-  padding:20px;
-  overflow-y:auto;
+.right{
+  background:var(--paper);border-left:4px solid #a88c6b;
+  display:flex;flex-direction:column;min-height:0
 }
-.panel h2{
-  margin:0 0 18px;
-  font-size:19px;
+.panel-head{
+  padding:20px 19px 13px;border-bottom:2px solid var(--border)
 }
+.panel-head small{font-size:10px;color:#88765f;letter-spacing:2px}
+.panel-head h2{font-size:19px;margin:7px 0 0}
 .categories{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:9px;
-  margin-bottom:22px;
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:8px;padding:15px 15px 12px
 }
 .category{
-  min-height:75px;
-  border:3px solid #111;
-  background:#333;
-  color:white;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:5px;
+  height:65px;background:#e8dcc9;border:2px solid #c8b69e;
+  color:#51483e;display:grid;place-items:center;
+  font-size:25px;position:relative
 }
-.category .symbol{font-size:25px}
 .category.active{
-  background:#e6b94f;
-  color:#171717;
-  border-color:#fff0bd;
+  background:#292e35;color:#f5eddf;border-color:#292e35;
+  box-shadow:inset 0 -4px var(--accent)
 }
-.items-title{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  margin-bottom:12px;
-  color:#ddd;
+.category span{
+  position:absolute;bottom:5px;font-size:8px;letter-spacing:1px
+}
+.items-head{
+  padding:5px 17px 10px;display:flex;justify-content:space-between;
+  align-items:center;font-size:11px;color:#766b5d
 }
 .items{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:10px;
+  overflow-y:auto;padding:0 15px 15px;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:9px
 }
 .item{
-  background:#333;
-  color:white;
-  border:3px solid #111;
-  padding:12px 7px;
-  min-height:105px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:7px;
+  height:91px;position:relative;display:grid;place-items:center;
+  background:#fffaf1;border:2px solid #d8c9b5;
+  box-shadow:2px 2px 0 #6b50301a;color:#292e35
 }
+.item:hover{background:#f1e4cf;transform:translateY(-2px)}
 .item.selected{
-  border-color:#e6b94f;
-  background:#45402f;
+  border:3px solid #587e96;background:#e4eceb;
+  box-shadow:inset 0 0 0 2px #fff
 }
-.item-preview{
-  width:42px;
-  height:35px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:28px;
+.item.locked{opacity:.7}
+.item .symbol{font-size:34px;filter:drop-shadow(2px 2px 0 #0002)}
+.item .check{
+  position:absolute;right:4px;top:3px;font-size:12px;
+  color:#416d5b;font-weight:bold
 }
-.item-name{font-size:12px;text-align:center}
-.item-price{font-size:11px;color:#e6b94f}
+.item .price{
+  position:absolute;bottom:5px;right:5px;font-size:9px;
+  color:#80653c;background:#f5eddf;padding:2px 4px
+}
+.item .tooltip{
+  position:absolute;bottom:100%;left:50%;transform:translateX(-50%);
+  background:#292e35;color:white;padding:5px 7px;font-size:9px;
+  white-space:nowrap;opacity:0;pointer-events:none;z-index:5
+}
+.item:hover .tooltip{opacity:1}
+.footer{
+  margin-top:auto;padding:13px 16px;border-top:2px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;gap:8px
+}
+.balance{font-size:12px;color:#766b5d}
+.balance b{color:#292e35}
 .remove{
-  margin-top:18px;
-  width:100%;
-  padding:12px;
-  background:#3a3030;
-  color:#ffb6a9;
-  border:2px solid #111;
+  background:#e8dcc9;border:2px solid #c8b69e;
+  padding:9px 10px;font-size:10px;color:#51483e
 }
-.status{
-  margin-top:14px;
-  text-align:center;
-  font-size:12px;
-  color:#aaa;
+#status{
+  min-height:22px;text-align:center;padding:4px;
+  font-size:10px;color:#71877b
 }
 @media(max-width:700px){
-  body{overflow:auto}
-  .layout{
-    height:auto;
-    min-height:calc(100vh - 64px);
-    grid-template-columns:1fr;
-  }
-  .preview-area{min-height:430px}
-  canvas{width:240px;height:300px}
-  .panel{border-left:0;border-top:4px solid #080808}
+  body{height:auto;min-height:100vh;overflow:auto}
+  main{height:auto;min-height:calc(100vh - 62px);grid-template-columns:1fr}
+  .preview{height:390px}
+  #skin{width:340px;height:340px}
+  .right{border-left:0;border-top:4px solid #a88c6b;min-height:460px}
 }
 </style>
 </head>
-
 <body>
-<header class="topbar">
+
+<header>
   <button class="back" onclick="location.href='index.html'">← ZURÜCK</button>
-  <h1>KLEIDERSCHRANK</h1>
-  <span>👕</span>
+  <strong>KLEIDERSCHRANK</strong>
+  <span>♫</span>
 </header>
 
-<main class="layout">
-  <section class="preview-area">
-    <div class="preview-title">DEIN CHARAKTER</div>
-    <canvas id="skin" width="160" height="200"></canvas>
-    <div class="preview-name">MEIN SKIN</div>
+<main>
+  <section class="preview">
+    <div class="preview-label">DEIN CHARAKTER · VORSCHAU</div>
+    <canvas id="skin" width="480" height="420"></canvas>
   </section>
 
-  <aside class="panel">
-    <h2>Outfit bearbeiten</h2>
-
-    <div class="categories">
-      <button class="category active" data-category="head">
-        <span class="symbol">🧢</span>
-        <span>Kopf</span>
-      </button>
-      <button class="category" data-category="face">
-        <span class="symbol">👓</span>
-        <span>Gesicht</span>
-      </button>
-      <button class="category" data-category="clothes">
-        <span class="symbol">👕</span>
-        <span>Kleidung</span>
-      </button>
+  <aside class="right">
+    <div class="panel-head">
+      <small>CHARAKTER EDITOR</small>
+      <h2>Dein Outfit</h2>
     </div>
 
-    <div class="items-title">
-      <strong id="category-title">Kopf-Items</strong>
-      <span>Auswahl</span>
+    <div class="categories">
+      <button class="category active" data-type="Kopf" title="Kopf">♛<span>KOPF</span></button>
+      <button class="category" data-type="Gesicht" title="Gesicht">◉<span>GESICHT</span></button>
+      <button class="category" data-type="Kleidung" title="Kleidung">▣<span>STYLE</span></button>
+    </div>
+
+    <div class="items-head">
+      <b id="categoryName">KOPF-ITEMS</b>
+      <span>ITEMS</span>
     </div>
 
     <div class="items" id="items"></div>
 
-    <button class="remove" id="remove-item">Ausgewähltes entfernen</button>
-    <div class="status" id="status">Outfit wird automatisch gespeichert.</div>
+    <div class="footer">
+      <div class="balance">¢ <b id="money">120</b></div>
+      <button class="remove" id="remove">OUTFIT-TEIL ABLEGEN</button>
+    </div>
+    <div id="status">Änderungen werden automatisch gespeichert.</div>
   </aside>
 </main>
 
 <script>
-const STORAGE_KEY = "mein-zimmer-save-v1";
+"use strict";
 
-const defaults = {
-  money:120,
-  unlocked:[],
+const STORAGE_KEY="mein-zimmer-save-v1";
+
+const defaults={
+  money:120,unlocked:[],
   equipped:{head:null,face:null,clothes:null},
-  inventory:[],
-  placed:[],
-  orders:[],
-  received:[],
-  faucetOn:false,
-  bucketWater:0
+  inventory:[],placed:[],orders:[],received:[],
+  faucetOn:false,bucketWater:0
 };
 
 function loadSave(){
   try{
-    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if(!stored) return structuredClone(defaults);
-
+    const s=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
+    if(!s)return structuredClone(defaults);
     return {
-      ...structuredClone(defaults),
-      ...stored,
-      equipped:{
-        ...defaults.equipped,
-        ...(stored.equipped || {})
-      }
+      ...structuredClone(defaults),...s,
+      equipped:{...defaults.equipped,...(s.equipped||{})},
+      unlocked:Array.isArray(s.unlocked)?s.unlocked:[]
     };
-  }catch(e){
-    return structuredClone(defaults);
+  }catch{return structuredClone(defaults)}
+}
+
+let save=loadSave();
+
+const cosmetics=[
+  {id:"cap",name:"Blaue Cap",type:"Kopf",price:25,symbol:"🧢"},
+  {id:"crown",name:"Goldene Krone",type:"Kopf",price:80,symbol:"👑"},
+  {id:"glasses",name:"Pixelbrille",type:"Gesicht",price:35,symbol:"👓"},
+  {id:"scarf",name:"Grüner Schal",type:"Kleidung",price:30,symbol:"🧣"},
+  {id:"shirt",name:"Rotes Shirt",type:"Kleidung",price:45,symbol:"👕"},
+  {id:"hoodie",name:"Blauer Hoodie",type:"Kleidung",price:65,symbol:"🧥"}
+];
+
+let currentCategory="Kopf";
+let gameTime=0;
+let soundOn=true;
+let audio=null;
+
+const canvas=document.getElementById("skin");
+const ctx=canvas.getContext("2d");
+ctx.imageSmoothingEnabled=false;
+
+const player={
+  x:43,y:18,w:34,h:78,vx:0,vy:0,
+  grounded:true,facing:1,walk:0
+};
+
+const FLOOR=100;
+const carrying=null;
+
+function rect(x,y,w,h,color){
+  ctx.fillStyle=color;
+  ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h));
+}
+function line(x1,y1,x2,y2,color,width=2){
+  ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineCap="square";
+  ctx.beginPath();ctx.moveTo(Math.round(x1),Math.round(y1));
+  ctx.lineTo(Math.round(x2),Math.round(y2));ctx.stroke();
+}
+
+/* Originaler Charakter-Zeichenstil aus dem Spiel */
+function drawPlayer(){
+  const x=player.x,y=player.y,cx=x+player.w/2;
+  const lift=player.grounded?0:Math.sin(gameTime*12)*1.5;
+  const swing=player.grounded&&Math.abs(player.vx)>.1?Math.sin(player.walk)*7:0;
+  const shoulder=y+31+lift,hip=y+52+lift,head=y+7+lift;
+  const skin="#d5b18a",edge="#805b3c",wood="#b98552",light="#dfb47b";
+
+  rect(cx-20,FLOOR-3,40,4,"#99754f");
+
+  const legs=[
+    {x:cx-6-swing*.35,y:hip+12},
+    {x:cx+6+swing*.35,y:hip+12}
+  ];
+  const feet=[
+    {x:cx-7-swing,y:y+70+lift},
+    {x:cx+7+swing,y:y+70+lift}
+  ];
+
+  legs.forEach((p,i)=>{
+    line(p.x,p.y,feet[i].x,feet[i].y,edge,8);
+    line(p.x,p.y,feet[i].x,feet[i].y,wood,5);
+    rect(feet[i].x-5,feet[i].y-1,10,5,edge);
+    rect(feet[i].x-4,feet[i].y,8,3,wood);
+  });
+
+  const holding=carrying!==null;
+  const le=holding?{x:cx-13,y:y+39+lift}:{x:cx-15-swing*.55,y:y+43+lift};
+  const re=holding?{x:cx+13,y:y+39+lift}:{x:cx+15+swing*.55,y:y+43+lift};
+  const lh=holding?{x:cx-7,y:y+36+lift}:{x:cx-14-swing,y:y+54+lift};
+  const rh=holding?{x:cx+7,y:y+36+lift}:{x:cx+14+swing,y:y+54+lift};
+
+  line(cx-10,shoulder,le.x,le.y,wood,6);
+  line(le.x,le.y,lh.x,lh.y,wood,5);
+  line(cx+10,shoulder,re.x,re.y,wood,6);
+  line(re.x,re.y,rh.x,rh.y,wood,5);
+
+  rect(cx-11,shoulder-3,22,24,edge);
+  rect(cx-8,shoulder,16,18,wood);
+  rect(cx-6,shoulder+2,4,13,light);
+  rect(cx-5,hip-1,10,5,edge);
+  rect(cx-4,hip,8,3,wood);
+
+  if(save.equipped.clothes==="scarf"){
+    rect(cx-10,shoulder-2,20,6,"#4d995f");
+    rect(cx+3,shoulder+1,5,15,"#4d995f");
+    rect(cx+4,shoulder+2,2,11,"#78b27c");
+  }else if(save.equipped.clothes==="shirt"||save.equipped.clothes==="hoodie"){
+    const c=save.equipped.clothes==="shirt"?"#c64c48":"#3977bd";
+    rect(cx-10,shoulder-2,20,20,c);
+    rect(cx-4,shoulder+1,3,14,save.equipped.clothes==="shirt"?"#e1786b":"#6697d2");
+    if(save.equipped.clothes==="hoodie"){
+      rect(cx-7,shoulder-5,14,6,"#28578b");
+      rect(cx-3,shoulder+13,6,3,"#244f7e");
+    }
+  }
+
+  rect(cx-4,shoulder-7,8,7,edge);
+  rect(cx-3,shoulder-6,6,6,wood);
+  rect(cx-11,head,22,23,edge);
+  rect(cx-9,head+2,18,19,skin);
+  rect(cx-7,head+4,14,15,wood);
+  rect(cx-6,head+5,4,11,light);
+  rect(cx-1,head+5,8,11,"#c99a64");
+  rect(cx-6,head+10,3,3,"#43362c");
+  rect(cx+4,head+10,3,3,"#43362c");
+  rect(cx-2,head+16,5,2,"#8c5944");
+
+  if(save.equipped.head==="cap"){
+    rect(cx-13,head+1,26,5,"#3977bd");
+    rect(cx-10,head-5,20,7,"#3977bd");
+    rect(cx+4,head+4,10,3,"#285a91");
+    rect(cx-7,head-3,9,2,"#79a9e3");
+  }else if(save.equipped.head==="crown"){
+    rect(cx-12,head-4,24,5,"#d8a92e");
+    rect(cx-12,head-11,5,8,"#f4c64e");
+    rect(cx-4,head-14,6,11,"#f4c64e");
+    rect(cx+5,head-10,6,7,"#f4c64e");
+    rect(cx-9,head-3,18,2,"#fff0a4");
+  }
+
+  if(save.equipped.face==="glasses"){
+    rect(cx-9,head+9,8,6,"#29323c");
+    rect(cx+1,head+9,8,6,"#29323c");
+    rect(cx-1,head+11,2,2,"#29323c");
+    rect(cx-7,head+10,4,2,"#9fc9d6");
+    rect(cx+3,head+10,4,2,"#9fc9d6");
   }
 }
 
-let save = loadSave();
+function drawSkin(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.save();
+  ctx.scale(4,4);
+  drawPlayer();
+  ctx.restore();
+}
 
-const cosmetics = [
-  {id:"cap",name:"Blaue Cap",type:"head",price:25,color:"#3977bd",symbol:"🧢"},
-  {id:"crown",name:"Goldene Krone",type:"head",price:80,color:"#f4c64e",symbol:"👑"},
-  {id:"glasses",name:"Pixelbrille",type:"face",price:35,color:"#252c38",symbol:"👓"},
-  {id:"scarf",name:"Grüner Schal",type:"clothes",price:30,color:"#4d995f",symbol:"🧣"},
-  {id:"shirt",name:"Rotes Shirt",type:"clothes",price:45,color:"#c64c48",symbol:"👕"},
-  {id:"hoodie",name:"Blauer Hoodie",type:"clothes",price:65,color:"#3977bd",symbol:"🧥"}
-];
-
-let currentCategory = "head";
+function playSound(kind="click"){
+  if(!soundOn)return;
+  try{
+    audio=audio||new(window.AudioContext||window.webkitAudioContext)();
+    if(audio.state==="suspended")audio.resume();
+    const osc=audio.createOscillator();
+    const gain=audio.createGain();
+    osc.connect(gain);gain.connect(audio.destination);
+    const now=audio.currentTime;
+    const settings={
+      click:[520,.055,"square"],
+      select:[680,.09,"sine"],
+      buy:[880,.13,"triangle"],
+      error:[180,.15,"sawtooth"]
+    }[kind]||[520,.06,"sine"];
+    osc.type=settings[2];
+    osc.frequency.setValueAtTime(settings[0],now);
+    if(kind==="buy")osc.frequency.exponentialRampToValueAtTime(1250,now+.12);
+    if(kind==="error")osc.frequency.exponentialRampToValueAtTime(100,now+.14);
+    gain.gain.setValueAtTime(.055,now);
+    gain.gain.exponentialRampToValueAtTime(.001,now+settings[1]);
+    osc.start(now);osc.stop(now+settings[1]);
+  }catch{}
+}
 
 function persist(){
   localStorage.setItem(STORAGE_KEY,JSON.stringify(save));
-  document.getElementById("status").textContent = "✓ Outfit gespeichert";
+  document.getElementById("money").textContent=save.money;
+  document.getElementById("status").textContent="✓ Gespeichert";
 }
 
-function isUnlocked(id){
-  return save.unlocked.includes(id);
+function categoryKey(type){
+  return type==="Kopf"?"head":type==="Gesicht"?"face":"clothes";
 }
 
 function renderItems(){
-  const container = document.getElementById("items");
-  const title = document.getElementById("category-title");
+  const list=document.getElementById("items");
+  list.innerHTML="";
+  document.getElementById("categoryName").textContent=currentCategory.toUpperCase()+"-ITEMS";
 
-  const names = {
-    head:"Kopf-Items",
-    face:"Gesicht-Items",
-    clothes:"Kleidungsstücke"
-  };
+  cosmetics.filter(i=>i.type===currentCategory).forEach(item=>{
+    const unlocked=save.unlocked.includes(item.id);
+    const selected=save.equipped[categoryKey(item.type)]===item.id;
 
-  title.textContent = names[currentCategory];
-  container.innerHTML = "";
-
-  cosmetics
-    .filter(item => item.type === currentCategory)
-    .forEach(item => {
-      const unlocked = isUnlocked(item.id);
-      const selected = save.equipped[currentCategory] === item.id;
-
-      const button = document.createElement("button");
-      button.className = "item" + (selected ? " selected" : "");
-
-      button.innerHTML = `
-        <span class="item-preview">${item.symbol}</span>
-        <span class="item-name">${item.name}</span>
-        <span class="item-price">
-          ${unlocked ? (selected ? "✓ Wird getragen" : "Freigeschaltet") : item.price + " Münzen"}
-        </span>
-      `;
-
-      button.addEventListener("click",() => selectItem(item));
-      container.appendChild(button);
-    });
+    const button=document.createElement("button");
+    button.className="item"+(selected?" selected":"")+(unlocked?"":" locked");
+    button.title=item.name;
+    button.innerHTML=`
+      <span class="symbol">${item.symbol}</span>
+      ${selected?'<span class="check">✓</span>':""}
+      ${!unlocked?'<span class="price">¢ '+item.price+'</span>':""}
+      <span class="tooltip">${item.name}</span>
+    `;
+    button.addEventListener("click",()=>chooseItem(item));
+    list.appendChild(button);
+  });
 }
 
-function selectItem(item){
-  if(!isUnlocked(item.id)){
-    if((save.money || 0) < item.price){
-      document.getElementById("status").textContent = "Nicht genug Münzen!";
+function chooseItem(item){
+  const key=categoryKey(item.type);
+  const unlocked=save.unlocked.includes(item.id);
+
+  if(!unlocked){
+    if(save.money<item.price){
+      playSound("error");
+      document.getElementById("status").textContent="Nicht genug Münzen!";
       return;
     }
-
-    save.money -= item.price;
+    save.money-=item.price;
     save.unlocked.push(item.id);
+    playSound("buy");
+  }else{
+    playSound("select");
   }
 
-  save.equipped[item.type] = item.id;
+  save.equipped[key]=item.id;
   persist();
   renderItems();
   drawSkin();
 }
 
-function drawSkin(){
-  const canvas = document.getElementById("skin");
-  const ctx = canvas.getContext("2d");
-
-  ctx.clearRect(0,0,160,200);
-  ctx.imageSmoothingEnabled = false;
-
-  // Schatten
-  ctx.fillStyle = "#111";
-  ctx.fillRect(38,185,84,7);
-
-  // Beine
-  ctx.fillStyle = "#343c52";
-  ctx.fillRect(51,139,25,42);
-  ctx.fillRect(84,139,25,42);
-
-  // Schuhe
-  ctx.fillStyle = "#292929";
-  ctx.fillRect(47,177,31,9);
-  ctx.fillRect(82,177,31,9);
-
-  // Körper / Kleidung
-  const clothes = save.equipped.clothes;
-
-  let bodyColor = "#4779a9";
-  if(clothes === "scarf") bodyColor = "#4779a9";
-  if(clothes === "shirt") bodyColor = "#c64c48";
-  if(clothes === "hoodie") bodyColor = "#3977bd";
-
-  ctx.fillStyle = bodyColor;
-  ctx.fillRect(43,83,74,58);
-
-  // Arme
-  ctx.fillStyle = "#e8b78f";
-  ctx.fillRect(32,88,11,48);
-  ctx.fillRect(117,88,11,48);
-
-  // Schal
-  if(clothes === "scarf"){
-    ctx.fillStyle = "#4d995f";
-    ctx.fillRect(62,83,36,12);
-    ctx.fillRect(88,90,11,34);
-  }
-
-  // Kopf
-  ctx.fillStyle = "#e8b78f";
-  ctx.fillRect(48,29,64,54);
-
-  // Haare
-  ctx.fillStyle = "#493328";
-  ctx.fillRect(48,23,64,13);
-  ctx.fillRect(43,30,10,17);
-  ctx.fillRect(107,30,10,17);
-
-  // Augen
-  ctx.fillStyle = "#222";
-  ctx.fillRect(63,49,7,7);
-  ctx.fillRect(91,49,7,7);
-
-  // Mund
-  ctx.fillStyle = "#9b554d";
-  ctx.fillRect(74,68,13,3);
-
-  // Brille
-  if(save.equipped.face === "glasses"){
-    ctx.fillStyle = "#252c38";
-    ctx.fillRect(57,47,23,12);
-    ctx.fillRect(85,47,23,12);
-    ctx.fillRect(79,50,7,3);
-    ctx.fillStyle = "#e8b78f";
-    ctx.fillRect(62,50,13,5);
-    ctx.fillRect(90,50,13,5);
-  }
-
-  // Cap
-  if(save.equipped.head === "cap"){
-    ctx.fillStyle = "#3977bd";
-    ctx.fillRect(43,18,74,13);
-    ctx.fillRect(50,12,60,9);
-    ctx.fillRect(100,28,28,5);
-  }
-
-  // Krone
-  if(save.equipped.head === "crown"){
-    ctx.fillStyle = "#f4c64e";
-    ctx.fillRect(51,12,58,15);
-    ctx.fillRect(51,5,10,12);
-    ctx.fillRect(75,0,10,17);
-    ctx.fillRect(99,5,10,12);
-  }
-}
-
-document.querySelectorAll(".category").forEach(button => {
-  button.addEventListener("click",() => {
-    document.querySelectorAll(".category").forEach(b => b.classList.remove("active"));
+document.querySelectorAll(".category").forEach(button=>{
+  button.addEventListener("click",()=>{
+    document.querySelectorAll(".category").forEach(b=>b.classList.remove("active"));
     button.classList.add("active");
-    currentCategory = button.dataset.category;
+    currentCategory=button.dataset.type;
+    playSound("click");
     renderItems();
   });
 });
 
-document.getElementById("remove-item").addEventListener("click",() => {
-  save.equipped[currentCategory] = null;
+document.getElementById("remove").addEventListener("click",()=>{
+  save.equipped[categoryKey(currentCategory)]=null;
+  playSound("click");
   persist();
   renderItems();
   drawSkin();
 });
 
+document.getElementById("money").textContent=save.money;
 renderItems();
 drawSkin();
 </script>
