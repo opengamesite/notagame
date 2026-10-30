@@ -20,7 +20,7 @@ button{font:inherit;cursor:pointer}
 .money{display:flex;align-items:center;gap:8px;padding:10px 15px;color:var(--ink);background:#f7efdf;border:2px solid #bc8b3e;box-shadow:3px 3px 0 #634a3540;font-size:17px}
 .money span{color:#59411d}
 .bottom-hud{position:absolute;z-index:2;bottom:14px;left:15px;right:15px;display:flex;justify-content:space-between;align-items:end;gap:10px;pointer-events:none}
-.controls{display:flex;align-items:center;flex-wrap:wrap;gap:7px 13px;max-width:calc(100% - 50px);padding:9px 12px;color:#f7eddd;background:#292e35;box-shadow:3px 3px 0 #0002;font-size:12px}
+.controls{display:none;align-items:center;flex-wrap:wrap;gap:7px 13px;max-width:calc(100% - 50px);padding:9px 12px;color:#f7eddd;background:#292e35;box-shadow:3px 3px 0 #0002;font-size:12px}
 .controls span{display:flex;gap:5px;align-items:center}
 kbd{display:inline-grid;place-items:center;min-width:19px;height:19px;padding:2px 5px;color:#292e35;background:#f5eddf;border:2px solid #c7b79f;font-weight:bold}
 .small-button,.close-button{display:grid;place-items:center;background:#343941;color:#f8efe1;border:2px solid #1f2329;cursor:pointer}
@@ -50,7 +50,7 @@ kbd{display:inline-grid;place-items:center;min-width:19px;height:19px;padding:2p
 .empty-state{background:#f0e6d7;border-style:dashed;border-color:#c8b79f;color:#827463}
 .order-row{display:flex;justify-content:space-between;align-items:start;gap:12px;padding:12px;border-bottom:1px solid #d8c9b5;font-size:12px}
 .order-row small{max-width:55%;color:#7c6b57;text-align:right;font-size:10px;line-height:1.5}
-@media(max-width:620px){.brand{padding:7px}.brand-icon{width:26px;height:26px}.brand strong{font-size:13px}.brand small{font-size:10px}.hud{top:8px;left:8px;right:8px}.money{padding:8px;font-size:14px}.controls{gap:5px 8px;padding:7px;font-size:10px}.bottom-hud{left:8px;right:8px;bottom:8px}.item-grid{grid-template-columns:1fr}.panel-head{padding:12px}.panel-content{padding:12px}}
+@media(max-width:620px){.brand{padding:7px}.brand-icon{width:26px;height:26px}.brand strong{font-size:13px}.brand small{font-size:10px}.hud{top:8px;left:8px;right:8px}.money{padding:8px;font-size:14px}.controls{gap:5px 8px;padding:7px}.bottom-hud{left:8px;right:8px;bottom:8px}.item-grid{grid-template-columns:1fr}.panel-head{padding:12px}.panel-content{padding:12px}}
 </style>
 </head>
 <body>
@@ -109,7 +109,7 @@ function persist(){
 try{localStorage.setItem(STORAGE_KEY,JSON.stringify(save))}catch{}
 $("money").textContent=save.money;
 }
-let keys=new Set(),activePanel=null,carrying=null,lastTime=performance.now(),gameTime=0,saveTimer=0,faucetTimer=0,soundOn=true,audio=null,hintTimer=null;
+let keys=new Set(),activePanel=null,carrying=null,carryingItem=null,lastTime=performance.now(),gameTime=0,saveTimer=0,faucetTimer=0,soundOn=true,audio=null,hintTimer=null;
 const player={x:300,y:FLOOR-82,vx:0,vy:0,w:34,h:78,grounded:true,facing:1,walk:0};
 const bucket={x:575,y:FLOOR-34,w:34,h:32};
 const objects=[
@@ -168,7 +168,7 @@ const under=bucket.x+bucket.w>805&&bucket.x<855&&bucket.y+bucket.h>315&&bucket.y
 const endY=under?bucket.y+5:329,wobble=Math.sin(gameTime*15)*1.5;
 line(850,299,850+wobble,endY,"#8cd9ec",3);
 for(let i=0;i<5;i++){const yy=302+((gameTime*42+i*17)%Math.max(8,endY-302));rect(847+Math.round(Math.sin(gameTime*8+i)*2),yy,3,4,"#d6f5ff")}
-if(under&&save.bucketWater>0){const fill=Math.min(20,save.bucketWater*20);rect(bucket.x+5,bucket.y+bucket.h-6-fill,bucket.w-10,fill,"#69c9e7")}
+  if(under&&save.bucketWater>0){const fill=Math.min(20,save.bucketWater*20);rect(bucket.x+5,bucket.y+bucket.h-6-fill,bucket.w-10,fill,"#69c9e7")}
 }
 function drawBucket(){
 const x=bucket.x,y=bucket.y;
@@ -182,7 +182,7 @@ ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);rect(-11,0,22,14,"#b96f4c")
 function drawDecor(){
 rect(374,250,157,36,"#d9d1c4");rect(378,254,149,27,"#f1e9dc");for(let x=385;x<524;x+=12)rect(x,257,5,20,"#d2c7b5");rect(700,214,125,7,"#9b6d4b");rect(707,196,22,17,"#8eac9b");rect(710,191,16,7,"#6c967e");rect(737,191,16,22,"#c5a16b");rect(740,185,10,6,"#dfbd83");rect(762,199,19,14,"#6f879a");rect(765,194,13,5,"#a5bbc9");drawPlant(517,439,.85);drawPlant(754,439,.7);line(641,330,641,346,"#20272d",2);line(641,346,673,346,"#20272d",2);rect(488,414,28,26,"#6c8790");rect(485,410,34,5,"#8ca2a5");rect(494,419,3,17,"#4d6873");rect(503,419,3,17,"#4d6873");rect(742,270,20,17,"#f5eadd");rect(748,275,3,5,"#80776e");rect(755,275,3,5,"#80776e");
 }
-  function drawPlacedItems(){
+function drawPlacedItems(){
 for(const item of save.placed){
 if(item.id==="plant")drawPlant(item.x,item.y,.8);
 else if(item.id==="lamp"){
@@ -235,7 +235,7 @@ rect(cx-20,FLOOR-3,40,4,"#99754f");
 const legs=[{x:cx-6-swing*.35,y:hip+12},{x:cx+6+swing*.35,y:hip+12}];
 const feet=[{x:cx-7-swing,y:y+70+lift},{x:cx+7+swing,y:y+70+lift}];
 legs.forEach((p,i)=>{line(p.x,p.y,feet[i].x,feet[i].y,edge,8);line(p.x,p.y,feet[i].x,feet[i].y,wood,5);rect(feet[i].x-5,feet[i].y-1,10,5,edge);rect(feet[i].x-4,feet[i].y,8,3,wood)});
-const holding=carrying!==null;
+const holding=carrying!==null||carryingItem!==null;
 const le=holding?{x:cx-13,y:y+39+lift}:{x:cx-15-swing*.55,y:y+43+lift};
 const re=holding?{x:cx+13,y:y+39+lift}:{x:cx+15+swing*.55,y:y+43+lift};
 const lh=holding?{x:cx-7,y:y+36+lift}:{x:cx-14-swing,y:y+54+lift};
@@ -258,8 +258,20 @@ rect(cx-14,y,28,4,"#9b9b9a");rect(cx-13,y+4,26,19,"#b7c2c2");rect(cx-10,y+5,20,1
 line(cx-10,y+3,cx-7,y-4,"#7b8587",2);line(cx-7,y-4,cx+7,y-4,"#7b8587",2);line(cx+7,y-4,cx+10,y+3,"#7b8587",2);
 if(save.bucketWater>0)rect(cx-9,y+8,18,Math.min(9,save.bucketWater*9),"#58bddd");
 }
+function drawCarriedItem(){
+if(!carryingItem)return;
+const x=player.x+player.w/2+player.facing*18,y=player.y+43;
+ctx.save();ctx.translate(x,y);ctx.scale(.58,.58);
+if(carryingItem==="plant")drawPlant(0,9,.8);
+else if(carryingItem==="lamp"){rect(-13,5,26,6,"#6b513e");rect(-3,-17,6,22,"#6b513e");rect(-16,-24,32,9,"#e7c77b");rect(-12,-21,24,3,"#fff0b0")}
+else if(carryingItem==="poster"){rect(-22,-25,44,34,"#8c6248");rect(-18,-21,36,26,"#f0e6d4");rect(-13,-15,10,10,"#6d9e9c");rect(1,-15,12,10,"#d4aa64")}
+else if(carryingItem==="teddy"){rect(-11,-15,22,22,"#b78557");rect(-14,-23,9,9,"#b78557");rect(5,-23,9,9,"#b78557");rect(-7,-10,3,3,"#45372c");rect(4,-10,3,3,"#45372c");rect(-4,-3,8,4,"#e4c39b")}
+else if(carryingItem==="rug"){rect(-48,-3,96,12,"#416a86");rect(-42,0,84,6,"#7599ad")}
+else if(carryingItem==="star"){drawStar(0,-4,15,"#e8c65f");drawStar(20,-12,8,"#f2d987");drawStar(-20,-14,7,"#f2d987")}
+ctx.restore();
+}
 function draw(){
-ctx.clearRect(0,0,W,H);drawRoom();drawDecor();drawBed();drawWardrobe();drawDesk();drawComputer();drawSink();drawDoor();drawPlacedItems();drawFaucetWater();if(carrying!=="bucket")drawBucket();drawPostman();drawPlayer();if(carrying==="bucket")drawCarriedBucket();
+ctx.clearRect(0,0,W,H);drawRoom();drawDecor();drawBed();drawWardrobe();drawDesk();drawComputer();drawSink();drawDoor();drawPlacedItems();drawFaucetWater();if(carrying!=="bucket")drawBucket();drawPostman();drawPlayer();if(carrying==="bucket")drawCarriedBucket();if(carryingItem)drawCarriedItem();
 ctx.strokeStyle="#6e5745";ctx.lineWidth=4;ctx.strokeRect(2,2,W-4,H-4);
 }
 function getNearby(){
@@ -283,7 +295,7 @@ function makeCard(title,description,detail,actionText,action,disabled=false){
 const card=document.createElement("div");card.className="item-card";
 const info=document.createElement("div");info.className="item-info";
 const name=document.createElement("strong");name.textContent=title;info.append(name);
-const desc=document.createElement("p");desc.textContent=description;info.append(desc);
+
 const small=document.createElement("small");small.textContent=detail;info.append(small);
 card.append(info);const button=makeButton(actionText,action);button.disabled=disabled;card.append(button);return card;
 }
@@ -316,7 +328,7 @@ for(const item of cosmetics){
 const isOwned=owned.includes(item.id),equipped=save.equipped[item.type==="Kopf"?"head":item.type==="Gesicht"?"face":"clothes"]===item.id;
 const card=document.createElement("div");card.className="item-card";card.append(createCosmeticPreview(item));
 const info=document.createElement("div");info.className="item-info";const name=document.createElement("strong");name.textContent=item.name;info.append(name);
-const desc=document.createElement("p");desc.textContent=item.desc;info.append(desc);
+
 const small=document.createElement("small");small.textContent=isOwned?(equipped?"Getragen":"Freigeschaltet"):`${item.price} Münzen`;info.append(small);card.append(info);
 const button=makeButton(isOwned?(equipped?"Ablegen":"Anziehen"):"Kaufen",()=>{
 if(!isOwned){if(save.money<item.price)return;save.money-=item.price;save.unlocked.push(item.id)}
@@ -326,7 +338,7 @@ save.equipped[slot]=save.equipped[slot]===item.id?null:item.id;persist();renderW
 button.disabled=!isOwned&&save.money<item.price;card.append(button);grid.append(card);
 }
 panelContent.append(grid);
-}
+  }
 function renderShop(){
 panelContent.innerHTML="";
 const balance=document.createElement("div");balance.className="balance-line";balance.textContent=`Guthaben: ${save.money} Münzen`;panelContent.append(balance);
@@ -381,12 +393,22 @@ panelContent.innerHTML="";
 const status=document.createElement("div");status.className="balance-line";status.textContent=save.bucketWater>0?"Der Eimer ist voll.":"Der Eimer ist leer.";panelContent.append(status);
 panelContent.append(makeButton("Eimer auffüllen",()=>{save.bucketWater=1;persist();renderBucket();playTone(600,.08,"triangle")}));
 }
-  function interact(){
+function interact(){
+if(carryingItem){
+const x=Math.max(24,Math.min(W-24,player.x+player.w/2+player.facing*30));
+const y=FLOOR-2;
+save.placed.push({id:carryingItem,x,y});carryingItem=null;persist();playTone(390,.07,"triangle");return;
+}
 if(carrying==="bucket"){
 bucket.x=Math.max(8,Math.min(W-bucket.w-8,player.x+player.w/2-bucket.w/2+player.facing*25));
 bucket.y=FLOOR-bucket.h;carrying=null;persist();playTone(330,.06,"triangle");return;
 }
+const px=player.x+player.w/2,py=player.y+player.h/2;
+let placedIndex=-1,placedDistance=Infinity;
+save.placed.forEach((item,index)=>{const d=Math.hypot(px-item.x,py-(item.y-12));if(d<62&&d<placedDistance){placedDistance=d;placedIndex=index}});
+if(placedIndex>=0){const item=save.placed.splice(placedIndex,1)[0];carryingItem=item.id;persist();playTone(520,.07,"triangle");return;}
 const obj=getNearby();
+if(!obj&&save.inventory.length){carryingItem=save.inventory.shift();persist();playTone(520,.07,"triangle");return;}
 if(!obj)return;
 switch(obj.id){
 case "wardrobe":window.location.href="Schrank.html";break;
