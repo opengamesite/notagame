@@ -3,662 +3,583 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Mein Zimmer</title>
 <style>
 *{box-sizing:border-box}
-html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:Arial,sans-serif;background:#d8c9b5}
-canvas{display:block;width:100%;height:100%}
-#hud{position:fixed;top:18px;left:18px;display:flex;gap:10px;align-items:center;z-index:5}
-.pill,.ui-button{border:1px solid #ffffff80;background:#fffaf0e8;color:#554638;padding:12px 17px;border-radius:15px;font-weight:bold;box-shadow:0 4px 15px #46301e20}
-.ui-button{cursor:pointer}
-#controls{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#fffaf0e8;color:#594b3c;padding:12px 18px;border-radius:14px;font-size:13px;white-space:nowrap;box-shadow:0 4px 15px #46301e20}
-#panel{position:fixed;right:18px;top:18px;bottom:18px;width:min(340px,calc(100vw - 36px));z-index:10;background:#fffaf4;border-radius:22px;padding:22px;box-shadow:0 12px 45px #35231540;overflow:auto;color:#514337}
-#panel.hidden{display:none}
-#panel h2{margin:8px 0 18px}
-#closePanel{float:right;border:0;background:#eee2d5;border-radius:10px;padding:8px 12px;cursor:pointer;font-size:18px}
-.panel-card{background:#f2e8dc;border-radius:14px;padding:14px;margin:10px 0}
-.panel-card button{margin-top:8px}
-.small{font-size:12px;color:#8b7967}
-@media(max-width:600px){#controls{font-size:10px;padding:10px 12px;bottom:10px}.pill,.ui-button{padding:10px;font-size:12px}}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#17191b;font-family:Arial,sans-serif}
+canvas{display:block;width:100%;height:100%;outline:none}
+#hud{
+ position:fixed;left:18px;top:16px;color:#fff;
+ background:#17191bdc;padding:12px 16px;border-radius:12px;
+ border:1px solid #ffffff20;font-size:13px;line-height:1.7;
+ pointer-events:none
+}
+#hint{
+ position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+ background:#17191be8;color:white;padding:11px 18px;
+ border-radius:10px;font-size:13px;pointer-events:none;
+ text-align:center;white-space:nowrap
+}
+#prompt{
+ position:fixed;bottom:78px;left:50%;transform:translateX(-50%);
+ color:white;background:#17191be8;padding:10px 17px;
+ border-radius:9px;font-size:13px;display:none
+}
 </style>
 </head>
 <body>
-
 <canvas id="world"></canvas>
-
 <div id="hud">
-  <div class="pill">🪙 <span id="money">120</span></div>
-  <button class="ui-button" id="soundButton">♫</button>
-  <button class="ui-button" id="wardrobeButton">👕 Schrank</button>
-  <button class="ui-button" id="cityButton">🌆 Stadt</button>
+ <b>MEIN ZIMMER</b><br>
+ <span id="status">Ein gemütlicher Tag im Zimmer</span><br>
+ <span id="held">Nichts getragen</span>
 </div>
-
-<div id="controls">
-  A / D Bewegen · LEERTASTE Springen · E Aufheben / Interagieren · Q Ablegen
-</div>
-
-<aside id="panel" class="hidden">
-  <button id="closePanel">✕</button>
-  <div class="small" id="panelEyebrow">MEIN ZIMMER</div>
-  <h2 id="panelTitle">Schrank</h2>
-  <div id="panelContent"></div>
-</aside>
+<div id="prompt"></div>
+<div id="hint">A / D · Bewegen &nbsp; | &nbsp; LEERTASTE · Springen &nbsp; | &nbsp; E · Interagieren &nbsp; | &nbsp; Q · Ablegen</div>
 
 <script>
 "use strict";
 
-(() => {
-const canvas = document.getElementById("world");
-const ctx = canvas.getContext("2d");
+const canvas=document.getElementById("world");
+const ctx=canvas.getContext("2d");
+const statusText=document.getElementById("status");
+const heldText=document.getElementById("held");
+const prompt=document.getElementById("prompt");
 
-const $ = id => document.getElementById(id);
-const W = 960, H = 540;
-
-let dpr = 1;
-let lastTime = 0;
-let money = 120;
-let soundOn = true;
-let panelOpen = false;
-let keys = {};
-let cameraX = 0;
-let worldWidth = 1800;
-let carried = null;
-let selectedCosmetic = "wood";
-let notice = "";
-let noticeTime = 0;
-
-const player = {
-  x: 180, y: 0, vx: 0, vy: 0,
-  width: 48, height: 76,
-  grounded: false,
-  facing: 1,
-  walk: 0,
-  jump: 0,
-  blink: 0,
-  emotion: 0
-};
-
-const floorY = 435;
-
-const objects = [
-  {id:"book",name:"Buch",x:410,y:0,w:35,h:12,color:"#d56d54",weight:1},
-  {id:"plant",name:"Pflanze",x:600,y:0,w:38,h:55,color:"#6e9b69",weight:2},
-  {id:"ball",name:"Ball",x:760,y:0,w:28,h:28,color:"#e6a74f",weight:1},
-  {id:"box",name:"Geschenkbox",x:1000,y:0,w:40,h:35,color:"#d78d9b",weight:2},
-  {id:"lamp",name:"Lampe",x:1280,y:0,w:28,h:60,color:"#e9c875",weight:2}
-];
-
-objects.forEach(o => {
-  o.y = floorY - o.h;
-  o.vy = 0;
-  o.grounded = true;
-});
+const W=960,H=540;
+let scaleX=1,scaleY=1;
+let cameraX=0;
+let lastTime=0;
+let time=0;
 
 function resize(){
-  dpr = Math.min(window.devicePixelRatio || 1, 2);
-  canvas.width = Math.round(innerWidth * dpr);
-  canvas.height = Math.round(innerHeight * dpr);
+ const dpr=Math.min(window.devicePixelRatio||1,2);
+ canvas.width=Math.round(innerWidth*dpr);
+ canvas.height=Math.round(innerHeight*dpr);
+ scaleX=canvas.width/W;
+ scaleY=canvas.height/H;
 }
-window.addEventListener("resize", resize);
+window.addEventListener("resize",resize);
 resize();
 
-function scale(){
-  return Math.min(canvas.width / W, canvas.height / H);
-}
-
-function save(){
-  try{
-    localStorage.setItem("mein-zimmer-save-v2", JSON.stringify({
-      money, selectedCosmetic,
-      objects: objects.map(o => ({
-        id:o.id,x:o.x,y:o.y
-      }))
-    }));
-  }catch(e){}
-}
-
-function load(){
-  try{
-    const data = JSON.parse(localStorage.getItem("mein-zimmer-save-v2"));
-    if(!data) return;
-    money = Number.isFinite(data.money) ? data.money : 120;
-    selectedCosmetic = data.selectedCosmetic || "wood";
-    if(Array.isArray(data.objects)){
-      data.objects.forEach(saved => {
-        const o = objects.find(x => x.id === saved.id);
-        if(o && Number.isFinite(saved.x) && Number.isFinite(saved.y)){
-          o.x = saved.x;
-          o.y = saved.y;
-        }
-      });
-    }
-  }catch(e){}
-  $("money").textContent = money;
-}
-load();
-
-function showNotice(text){
-  notice = text;
-  noticeTime = 2.2;
-}
-
-function openPanel(title, eyebrow, html){
-  panelOpen = true;
-  $("panel").classList.remove("hidden");
-  $("panelTitle").textContent = title;
-  $("panelEyebrow").textContent = eyebrow;
-  $("panelContent").innerHTML = html;
-}
-
-function closePanel(){
-  panelOpen = false;
-  $("panel").classList.add("hidden");
-}
-
-$("closePanel").addEventListener("click", closePanel);
-
-$("wardrobeButton").addEventListener("click", () => {
-  openPanel("Dein Stuhl", "KLEIDERSCHRANK", `
-    <p>Verändere das Aussehen deiner Spielfigur.</p>
-    <div class="panel-card">
-      <strong>🪵 Natürliches Holz</strong><br>
-      <button class="ui-button" data-cosmetic="wood">Auswählen</button>
-    </div>
-    <div class="panel-card">
-      <strong>🌸 Rosa Lack</strong><br>
-      <button class="ui-button" data-cosmetic="pink">Auswählen · 20 Münzen</button>
-    </div>
-    <div class="panel-card">
-      <strong>🌿 Grüner Lack</strong><br>
-      <button class="ui-button" data-cosmetic="green">Auswählen · 20 Münzen</button>
-    </div>
-    <p class="small">Dein Aussehen wird gespeichert.</p>
-  `);
+const keys={};
+window.addEventListener("keydown",e=>{
+ const k=e.key.toLowerCase();
+ keys[k]=true;
+ if([" ","arrowleft","arrowright","arrowup"].includes(k))e.preventDefault();
+ if(k===" "||k==="arrowup"||k==="w")jump();
+ if(k==="e")interact();
+ if(k==="q")dropItem();
 });
+window.addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
 
-$("panelContent").addEventListener("click", e => {
-  const button = e.target.closest("[data-cosmetic]");
-  if(!button) return;
-  const type = button.dataset.cosmetic;
-  if(type !== selectedCosmetic && type !== "wood"){
-    if(money < 20){
-      showNotice("Du brauchst 20 Münzen!");
-      return;
-    }
-    money -= 20;
-  }
-  selectedCosmetic = type;
-  $("money").textContent = money;
-  save();
-  showNotice("Aussehen geändert!");
-  closePanel();
-});
+const world={
+ width:2600,
+ floor:440
+};
 
-$("cityButton").addEventListener("click", () => {
-  openPanel("Die Stadt", "AUSFLUG", `
-    <p>Dein nächstes Abenteuer wartet!</p>
-    <div class="panel-card">
-      <strong>🌆 Stadt besuchen</strong>
-      <p class="small">Die Stadt bekommt eine eigene Welt.</p>
-      <button class="ui-button" onclick="location.href='stadt.html'">Stadt öffnen</button>
-    </div>
-    <div class="panel-card">
-      <strong>🏠 Zuhause</strong>
-      <p class="small">Du befindest dich gerade in deinem Zimmer.</p>
-    </div>
-  `);
-});
+const player={
+ x:180,y:0,vx:0,vy:0,
+ width:84,height:116,
+ grounded:false,
+ facing:1,
+ walk:0,
+ jumpPower:510,
+ held:null
+};
 
-$("soundButton").addEventListener("click", () => {
-  soundOn = !soundOn;
-  $("soundButton").textContent = soundOn ? "♫" : "♪";
-});
+const objects=[
+ {id:"Buch",type:"book",x:430,y:0,w:44,h:12,color:"#405d76",mass:1},
+ {id:"Paket",type:"box",x:650,y:0,w:52,h:48,color:"#b58a5a",mass:2},
+ {id:"Kissen",type:"pillow",x:920,y:0,w:60,h:28,color:"#a6a19a",mass:1},
+ {id:"Blumentopf",type:"plant",x:1200,y:0,w:42,h:62,color:"#71845a",mass:2},
+ {id:"Buch 2",type:"book",x:1580,y:0,w:44,h:12,color:"#8b4d45",mass:1}
+];
 
-function roundedRect(x,y,w,h,r,color){
-  ctx.fillStyle = color;
+const furniture=[
+ {type:"table",x:470,y:440,w:220,h:105},
+ {type:"sofa",x:790,y:440,w:280,h:130},
+ {type:"shelf",x:1250,y:440,w:150,h:180},
+ {type:"lamp",x:1740,y:440,w:80,h:190},
+ {type:"plant",x:2050,y:440,w:80,h:120}
+];
+
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function lerp(a,b,t){return a+(b-a)*t}
+
+function roundedRect(x,y,w,h,r,fill,stroke){
+ ctx.beginPath();
+ ctx.roundRect(x,y,w,h,r);
+ if(fill){ctx.fillStyle=fill;ctx.fill()}
+ if(stroke){ctx.strokeStyle=stroke;ctx.stroke()}
+}
+
+function gradient(x,y,w,h,c1,c2){
+ const g=ctx.createLinearGradient(x,y,x+w,y+h);
+ g.addColorStop(0,c1);g.addColorStop(1,c2);
+ return g;
+}
+
+function wood(x,y,w,h,base="#96613c"){
+ roundedRect(x,y,w,h,3,gradient(x,y,w,h,"#d3a071",base));
+ ctx.save();
+ ctx.globalAlpha=.2;
+ for(let i=0;i<5;i++){
   ctx.beginPath();
-  ctx.roundRect(x,y,w,h,r);
-  ctx.fill();
+  const yy=y+8+i*h/6;
+  ctx.moveTo(x+4,yy);
+  ctx.bezierCurveTo(x+w*.3,yy-3,x+w*.6,yy+3,x+w-4,yy);
+  ctx.strokeStyle=i%2?"#402719":"#f7d0a0";
+  ctx.lineWidth=1;
+  ctx.stroke();
+ }
+ ctx.restore();
 }
 
 function drawRoom(){
-  // Wand
-  const wall = ctx.createLinearGradient(0,0,0,floorY);
-  wall.addColorStop(0,"#eadcc9");
-  wall.addColorStop(1,"#d7c2a9");
-  ctx.fillStyle = wall;
-  ctx.fillRect(0,0,worldWidth,floorY);
+ // Wand
+ ctx.fillStyle=gradient(0,0,0,440,"#e7dfd1","#c7bba9");
+ ctx.fillRect(0,0,world.width,440);
 
-  // Wanddetails
-  ctx.fillStyle = "#c8ad91";
-  ctx.fillRect(0,90,worldWidth,3);
-  ctx.fillRect(0,350,worldWidth,3);
+ // Wandstruktur
+ ctx.strokeStyle="#ffffff35";
+ ctx.lineWidth=2;
+ for(let x=0;x<world.width;x+=160){
+  ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,440);ctx.stroke();
+ }
 
-  // Fenster
-  for(let x=120;x<worldWidth;x+=650){
-    roundedRect(x,65,150,170,8,"#987d65");
-    roundedRect(x+7,72,136,156,4,"#b9d5dd");
-    ctx.fillStyle="#e8f0e8";
-    ctx.fillRect(x+72,72,5,156);
-    ctx.fillRect(x+7,147,136,5);
-    ctx.fillStyle="#fff4d6";
-    ctx.globalAlpha=.22;
-    ctx.beginPath();
-    ctx.moveTo(x+7,72);
-    ctx.lineTo(x+145,72);
-    ctx.lineTo(x+145,228);
-    ctx.closePath();
-    ctx.fill();
-    ctx.globalAlpha=1;
+ // Sockelleiste
+ ctx.fillStyle="#a78e75";
+ ctx.fillRect(0,416,world.width,24);
+ ctx.fillStyle="#d8c4a9";
+ ctx.fillRect(0,416,world.width,4);
+
+ // Fenster
+ for(let x of [110,1030,1900]){
+  ctx.save();
+  ctx.shadowColor="#6b5b47";
+  ctx.shadowBlur=18;
+  ctx.fillStyle="#eee6d7";
+  ctx.fillRect(x,65,240,190);
+  ctx.restore();
+  ctx.fillStyle=gradient(x,65,240,190,"#a8c5d3","#d9e6df");
+  ctx.fillRect(x+9,74,222,172);
+  // Außenansicht
+  ctx.fillStyle="#8fa78b";
+  ctx.fillRect(x+9,190,222,56);
+  ctx.fillStyle="#6e896d";
+  for(let i=0;i<7;i++){
+   ctx.beginPath();ctx.arc(x+25+i*35,195+(i%3)*8,19,0,Math.PI*2);ctx.fill();
   }
+  ctx.fillStyle="#eee8dc";
+  ctx.fillRect(x+116,74,8,172);
+  ctx.fillRect(x+9,155,222,7);
+  ctx.fillStyle="#b49c80";
+  ctx.fillRect(x-7,56,254,10);
+  ctx.fillRect(x-7,255,254,9);
+ }
 
-  // Boden
-  const floor = ctx.createLinearGradient(0,floorY,0,H);
-  floor.addColorStop(0,"#bd916a");
-  floor.addColorStop(1,"#916748");
-  ctx.fillStyle=floor;
-  ctx.fillRect(0,floorY,worldWidth,H-floorY);
+ // Bilder an der Wand
+ for(let x of [490,1510]){
+  ctx.fillStyle="#6f5947";ctx.fillRect(x,90,95,110);
+  ctx.fillStyle="#eee5d5";ctx.fillRect(x+6,96,83,98);
+  ctx.fillStyle="#8a9b7b";
+  ctx.beginPath();ctx.moveTo(x+12,184);ctx.lineTo(x+42,124);ctx.lineTo(x+83,184);ctx.fill();
+  ctx.fillStyle="#c5a17a";
+  ctx.beginPath();ctx.arc(x+49,127,15,0,Math.PI*2);ctx.fill();
+ }
 
-  // Holzplanken
-  for(let x=0;x<worldWidth;x+=95){
-    ctx.strokeStyle="#805a3e55";
-    ctx.lineWidth=2;
-    ctx.beginPath();
-    ctx.moveTo(x,floorY);
-    ctx.lineTo(x,H);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(x,floorY+45);
-    ctx.lineTo(x+95,floorY+45);
-    ctx.stroke();
+ // Boden
+ ctx.fillStyle=gradient(0,440,0,100,"#98734f","#5e4633");
+ ctx.fillRect(0,440,world.width,100);
+ ctx.strokeStyle="#49352288";
+ ctx.lineWidth=2;
+ for(let y=440;y<540;y+=25){
+  ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(world.width,y);ctx.stroke();
+ }
+ for(let x=0;x<world.width;x+=130){
+  ctx.beginPath();ctx.moveTo(x,440);ctx.lineTo(x,540);ctx.stroke();
+ }
+
+ // Lichtflecken
+ ctx.save();
+ ctx.globalAlpha=.11;
+ ctx.fillStyle="#fff2cf";
+ ctx.beginPath();ctx.moveTo(120,255);ctx.lineTo(360,255);ctx.lineTo(540,440);ctx.lineTo(210,440);ctx.fill();
+ ctx.restore();
+}
+
+function drawTable(f){
+ // Schatten
+ ctx.fillStyle="#00000025";
+ ctx.beginPath();ctx.ellipse(f.x+f.w/2,442,f.w*.55,9,0,0,Math.PI*2);ctx.fill();
+ wood(f.x,f.y-12,f.w,14,"#795033");
+ wood(f.x+13,f.y,f.w*.09,f.h,"#765033");
+ wood(f.x+f.w-33,f.y,f.w*.09,f.h,"#765033");
+ wood(f.x+10,f.y+f.h-12,f.w-20,13,"#8e5d3a");
+}
+
+function drawSofa(f){
+ ctx.fillStyle="#00000022";
+ ctx.beginPath();ctx.ellipse(f.x+f.w/2,444,f.w*.55,9,0,0,Math.PI*2);ctx.fill();
+ roundedRect(f.x+10,f.y-80,f.w-20,85,15,gradient(f.x,f.y-80,f.w,85,"#777e7c","#414c4d"));
+ roundedRect(f.x,f.y-35,f.w,45,12,gradient(f.x,f.y-35,f.w,45,"#929895","#555e5d"));
+ roundedRect(f.x+12,f.y-100,75,55,12,"#9b9d96");
+ roundedRect(f.x+100,f.y-100,75,55,12,"#8b918e");
+ roundedRect(f.x+188,f.y-100,75,55,12,"#777f7d");
+ wood(f.x+28,f.y+2,14,18,"#765039");
+ wood(f.x+f.w-42,f.y+2,14,18,"#765039");
+}
+
+function drawShelf(f){
+ wood(f.x,f.y-f.h,f.w,12,"#714a30");
+ wood(f.x+4,f.y-f.h,12,f.h,"#805438");
+ wood(f.x+f.w-16,f.y-f.h,12,f.h,"#805438");
+ for(let y=f.y-f.h+55;y<f.y-15;y+=55){
+  wood(f.x+10,y,f.w-20,8,"#805438");
+ }
+ const books=[
+  ["#8a5144",22],["#526b79",19],["#a88a59",23],
+  ["#66765c",18],["#9b6b4d",24]
+ ];
+ for(let row=0;row<2;row++){
+  let xx=f.x+18;
+  for(let i=0;i<5;i++){
+   const b=books[(i+row*2)%books.length];
+   ctx.fillStyle=b[0];
+   ctx.fillRect(xx,f.y-f.h+39+row*55-b[1],13,b[1]);
+   ctx.fillStyle="#ffffff55";
+   ctx.fillRect(xx+3,f.y-f.h+39+row*55-b[1]+4,2,b[1]-8);
+   xx+=21;
   }
+ }
+}
 
-  // Teppich
-  roundedRect(290,390,440,110,18,"#b96e5d");
-  roundedRect(300,400,420,90,13,"#d59a7d");
-  ctx.strokeStyle="#f0c6a4";
-  ctx.lineWidth=3;
-  ctx.strokeRect(315,414,390,62);
+function drawLamp(f){
+ ctx.fillStyle="#00000020";
+ ctx.beginPath();ctx.ellipse(f.x+f.w/2,443,45,7,0,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle="#6e6255";
+ ctx.fillRect(f.x+36,f.y-140,7,140);
+ ctx.fillStyle="#8c7861";
+ ctx.beginPath();
+ ctx.moveTo(f.x+7,f.y-140);
+ ctx.lineTo(f.x+23,f.y-190);
+ ctx.lineTo(f.x+58,f.y-190);
+ ctx.lineTo(f.x+75,f.y-140);
+ ctx.closePath();ctx.fill();
+ ctx.fillStyle="#e7d5a6";
+ ctx.beginPath();
+ ctx.ellipse(f.x+41,f.y-140,34,6,0,0,Math.PI*2);ctx.fill();
+}
 
-  // Sockelleiste
-  ctx.fillStyle="#f0dfc9";
-  ctx.fillRect(0,350,worldWidth,10);
+function drawPlant(x,y,w,h){
+ ctx.fillStyle="#00000022";
+ ctx.beginPath();ctx.ellipse(x+w/2,y+3,w*.55,7,0,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle="#9d6548";
+ ctx.beginPath();
+ ctx.moveTo(x+8,y-34);ctx.lineTo(x+w-8,y-34);
+ ctx.lineTo(x+w-14,y);ctx.lineTo(x+14,y);ctx.closePath();ctx.fill();
+ ctx.fillStyle="#bd8864";ctx.fillRect(x+8,y-34,w-16,5);
+ const stems=[
+  [w*.5,h*.9,-.25],[w*.45,h*.7,.4],[w*.58,h*.62,-.65],
+  [w*.32,h*.55,.8],[w*.7,h*.48,-.1]
+ ];
+ for(const s of stems){
+  ctx.strokeStyle="#536b43";ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(x+w/2,y-34);ctx.quadraticCurveTo(x+w/2+s[2]*20,y-s[1]*.5,x+s[0],y-s[1]);ctx.stroke();
+  ctx.fillStyle="#6f8d59";
+  ctx.beginPath();ctx.ellipse(x+s[0],y-s[1],10,19,s[2],0,Math.PI*2);ctx.fill();
+  ctx.fillStyle="#9cad77";
+  ctx.beginPath();ctx.ellipse(x+s[0]-3,y-s[1]-5,3,10,s[2],0,Math.PI*2);ctx.fill();
+ }
 }
 
 function drawFurniture(){
-  // Sofa
-  ctx.fillStyle="#75574c";
-  ctx.beginPath();
-  ctx.ellipse(880,420,100,13,0,0,Math.PI*2);
-  ctx.fill();
-  roundedRect(790,300,180,110,20,"#8b6558");
-  roundedRect(805,275,150,75,18,"#a77d6e");
-  roundedRect(795,350,170,45,12,"#bb9180");
-  ctx.fillStyle="#6c4d42";
-  ctx.fillRect(810,400,10,25);
-  ctx.fillRect(945,400,10,25);
+ for(const f of furniture){
+  if(f.type==="table")drawTable(f);
+  if(f.type==="sofa")drawSofa(f);
+  if(f.type==="shelf")drawShelf(f);
+  if(f.type==="lamp")drawLamp(f);
+  if(f.type==="plant")drawPlant(f.x,f.y,f.w,f.h);
+ }
+}
 
-  // Regal
-  roundedRect(1450,155,170,200,7,"#956d4c");
-  ctx.fillStyle="#c59a70";
-  ctx.fillRect(1460,215,150,8);
-  ctx.fillRect(1460,285,150,8);
-  ctx.fillStyle="#e0b47e";
-  ctx.fillRect(1470,165,25,48);
-  ctx.fillRect(1505,170,40,43);
-  ctx.fillStyle="#d18c75";
-  ctx.fillRect(1475,230,38,52);
-  ctx.fillStyle="#78916d";
-  ctx.fillRect(1530,235,55,47);
+function drawBook(o){
+ ctx.save();
+ ctx.translate(o.x,o.y);
+ ctx.fillStyle="#00000025";ctx.fillRect(3,o.h-2,o.w,4);
+ roundedRect(0,0,o.w,o.h,2,o.color);
+ ctx.fillStyle="#d5c9ad";
+ ctx.fillRect(4,2,o.w-8,o.h-4);
+ ctx.fillStyle="#ffffff55";ctx.fillRect(1,1,3,o.h-2);
+ ctx.restore();
+}
+
+function drawBox(o){
+ ctx.save();
+ ctx.translate(o.x,o.y);
+ ctx.fillStyle="#00000020";ctx.fillRect(3,o.h-2,o.w,5);
+ ctx.fillStyle="#b88d5c";ctx.fillRect(0,0,o.w,o.h);
+ ctx.strokeStyle="#805b3b";ctx.lineWidth=2;ctx.strokeRect(1,1,o.w-2,o.h-2);
+ ctx.fillStyle="#d7b184";ctx.fillRect(o.w*.42,0,o.w*.16,o.h);
+ ctx.restore();
+}
+
+function drawPillow(o){
+ ctx.save();ctx.translate(o.x,o.y);
+ roundedRect(0,0,o.w,o.h,10,gradient(0,0,o.w,o.h,"#d5d0c7","#888c89"));
+ ctx.strokeStyle="#ffffff55";ctx.lineWidth=2;
+ ctx.beginPath();ctx.moveTo(8,5);ctx.quadraticCurveTo(o.w/2,o.h/2,o.w-8,5);ctx.stroke();
+ ctx.restore();
 }
 
 function drawObject(o){
-  ctx.save();
-  ctx.translate(o.x,o.y);
+ if(o.type==="book")drawBook(o);
+ if(o.type==="box")drawBox(o);
+ if(o.type==="pillow")drawPillow(o);
+ if(o.type==="plant")drawPlant(o.x,o.y+o.h,o.w,o.h);
+}
 
-  // Schatten
-  ctx.fillStyle="#38291f30";
-  ctx.beginPath();
-  ctx.ellipse(o.w/2,o.h+4,o.w*.7,5,0,0,Math.PI*2);
-  ctx.fill();
-
-  if(o.id==="book"){
-    roundedRect(0,3,o.w,o.h-3,3,o.color);
-    ctx.fillStyle="#f4e5c7";
-    ctx.fillRect(5,4,3,o.h-5);
-  }else if(o.id==="plant"){
-    roundedRect(5,25,28,30,5,"#bd8060");
-    ctx.strokeStyle="#557d4d";
-    ctx.lineWidth=5;
-    ctx.beginPath();
-    ctx.moveTo(19,30);
-    ctx.lineTo(19,7);
-    ctx.stroke();
-    ctx.fillStyle="#6f9c64";
-    ctx.beginPath();
-    ctx.ellipse(9,13,11,6,-.5,0,Math.PI*2);
-    ctx.ellipse(28,9,11,6,.5,0,Math.PI*2);
-    ctx.fill();
-  }else if(o.id==="ball"){
-    ctx.fillStyle=o.color;
-    ctx.beginPath();
-    ctx.arc(14,14,14,0,Math.PI*2);
-    ctx.fill();
-    ctx.strokeStyle="#fff8";
-    ctx.lineWidth=2;
-    ctx.beginPath();
-    ctx.arc(14,14,8,-1,1);
-    ctx.stroke();
-  }else if(o.id==="box"){
-    roundedRect(0,5,o.w,o.h-5,4,o.color);
-    ctx.fillStyle="#f5d5a2";
-    ctx.fillRect(o.w/2-3,5,6,o.h-5);
-    ctx.fillRect(0,15,o.w,5);
-  }else if(o.id==="lamp"){
-    ctx.fillStyle="#80664e";
-    ctx.fillRect(12,22,4,38);
-    ctx.fillStyle="#e8c77d";
-    ctx.beginPath();
-    ctx.moveTo(0,25);
-    ctx.lineTo(7,0);
-    ctx.lineTo(23,0);
-    ctx.lineTo(28,25);
-    ctx.closePath();
-    ctx.fill();
-    ctx.fillStyle="#f9e5a5";
-    ctx.beginPath();
-    ctx.arc(14,29,5,0,Math.PI*2);
-    ctx.fill();
-  }
-  ctx.restore();
+function chairLeg(x,y,w,h,angle,back=false){
+ ctx.save();
+ ctx.translate(x,y);
+ ctx.rotate(angle);
+ const g=gradient(-w/2,0,w,h,back?"#63412c":"#a36d43",back?"#a8794e":"#593923");
+ roundedRect(-w/2,0,w,h,3,g);
+ ctx.fillStyle="#ffffff35";
+ ctx.fillRect(-w/2+2,3,2,h-7);
+ ctx.restore();
 }
 
 function drawChair(){
-  const x=player.x-cameraX;
-  const y=player.y;
-  const bob = player.grounded ? Math.abs(Math.sin(player.walk))*2 : 0;
-  const tilt = player.grounded ? Math.sin(player.walk)*.035 : -.08;
+ const moving=Math.abs(player.vx)>8&&player.grounded;
+ const cycle=moving?Math.sin(player.walk):0;
+ const tilt=player.grounded?cycle*.025:player.vy<0?-.045:.03;
+ const x=player.x-player.width/2;
+ const y=player.y;
+ const bob=moving?Math.abs(cycle)*1.5:0;
 
+ ctx.save();
+ ctx.translate(x+42,y+58+bob);
+ ctx.rotate(tilt);
+ ctx.translate(-42,-58);
+
+ // Schatten
+ ctx.fillStyle="#00000035";
+ ctx.beginPath();ctx.ellipse(43,112,44,7,0,0,Math.PI*2);ctx.fill();
+
+ // Hintere Beine
+ chairLeg(23,62,10,49,-.07-cycle*.12,true);
+ chairLeg(62,62,10,49,.07+cycle*.12,true);
+
+ // Rückenlehne
+ wood(18,0,55,67,"#754629");
+ ctx.fillStyle="#d6a174";
+ ctx.fillRect(23,5,45,5);
+ ctx.fillStyle="#6d422a";
+ ctx.fillRect(25,14,41,3);
+ ctx.fillRect(25,28,41,3);
+ ctx.fillRect(25,42,41,3);
+ ctx.fillRect(25,56,41,3);
+
+ // Sitzfläche
+ ctx.save();
+ ctx.shadowColor="#00000045";
+ ctx.shadowBlur=7;
+ wood(7,61,76,13,"#98613a");
+ ctx.restore();
+
+ // Seitliche Holzkanten
+ wood(8,65,9,13,"#754629");
+ wood(73,65,9,13,"#754629");
+
+ // Vordere Beine
+ chairLeg(16,72,10,43,cycle*.12,false);
+ chairLeg(67,72,10,43,-cycle*.12,false);
+
+ // Armlehnen
+ wood(4,52,13,7,"#98613a");
+ wood(70,52,13,7,"#98613a");
+ wood(7,54,7,12,"#875332");
+ wood(73,54,7,12,"#875332");
+
+ // Holzmaserung
+ ctx.strokeStyle="#4b2d1c66";ctx.lineWidth=1;
+ ctx.beginPath();ctx.moveTo(28,9);ctx.lineTo(28,58);ctx.stroke();
+ ctx.beginPath();ctx.moveTo(60,9);ctx.lineTo(60,58);ctx.stroke();
+
+ ctx.restore();
+
+ // Getragener Gegenstand liegt sichtbar auf der Sitzfläche
+ if(player.held){
+  const o=player.held;
+  const hx=player.x-player.facing*4;
+  const hy=player.y+43;
   ctx.save();
-  ctx.translate(x+24,y+player.height-bob);
-  ctx.scale(player.facing,1);
-  ctx.rotate(tilt);
-
-  // Bodenschatten
-  ctx.fillStyle="#30231d35";
-  ctx.beginPath();
-  ctx.ellipse(0,2,30,7,0,0,Math.PI*2);
-  ctx.fill();
-
-  const wood = selectedCosmetic==="pink" ? "#d68e9e" :
-               selectedCosmetic==="green" ? "#739879" : "#b78354";
-  const dark = selectedCosmetic==="pink" ? "#a75f75" :
-               selectedCosmetic==="green" ? "#486e53" : "#805433";
-  const light = selectedCosmetic==="pink" ? "#efb9c5" :
-                selectedCosmetic==="green" ? "#a7c39b" : "#d9ad7b";
-
-  // Hinterbeine
-  ctx.strokeStyle=dark;
-  ctx.lineWidth=7;
-  ctx.lineCap="round";
-  ctx.beginPath();
-  ctx.moveTo(-15,-25);ctx.lineTo(-17,-2);
-  ctx.moveTo(15,-25);ctx.lineTo(17,-2);
-  ctx.stroke();
-
-  // Sitzfläche
-  roundedRect(-25,-42,50,14,7,dark);
-  roundedRect(-24,-45,48,12,6,wood);
-
-  // Rückenlehne
-  roundedRect(-20,-82,40,39,9,dark);
-  roundedRect(-17,-80,34,35,8,wood);
-
-  // Rückenlehnen-Details
-  ctx.strokeStyle=light;
-  ctx.lineWidth=3;
-  ctx.beginPath();
-  ctx.moveTo(-9,-74);ctx.lineTo(-9,-51);
-  ctx.moveTo(9,-74);ctx.lineTo(9,-51);
-  ctx.stroke();
-
-  // Vorderbeine
-  ctx.strokeStyle=dark;
-  ctx.lineWidth=7;
-  ctx.beginPath();
-  ctx.moveTo(-19,-32);ctx.lineTo(-21,-2);
-  ctx.moveTo(19,-32);ctx.lineTo(21,-2);
-  ctx.stroke();
-
-  // Kleine Füße
-  ctx.strokeStyle=wood;
-  ctx.lineWidth=9;
-  ctx.beginPath();
-  ctx.moveTo(-25,-2);ctx.lineTo(-15,-2);
-  ctx.moveTo(15,-2);ctx.lineTo(25,-2);
-  ctx.stroke();
-
-  // Arme
-  const armMove = player.grounded ? Math.sin(player.walk)*5 : -7;
-  ctx.strokeStyle=dark;
-  ctx.lineWidth=6;
-  ctx.beginPath();
-  ctx.moveTo(-23,-48);ctx.lineTo(-31,-38+armMove);
-  ctx.moveTo(23,-48);ctx.lineTo(31,-38-armMove);
-  ctx.stroke();
-
-  // Augen
-  ctx.fillStyle="#fffaf0";
-  ctx.beginPath();
-  ctx.ellipse(-8,-62,6,8,0,0,Math.PI*2);
-  ctx.ellipse(8,-62,6,8,0,0,Math.PI*2);
-  ctx.fill();
-
-  ctx.fillStyle="#352a24";
-  ctx.beginPath();
-  ctx.arc(-7,-62,2.8,0,Math.PI*2);
-  ctx.arc(9,-62,2.8,0,Math.PI*2);
-  ctx.fill();
-
-  // Mund
-  ctx.strokeStyle="#674338";
-  ctx.lineWidth=2;
-  ctx.beginPath();
-  ctx.arc(0,-51,5,.2,Math.PI-.2);
-  ctx.stroke();
-
-  // Kleine Glanzpunkte
-  ctx.fillStyle="#fff";
-  ctx.beginPath();
-  ctx.arc(-8,-65,1.5,0,Math.PI*2);
-  ctx.arc(8,-65,1.5,0,Math.PI*2);
-  ctx.fill();
-
-  // Getragener Gegenstand
-  if(carried){
-    ctx.save();
-    ctx.translate(35,-42);
-    ctx.scale(.7,.7);
-    drawObject({ ...carried, x:0,y:0 });
-    ctx.restore();
-  }
-
+  ctx.translate(hx,hy);
+  ctx.rotate(-player.facing*.08);
+  const temp={...o,x:0,y:0};
+  if(temp.type==="book")drawBook(temp);
+  if(temp.type==="box")drawBox(temp);
+  if(temp.type==="pillow")drawPillow(temp);
   ctx.restore();
+ }
 }
 
-function nearestObject(){
-  let best=null, distance=Infinity;
-  for(const o of objects){
-    if(o===carried) continue;
-    const d=Math.abs((o.x+o.w/2)-(player.x+24));
-    if(d<distance && d<85){
-      distance=d;
-      best=o;
-    }
-  }
-  return best;
-}
-
-function pickup(){
-  if(carried){
-    carried.x=player.x+player.width/2+player.facing*40-carried.w/2;
-    carried.y=floorY-carried.h;
-    carried.vy=0;
-    carried.grounded=true;
-    objects.push(carried);
-    carried=null;
-    showNotice("Gegenstand abgestellt!");
-    save();
-    return;
-  }
-  const o=nearestObject();
-  if(!o){
-    showNotice("Hier ist nichts zum Aufheben.");
-    return;
-  }
-  carried=o;
-  objects.splice(objects.indexOf(o),1);
-  showNotice(o.name+" aufgehoben!");
-  save();
-}
-
-function interact(){
-  if(panelOpen) return;
-  const o=nearestObject();
-  if(o){
-    pickup();
-    return;
-  }
-  showNotice("Schau dich ein bisschen um!");
-}
-
-function update(dt){
-  if(panelOpen) return;
-
-  const speed=190;
-  let move=0;
-  if(keys.KeyA || keys.ArrowLeft) move--;
-  if(keys.KeyD || keys.ArrowRight) move++;
-
-  player.vx=move*speed;
-  if(move!==0){
-    player.facing=move;
-    player.walk+=dt*10;
-  }else{
-    player.walk+=dt*2;
-  }
-
-  player.x+=player.vx*dt;
-  player.x=Math.max(0,Math.min(worldWidth-player.width,player.x));
-
-  if(keys.Space && player.grounded){
-    player.vy=-480;
-    player.grounded=false;
-    player.jump=1;
-  }
-
-  player.vy+=1100*dt;
-  player.y+=player.vy*dt;
-
-  if(player.y+player.height>=floorY){
-    player.y=floorY-player.height;
-    player.vy=0;
-    player.grounded=true;
-  }
-
-  // Schwerkraft für Gegenstände
-  for(const o of objects){
-    if(o.grounded) continue;
-    o.vy+=1000*dt;
-    o.y+=o.vy*dt;
-    if(o.y+o.h>=floorY){
-      o.y=floorY-o.h;
-      o.vy=0;
-      o.grounded=true;
-    }
-  }
-
-  cameraX=Math.max(0,Math.min(worldWidth-W,player.x-W/2));
-  if(noticeTime>0) noticeTime-=dt;
+function drawRoomDecor(){
+ // Kleine Wandsteckdose
+ for(let x of [730,1460]){
+  roundedRect(x,385,25,18,3,"#e7dfd3");
+  ctx.fillStyle="#777";ctx.fillRect(x+7,391,3,6);ctx.fillRect(x+15,391,3,6);
+ }
+ // Teppich
+ ctx.fillStyle="#00000018";
+ ctx.fillRect(340,422,430,8);
+ ctx.fillStyle="#8b7770";
+ ctx.fillRect(350,400,410,23);
+ ctx.fillStyle="#aa9687";
+ ctx.fillRect(365,403,380,17);
+ ctx.strokeStyle="#ffffff35";
+ ctx.strokeRect(375,405,360,13);
 }
 
 function draw(){
-  ctx.setTransform(1,0,0,1,0,0);
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+ ctx.setTransform(scaleX,0,0,scaleY,0,0);
+ ctx.clearRect(0,0,W,H);
 
-  const s=scale();
-  const ox=(canvas.width-W*s)/2;
-  const oy=(canvas.height-H*s)/2;
-  ctx.setTransform(s,0,0,s,ox,oy);
+ ctx.save();
+ ctx.translate(-cameraX,0);
+ drawRoom();
+ drawRoomDecor();
+ drawFurniture();
 
-  ctx.save();
-  ctx.translate(-cameraX,0);
+ for(const o of objects)drawObject(o);
+ drawChair();
 
-  drawRoom();
-  drawFurniture();
+ ctx.restore();
 
-  for(const o of objects) drawObject(o);
-
-  drawChair();
-  ctx.restore();
-
-  // Interaktionshinweis
-  if(!panelOpen && nearestObject() && !carried){
-    roundedRect(410,350,140,30,10,"#fffaf0e8");
-    ctx.fillStyle="#554638";
-    ctx.font="bold 13px Arial";
-    ctx.textAlign="center";
-    ctx.fillText("E  Aufheben",480,370);
-  }
-
-  if(carried){
-    roundedRect(410,350,140,30,10,"#fffaf0e8");
-    ctx.fillStyle="#554638";
-    ctx.font="bold 13px Arial";
-    ctx.textAlign="center";
-    ctx.fillText("Q  Ablegen",480,370);
-  }
-
-  if(noticeTime>0){
-    ctx.globalAlpha=Math.min(1,noticeTime);
-    roundedRect(330,35,300,42,13,"#fffaf0ed");
-    ctx.fillStyle="#554638";
-    ctx.font="bold 15px Arial";
-    ctx.textAlign="center";
-    ctx.fillText(notice,480,61);
-    ctx.globalAlpha=1;
-  }
+ // Kleine Positionsanzeige
+ statusText.textContent=player.grounded?"Der Stuhl steht auf dem Boden":"Der Stuhl ist in der Luft";
+ heldText.textContent=player.held?"Trägt: "+player.held.id:"Nichts getragen";
 }
 
-function loop(time){
-  const dt=Math.min((time-lastTime)/1000 || 0,0.033);
-  lastTime=time;
-  update(dt);
-  draw();
-  requestAnimationFrame(loop);
+function jump(){
+ if(player.grounded){
+  player.vy=-player.jumpPower;
+  player.grounded=false;
+ }
 }
 
-window.addEventListener("keydown",e=>{
-  if(["Space","ArrowLeft","ArrowRight"].includes(e.code)) e.preventDefault();
-  if(keys[e.code]) return;
-  keys[e.code]=true;
+function nearestObject(){
+ let best=null,bestD=95;
+ for(const o of objects){
+  if(o===player.held)continue;
+  const dx=(o.x+o.w/2)-(player.x);
+  const dy=(o.y+o.h/2)-(player.y+player.height/2);
+  const d=Math.hypot(dx,dy);
+  if(d<bestD){best=o;bestD=d}
+ }
+ return best;
+}
 
-  if(e.code==="KeyE") interact();
-  if(e.code==="KeyQ" && carried) pickup();
-  if(e.code==="Escape") closePanel();
-});
+function interact(){
+ if(player.held){
+  dropItem();
+  return;
+ }
+ const o=nearestObject();
+ if(!o)return;
+ player.held=o;
+ objects.splice(objects.indexOf(o),1);
+ player.vx*=.5;
+}
 
-window.addEventListener("keyup",e=>{
-  keys[e.code]=false;
-});
+function dropItem(){
+ if(!player.held)return;
+ const o=player.held;
+ o.x=player.x-o.w/2+player.facing*35;
+ o.y=player.y+player.height-o.h;
+ o.vx=player.facing*80;
+ o.vy=-80;
+ objects.push(o);
+ player.held=null;
+}
 
-window.addEventListener("blur",()=>{
-  keys={};
-});
+function update(dt){
+ time+=dt;
 
+ const left=keys["a"]||keys["arrowleft"];
+ const right=keys["d"]||keys["arrowright"];
+ const dir=(right?1:0)-(left?1:0);
+
+ if(dir!==0){
+  player.facing=dir;
+  player.vx+=dir*1500*dt;
+ }else{
+  player.vx*=Math.pow(.0008,dt);
+ }
+
+ player.vx=clamp(player.vx,-250,250);
+ player.x+=player.vx*dt;
+ player.x=clamp(player.x,50,world.width-50);
+
+ // Schwerkraft
+ player.vy+=1450*dt;
+ player.y+=player.vy*dt;
+
+ if(player.y+player.height>=world.floor){
+  player.y=world.floor-player.height;
+  player.vy=0;
+  player.grounded=true;
+ }else{
+  player.grounded=false;
+ }
+
+ if(Math.abs(player.vx)>8&&player.grounded)player.walk+=dt*10;
+
+ // Gegenstände haben eigene Schwerkraft
+ for(const o of objects){
+  o.vx=(o.vx||0)*Math.pow(.08,dt);
+  o.vy=(o.vy||0)+1200*dt;
+  o.x+=o.vx*dt;
+  o.y+=o.vy*dt;
+
+  if(o.y+o.h>world.floor){
+   o.y=world.floor-o.h;
+   o.vy=0;
+  }
+  o.x=clamp(o.x,0,world.width-o.w);
+ }
+
+ // Kamera folgt dem Spieler, ohne seine Bewegung zu ersetzen
+ const target=clamp(player.x-W*.42,0,world.width-W);
+ cameraX=lerp(cameraX,target,1-Math.pow(.0005,dt));
+
+ // Interaktionshinweis
+ const nearby=player.held?null:nearestObject();
+ if(player.held){
+  prompt.style.display="block";
+  prompt.textContent="E oder Q drücken · Gegenstand ablegen";
+ }else if(nearby){
+  prompt.style.display="block";
+  prompt.textContent="E drücken · "+nearby.id+" aufheben";
+ }else{
+  prompt.style.display="none";
+ }
+}
+
+function loop(timestamp){
+ const dt=Math.min((timestamp-lastTime)/1000||0,.033);
+ lastTime=timestamp;
+ update(dt);
+ draw();
+ requestAnimationFrame(loop);
+}
+
+// Startposition
+player.y=world.floor-player.height;
 requestAnimationFrame(loop);
-})();
 </script>
 </body>
 </html>
