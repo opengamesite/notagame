@@ -19,9 +19,7 @@
     --white: #f4edda;
 }
 
-* {
-    box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
     margin: 0;
@@ -38,9 +36,7 @@ body {
     padding: 25px 15px;
 }
 
-button, input {
-    font-family: inherit;
-}
+button, input { font-family: inherit; }
 
 .page {
     width: 100%;
@@ -48,9 +44,7 @@ button, input {
     text-align: center;
 }
 
-.logo {
-    margin-bottom: 28px;
-}
+.logo { margin-bottom: 28px; }
 
 .logo h1 {
     color: var(--yellow);
@@ -67,8 +61,6 @@ button, input {
     margin-top: 12px;
 }
 
-/* COMPUTER */
-
 .computer {
     width: min(100%, 570px);
     margin: 0 auto 28px;
@@ -82,9 +74,8 @@ button, input {
     border-bottom: 13px solid #77776d;
     border-radius: 22px 22px 12px 12px;
     padding: 17px;
-    box-shadow:
-        inset 5px 5px 0 rgba(255,255,255,.22),
-        inset -5px -5px 0 rgba(0,0,0,.12);
+    box-shadow: inset 5px 5px 0 rgba(255,255,255,.22),
+                inset -5px -5px 0 rgba(0,0,0,.12);
 }
 
 .screen {
@@ -124,11 +115,10 @@ button, input {
     height: 44px;
     background: #e9b95f;
     margin: 0 auto 15px;
-    box-shadow:
-        0 -8px 0 -3px #e9b95f,
-        0 8px 0 -3px #e9b95f,
-        8px 0 0 -3px #e9b95f,
-        -8px 0 0 -3px #e9b95f;
+    box-shadow: 0 -8px 0 -3px #e9b95f,
+                0 8px 0 -3px #e9b95f,
+                8px 0 0 -3px #e9b95f,
+                -8px 0 0 -3px #e9b95f;
 }
 
 .screen-title {
@@ -152,7 +142,7 @@ button, input {
     padding-top: 11px;
 }
 
-.monitor-dot {
+.monitor-dot, .monitor-light, .monitor-button {
     width: 9px;
     height: 9px;
     border-radius: 50%;
@@ -162,7 +152,6 @@ button, input {
 .monitor-light {
     width: 7px;
     height: 7px;
-    border-radius: 50%;
     background: #9acb73;
     box-shadow: 0 0 8px #9acb73;
 }
@@ -170,7 +159,6 @@ button, input {
 .monitor-button {
     width: 15px;
     height: 15px;
-    border-radius: 50%;
     background: #555b52;
     border: 2px solid #77776d;
 }
@@ -190,8 +178,6 @@ button, input {
     margin: 0 auto;
     box-shadow: inset 0 -4px 0 rgba(0,0,0,.12);
 }
-
-/* MENU */
 
 .menu {
     display: flex;
@@ -229,18 +215,14 @@ button, input {
     box-shadow: 0 6px 0 #64846a;
 }
 
-.menu-button.multiplayer:hover {
-    background: #c5e3b9;
-}
+.menu-button.multiplayer:hover { background: #c5e3b9; }
 
 .menu-button.settings {
     background: #e8a16b;
     box-shadow: 0 6px 0 #a56642;
 }
 
-.menu-button.settings:hover {
-    background: #ffc08c;
-}
+.menu-button.settings:hover { background: #ffc08c; }
 
 .button-icon {
     display: block;
@@ -248,16 +230,12 @@ button, input {
     margin-bottom: 13px;
 }
 
-/* FOOTER */
-
 .footer {
     color: #777f96;
     font-size: 8px;
     margin-top: 30px;
     line-height: 2;
 }
-
-/* MODALS */
 
 .modal-backdrop {
     display: none;
@@ -268,11 +246,10 @@ button, input {
     align-items: center;
     justify-content: center;
     padding: 18px;
+    overflow-y: auto;
 }
 
-.modal-backdrop.open {
-    display: flex;
-}
+.modal-backdrop.open { display: flex; }
 
 .modal {
     width: 100%;
@@ -282,6 +259,7 @@ button, input {
     box-shadow: 9px 9px 0 rgba(0,0,0,.35);
     padding: 25px;
     text-align: center;
+    margin: auto;
 }
 
 .modal h2 {
@@ -309,9 +287,7 @@ button, input {
     margin: 8px 0 15px;
 }
 
-.modal input:focus {
-    border-color: var(--yellow);
-}
+.modal input:focus { border-color: var(--yellow); }
 
 .modal-button {
     width: 100%;
@@ -324,13 +300,8 @@ button, input {
     cursor: pointer;
 }
 
-.modal-button.secondary {
-    background: #a9c9a0;
-}
-
-.modal-button.close {
-    background: #d38b7b;
-}
+.modal-button.secondary { background: #a9c9a0; }
+.modal-button.close { background: #d38b7b; }
 
 .modal-button:disabled {
     opacity: .5;
@@ -340,6 +311,7 @@ button, input {
 .note {
     font-size: 12px !important;
     color: #aab2c5 !important;
+    overflow-wrap: anywhere;
 }
 
 .setting-row {
@@ -357,23 +329,31 @@ button, input {
     margin: 0;
 }
 
-@media(max-width: 600px) {
-    .screen {
-        height: 210px;
-    }
+.room-result {
+    display: none;
+    background: #171b29;
+    border: 2px solid #a9c9a0;
+    padding: 15px;
+    margin-top: 15px;
+    overflow-wrap: anywhere;
+}
 
+.room-result strong {
+    display: block;
+    color: var(--yellow);
+    font-size: 18px;
+    margin-top: 12px;
+    letter-spacing: 3px;
+}
+
+@media(max-width: 600px) {
+    .screen { height: 210px; }
     .menu {
         flex-direction: column;
         align-items: center;
     }
-
-    .menu-button {
-        width: min(100%, 300px);
-    }
-
-    .logo p {
-        font-size: 7px;
-    }
+    .menu-button { width: min(100%, 300px); }
+    .logo p { font-size: 7px; }
 }
 </style>
 </head>
@@ -392,12 +372,8 @@ button, input {
             <div class="screen">
                 <div class="screen-content">
                     <div class="pixel-sun"></div>
-                    <div class="screen-title">
-                        MEIN ZIMMER
-                    </div>
-                    <div class="screen-subtitle">
-                        DEIN ABENTEUER BEGINNT ...
-                    </div>
+                    <div class="screen-title">MEIN ZIMMER</div>
+                    <div class="screen-subtitle">DEIN ABENTEUER BEGINNT ...</div>
                 </div>
             </div>
 
@@ -413,7 +389,6 @@ button, input {
     </div>
 
     <div class="menu">
-
         <button class="menu-button" onclick="startGame()">
             <span class="button-icon">▶</span>
             EINZELSPIELER
@@ -428,7 +403,6 @@ button, input {
             <span class="button-icon">⚙</span>
             EINSTELLUNGEN
         </button>
-
     </div>
 
     <div class="footer">
@@ -444,32 +418,28 @@ button, input {
     <div class="modal">
         <h2>MEHRSPIELER</h2>
 
-        <p>
-            Spiele gemeinsam mit deinen Freunden in einer eigenen Welt!
-        </p>
+        <p>Spiele gemeinsam mit deinen Freunden in einer eigenen Welt!</p>
 
-        <input
-            id="playerName"
-            maxlength="18"
-            placeholder="Dein Spielername"
-        >
+        <input id="playerName" maxlength="18" placeholder="Dein Spielername">
 
-        <button class="modal-button secondary" onclick="showMultiplayerInfo()">
+        <button class="modal-button secondary" id="createRoomButton" onclick="createRoom()">
             WELT ERSTELLEN
         </button>
 
-        <input
-            id="roomCode"
-            maxlength="12"
-            placeholder="Einladungscode eingeben"
-        >
+        <input id="roomCode" maxlength="12" placeholder="Einladungscode eingeben">
 
-        <button class="modal-button" onclick="showMultiplayerInfo()">
+        <button class="modal-button" id="joinRoomButton" onclick="joinRoom()">
             WELT BEITRETEN
         </button>
 
+        <div class="room-result" id="roomResult">
+            DEIN EINLADUNGSCODE
+            <strong id="createdRoomCode"></strong>
+            <button class="modal-button secondary" onclick="copyRoomCode()">CODE KOPIEREN</button>
+        </div>
+
         <p class="note" id="multiplayerMessage">
-            Das Online-System wird gerade vorbereitet.
+            Bitte gib deinen Spielernamen ein.
         </p>
 
         <button class="modal-button close" onclick="closeModal('multiplayerModal')">
@@ -494,17 +464,18 @@ button, input {
             <input type="checkbox" id="animations" checked>
         </div>
 
-        <button class="modal-button" onclick="saveSettings()">
-            SPEICHERN
-        </button>
-
-        <button class="modal-button close" onclick="closeModal('settingsModal')">
-            ZURÜCK
-        </button>
+        <button class="modal-button" onclick="saveSettings()">SPEICHERN</button>
+        <button class="modal-button close" onclick="closeModal('settingsModal')">ZURÜCK</button>
     </div>
 </div>
 
+<!-- Supabase zuerst laden -->
+<script src="supabase.js"></script>
+
 <script>
+let activeRoom = null;
+let busy = false;
+
 function startGame() {
     window.location.href = "index.html";
 }
@@ -517,9 +488,131 @@ function closeModal(id) {
     document.getElementById(id).classList.remove("open");
 }
 
-function showMultiplayerInfo() {
-    document.getElementById("multiplayerMessage").textContent =
-        "Die Online-Verbindung ist noch nicht angeschlossen. Spielerprofile und Einladungen folgen mit unserem Server.";
+function setMessage(message, error = false) {
+    const element = document.getElementById("multiplayerMessage");
+    element.textContent = message;
+    element.style.color = error ? "#ff9b91" : "#a9c9a0";
+}
+
+function setBusy(value) {
+    busy = value;
+    document.getElementById("createRoomButton").disabled = value;
+    document.getElementById("joinRoomButton").disabled = value;
+}
+
+function getPlayerName() {
+    return document.getElementById("playerName").value.trim();
+}
+
+async function loginPlayer() {
+    if (!window.GameOnline) {
+        throw new Error("supabase.js wurde nicht geladen. Bitte Dateiname und GitHub-Pfad prüfen.");
+    }
+
+    const name = getPlayerName();
+
+    if (name.length < 2 || name.length > 18) {
+        throw new Error("Dein Spielername muss 2 bis 18 Zeichen lang sein.");
+    }
+
+    const result = await GameOnline.login(name);
+
+    if (!result || result.error) {
+        throw new Error(result?.error?.message || "Spieleranmeldung fehlgeschlagen.");
+    }
+
+    return result;
+}
+
+async function createRoom() {
+    if (busy) return;
+
+    setBusy(true);
+    document.getElementById("roomResult").style.display = "none";
+    setMessage("Verbindung wird hergestellt ...");
+
+    try {
+        await loginPlayer();
+
+        const result = await GameOnline.createRoom("Meine Welt");
+
+        if (!result || result.error) {
+            throw new Error(result?.error?.message || "Die Welt konnte nicht erstellt werden.");
+        }
+
+        const room = result.data;
+
+        activeRoom = room;
+
+        const code = room.invite_code || room.code;
+
+        if (!code) {
+            throw new Error("Die Welt wurde erstellt, aber der Einladungscode fehlt in der Serverantwort.");
+        }
+
+        document.getElementById("createdRoomCode").textContent = code;
+        document.getElementById("roomResult").style.display = "block";
+
+        setMessage("Deine Welt wurde erfolgreich erstellt!");
+
+    } catch (error) {
+        console.error(error);
+        setMessage(error.message || "Ein unbekannter Fehler ist aufgetreten.", true);
+    } finally {
+        setBusy(false);
+    }
+}
+
+async function joinRoom() {
+    if (busy) return;
+
+    const code = document.getElementById("roomCode").value.trim();
+
+    if (!code) {
+        setMessage("Bitte gib einen Einladungscode ein.", true);
+        return;
+    }
+
+    setBusy(true);
+    setMessage("Einladungscode wird geprüft ...");
+
+    try {
+        await loginPlayer();
+
+        const result = await GameOnline.joinRoom(code);
+
+        if (!result || result.error) {
+            throw new Error(result?.error?.message || "Beitritt fehlgeschlagen.");
+        }
+
+        activeRoom = result.data;
+
+        setMessage("Du bist der Welt erfolgreich beigetreten!");
+
+        // Raumdaten für den nächsten Spielschritt lokal merken.
+        sessionStorage.setItem("mein-zimmer-active-room", JSON.stringify(activeRoom));
+
+        setTimeout(() => {
+            window.location.href = "index.html";
+        }, 1000);
+
+    } catch (error) {
+        console.error(error);
+        setMessage(error.message || "Ein unbekannter Fehler ist aufgetreten.", true);
+    } finally {
+        setBusy(false);
+    }
+}
+
+async function copyRoomCode() {
+    const code = document.getElementById("createdRoomCode").textContent;
+
+    try {
+        await navigator.clipboard.writeText(code);
+        setMessage("Einladungscode wurde kopiert!");
+    } catch (error) {
+        setMessage("Kopieren nicht möglich. Bitte den Code markieren.", true);
+    }
 }
 
 function saveSettings() {
@@ -536,17 +629,12 @@ function saveSettings() {
 
 function loadSettings() {
     try {
-        const settings = JSON.parse(
-            localStorage.getItem("pixel-settings-v1")
-        );
+        const settings = JSON.parse(localStorage.getItem("pixel-settings-v1"));
 
         if (!settings) return;
 
-        document.getElementById("pixelEffects").checked =
-            settings.effects !== false;
-
-        document.getElementById("animations").checked =
-            settings.animations !== false;
+        document.getElementById("pixelEffects").checked = settings.effects !== false;
+        document.getElementById("animations").checked = settings.animations !== false;
     } catch (error) {
         console.warn("Einstellungen konnten nicht geladen werden.");
     }
