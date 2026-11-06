@@ -42,14 +42,17 @@ button{cursor:pointer;font:inherit}
 <body>
 <main id="game">
 <canvas id="world"></canvas>
+
 <header class="hud">
  <div class="brand"><strong>MEIN ZIMMER</strong><small>Dein kleines Zuhause ♡</small></div>
  <div class="money"><span>¢</span> <b id="money">120</b></div>
 </header>
+
 <div class="bottom">
- <div class="controls">A / D – Bewegen · W – Hüpfen · E – Interagieren</div>
+ <div class="controls">A / D – Fahren · LEERTASTE – Springen · E – Arme / Interagieren · Q – Ablegen</div>
  <button class="sound" id="soundButton">♫</button>
 </div>
+
 <section id="panel" class="panel hidden" role="dialog" aria-modal="true">
  <div class="panel-head">
   <div><small id="panelEyebrow">DEIN ZUHAUSE</small><h1 id="panelTitle">Zimmer</h1></div>
@@ -58,24 +61,36 @@ button{cursor:pointer;font:inherit}
  <div id="panelContent" class="content"></div>
 </section>
 </main>
+
 <script>
 const $=id=>document.getElementById(id);
 const canvas=$("world"),ctx=canvas.getContext("2d");
 const W=960,H=540;
 let dpr=1;
+
 function resize(){
  dpr=Math.min(devicePixelRatio||1,2);
- canvas.width=W*dpr;canvas.height=H*dpr;
+ canvas.width=W*dpr;
+ canvas.height=H*dpr;
  ctx.setTransform(dpr,0,0,dpr,0,0);
 }
-window.addEventListener("resize",resize);resize();
+window.addEventListener("resize",resize);
+resize();
 
 const defaults={
- money:120,unlocked:[],
+ money:120,
+ unlocked:[],
  equipped:{head:null,face:null,clothes:null,back:null,pants:null,seat:null,legs:null,extra:null},
- inventory:[],placed:[],orders:[],received:[],faucetOn:false,bucketWater:0
+ inventory:[],
+ placed:[],
+ orders:[],
+ received:[],
+ faucetOn:false,
+ bucketWater:0
 };
+
 const STORAGE_KEY="mein-zimmer-save-v1";
+
 function loadSave(){
  try{
   const s=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
@@ -83,16 +98,27 @@ function loadSave(){
   return {...structuredClone(defaults),...s,equipped:{...defaults.equipped,...(s.equipped||{})}};
  }catch{return structuredClone(defaults)}
 }
+
 let save=loadSave();
+
 function persist(){
  localStorage.setItem(STORAGE_KEY,JSON.stringify(save));
  $("money").textContent=save.money;
 }
 persist();
 
-const player={x:465,y:0,vy:0,facing:1,moving:false,walk:0};
+const player={
+ x:465,y:0,vy:0,facing:1,moving:false,walk:0,
+ armsOut:false
+};
+
 const keys=new Set();
-let carrying=null,nearby=null,time=0;
+let carrying=null;
+let nearby=null;
+let time=0;
+
+let bucketPosition={x:790,y:425};
+
 const targets=[
  {id:"wardrobe",x:120,y:330},
  {id:"computer",x:680,y:325},
@@ -101,30 +127,56 @@ const targets=[
  {id:"door",x:900,y:350},
  {id:"bucket",x:790,y:405}
 ];
+
 const objects=[
  {id:"lamp",name:"Schreibtischlampe",x:650,y:278},
  {id:"poster",name:"Poster",x:350,y:165},
  {id:"teddy",name:"Teddybär",x:285,y:390}
 ];
+
 let placedObjects=[];
 
-const colors={blue:"#668da8",red:"#bb7771",green:"#7d9c80",black:"#45494b",white:"#eee8df",gold:"#c5a46c"};
+const colors={
+ blue:"#668da8",
+ red:"#bb7771",
+ green:"#7d9c80",
+ black:"#45494b",
+ white:"#eee8df",
+ gold:"#c5a46c"
+};
 
 function rounded(x,y,w,h,r,color){
- ctx.fillStyle=color;ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill();
+ ctx.fillStyle=color;
+ ctx.beginPath();
+ ctx.roundRect(x,y,w,h,r);
+ ctx.fill();
 }
+
 function ellipse(x,y,rx,ry,color){
- ctx.fillStyle=color;ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle=color;
+ ctx.beginPath();
+ ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);
+ ctx.fill();
 }
+
 function line(x1,y1,x2,y2,color,width=2){
- ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineCap="round";
- ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+ ctx.strokeStyle=color;
+ ctx.lineWidth=width;
+ ctx.lineCap="round";
+ ctx.beginPath();
+ ctx.moveTo(x1,y1);
+ ctx.lineTo(x2,y2);
+ ctx.stroke();
 }
+
 function gradient(x,y,w,h,a,b){
  const g=ctx.createLinearGradient(x,y,x,y+h);
- g.addColorStop(0,a);g.addColorStop(1,b);
- ctx.fillStyle=g;ctx.fillRect(x,y,w,h);
+ g.addColorStop(0,a);
+ g.addColorStop(1,b);
+ ctx.fillStyle=g;
+ ctx.fillRect(x,y,w,h);
 }
+
 function shadow(x,y,rx,ry,alpha=.12){
  ellipse(x,y,rx,ry,`rgba(55,43,33,${alpha})`);
 }
@@ -133,61 +185,76 @@ function shadow(x,y,rx,ry,alpha=.12){
 function drawRoom(){
  gradient(0,0,W,430,"#f0e7d9","#e5d9c8");
 
- // Wandpaneele
- ctx.strokeStyle="#d5c8b7";ctx.lineWidth=1;
+ ctx.strokeStyle="#d5c8b7";
+ ctx.lineWidth=1;
  for(let x=30;x<W;x+=115){
-  ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,420);ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x,0);
+  ctx.lineTo(x,420);
+  ctx.stroke();
  }
- // warmes Licht
- const glow=ctx.createRadialGradient(480,170,15,480,170,440);
- glow.addColorStop(0,"#fff9df55");glow.addColorStop(1,"#fff9df00");
- ctx.fillStyle=glow;ctx.fillRect(0,0,W,430);
 
- // Fensterrahmen
+ const glow=ctx.createRadialGradient(480,170,15,480,170,440);
+ glow.addColorStop(0,"#fff9df55");
+ glow.addColorStop(1,"#fff9df00");
+ ctx.fillStyle=glow;
+ ctx.fillRect(0,0,W,430);
+
  shadow(485,194,115,8,.09);
  rounded(380,55,205,140,7,"#927052");
  rounded(388,63,189,124,4,"#a9cbd0");
  gradient(392,67,180,112,"#b9d9dc","#e8e0cc");
  ellipse(530,100,28,24,"#fff1c6aa");
- // Wolken
+
  ellipse(430,100,22,9,"#ffffff99");
  ellipse(447,96,17,11,"#ffffff99");
  ellipse(460,102,21,8,"#ffffff99");
+
  rounded(478,65,5,119,2,"#f6eee0");
  rounded(390,121,185,5,2,"#f6eee0");
 
- // Vorhänge mit leichter Bewegung
  const sway=Math.sin(time*1.1)*3;
  ctx.fillStyle="#c5a995";
- ctx.beginPath();ctx.moveTo(370,50);ctx.quadraticCurveTo(360+sway,125,376,195);ctx.lineTo(397,190);ctx.lineTo(394,50);ctx.closePath();ctx.fill();
- ctx.beginPath();ctx.moveTo(592,50);ctx.quadraticCurveTo(606-sway,125,589,195);ctx.lineTo(570,190);ctx.lineTo(573,50);ctx.closePath();ctx.fill();
+ ctx.beginPath();
+ ctx.moveTo(370,50);
+ ctx.quadraticCurveTo(360+sway,125,376,195);
+ ctx.lineTo(397,190);
+ ctx.lineTo(394,50);
+ ctx.closePath();
+ ctx.fill();
 
- // Wandbild
+ ctx.beginPath();
+ ctx.moveTo(592,50);
+ ctx.quadraticCurveTo(606-sway,125,589,195);
+ ctx.lineTo(570,190);
+ ctx.lineTo(573,50);
+ ctx.closePath();
+ ctx.fill();
+
  rounded(55,90,105,83,4,"#947252");
  rounded(61,96,93,71,2,"#d4e0d0");
  ellipse(108,127,23,23,"#e7c99c");
  ellipse(87,143,19,15,"#8ea98e");
  ellipse(130,144,18,16,"#a9b99b");
 
- // Boden
  gradient(0,420,W,120,"#c49a72","#a77c5c");
- for(let y=435;y<540;y+=25){
-  line(0,y,W,y,"#916c5050",1);
- }
- for(let x=-30;x<W;x+=120){
-  line(x,421,x+25,540,"#916c5030",1);
- }
+
+ for(let y=435;y<540;y+=25)line(0,y,W,y,"#916c5050",1);
+ for(let x=-30;x<W;x+=120)line(x,421,x+25,540,"#916c5030",1);
+
  rounded(0,418,W,9,2,"#997354");
  rounded(0,418,W,3,1,"#d6b18b");
 
- // Teppich
  shadow(490,468,215,35,.13);
  ellipse(490,463,205,33,"#829b9b");
  ellipse(490,460,187,25,"#9aafb0");
- ctx.strokeStyle="#c5d2c9";ctx.lineWidth=2;
- ctx.beginPath();ctx.ellipse(490,460,165,19,0,0,Math.PI*2);ctx.stroke();
 
- // kleine Sterne im Licht
+ ctx.strokeStyle="#c5d2c9";
+ ctx.lineWidth=2;
+ ctx.beginPath();
+ ctx.ellipse(490,460,165,19,0,0,Math.PI*2);
+ ctx.stroke();
+
  for(let i=0;i<7;i++){
   const px=(i*137+Math.sin(time*.7+i)*10)%W;
   const py=70+(i*53)%270;
@@ -207,10 +274,12 @@ function drawBed(){
  rounded(293,316,62,35,8,"#fff8ee");
  rounded(205,395,10,25,3,"#74533d");
  rounded(395,395,10,25,3,"#74533d");
- // Decke
- ctx.strokeStyle="#a8bdc0";ctx.lineWidth=1;
+
+ ctx.strokeStyle="#a8bdc0";
+ ctx.lineWidth=1;
  for(let i=0;i<5;i++)line(225,348+i*7,380,348+i*7,"#ffffff30",1);
 }
+
 function drawWardrobe(){
  shadow(115,425,65,9);
  rounded(48,220,135,202,7,"#79583e");
@@ -218,33 +287,34 @@ function drawWardrobe(){
  rounded(114,229,3,184,2,"#79583e");
  rounded(63,236,47,169,3,"#c09268");
  rounded(120,236,48,169,3,"#c09268");
- ellipse(104,324,3,3,"#ead0a0");ellipse(126,324,3,3,"#ead0a0");
+ ellipse(104,324,3,3,"#ead0a0");
+ ellipse(126,324,3,3,"#ead0a0");
  line(62,245,62,396,"#e1b88b",1);
 }
+
 function drawDesk(){
  shadow(680,424,112,10);
  rounded(565,302,230,15,4,"#956d4b");
  rounded(580,316,12,105,3,"#805a3d");
  rounded(768,316,12,105,3,"#805a3d");
- // Monitor
+
  shadow(685,302,47,5,.08);
  rounded(640,220,94,76,7,"#41494b");
  rounded(646,226,82,62,4,"#6c9295");
  gradient(649,229,76,56,"#8eafb0","#547b82");
  rounded(680,296,13,9,2,"#5d6261");
  rounded(659,303,54,5,2,"#555b5b");
- // Bildschirmdetails
  rounded(656,237,40,3,2,"#d8e4d5");
  rounded(656,245,56,2,1,"#d8e4d566");
  rounded(656,252,33,2,1,"#d8e4d566");
- // Tastatur
  rounded(653,307,67,7,3,"#555d5c");
- // Lampe
+
  line(610,302,610,272,"#77766c",4);
  line(610,272,625,257,"#77766c",4);
  rounded(614,246,28,14,5,"#e1c58c");
  ellipse(628,262,9,3,"#fff1c6");
 }
+
 function drawSink(){
  shadow(850,423,66,8);
  rounded(795,311,132,17,4,"#906a4b");
@@ -253,7 +323,14 @@ function drawSink(){
  ellipse(860,300,16,4,"#92a9a7");
  line(860,290,860,273,"#929b98",4);
  line(860,273,876,273,"#929b98",4);
+
+ if(save.faucetOn){
+  const drip=(time*35)%18;
+  line(860,294,860,303+drip,"#79c5d4",2);
+  ellipse(860,304+drip,2,3,"#79c5d4");
+ }
 }
+
 function drawDoor(){
  shadow(915,423,36,7);
  rounded(879,158,70,264,6,"#79563d");
@@ -261,8 +338,12 @@ function drawDoor(){
  rounded(892,172,44,232,2,"#c29467");
  ellipse(931,300,4,4,"#e4c27b");
 }
+
 function drawPlant(x,y,scale=1){
- ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);
+ ctx.save();
+ ctx.translate(x,y);
+ ctx.scale(scale,scale);
+
  const sway=Math.sin(time*1.6+x)*3;
  shadow(0,0,15,4);
  rounded(-12,-23,24,23,4,"#b87960");
@@ -274,19 +355,27 @@ function drawPlant(x,y,scale=1){
  ellipse(20+sway,-67,10,5,"#83a780");
  ellipse(0,-70,8,13,"#759b72");
  ellipse(-2,-72,3,7,"#a5c19a");
+
  ctx.restore();
 }
+
 function drawBucket(x,y){
  shadow(x,y,17,4);
  rounded(x-13,y-25,26,25,5,"#8da6a5");
  rounded(x-10,y-23,20,3,2,"#b8c8c3");
- ctx.strokeStyle="#6e8583";ctx.lineWidth=2;
- ctx.beginPath();ctx.arc(x,y-23,14,Math.PI,Math.PI*2);ctx.stroke();
+
+ ctx.strokeStyle="#6e8583";
+ ctx.lineWidth=2;
+ ctx.beginPath();
+ ctx.arc(x,y-23,14,Math.PI,Math.PI*2);
+ ctx.stroke();
+
  if(save.bucketWater>0){
   rounded(x-10,y-12,20,9,3,"#7bc3d2");
   line(x-8,y-10,x+8,y-10,"#c7eff0",1);
  }
 }
+
 function drawTeddy(x,y){
  shadow(x,y+18,19,5);
  ellipse(x,y,15,16,"#b98962");
@@ -302,21 +391,37 @@ function drawTeddy(x,y){
 function drawObjects(){
  drawPlant(510,420,.85);
  drawPlant(845,420,.9);
- drawBucket(790,425);
+
+ if(carrying!=="bucket"){
+  drawBucket(bucketPosition.x,bucketPosition.y);
+ }
+
  for(const o of objects){
+  if(o.id===carrying)continue;
+
   if(o.id==="teddy")drawTeddy(o.x,o.y);
+
   if(o.id==="poster"){
    rounded(o.x-29,o.y-21,58,42,3,"#927052");
    rounded(o.x-24,o.y-16,48,32,2,"#c4d4c2");
    ellipse(o.x,o.y,11,11,"#e7c99c");
   }
+
+  if(o.id==="lamp"){
+   // Die Lampe bleibt auf dem Schreibtisch, solange sie nicht getragen wird.
+   if(o.x!==650||o.y!==278){
+    line(o.x,o.y,o.x,o.y-25,"#77766c",4);
+    rounded(o.x-13,o.y-38,26,14,5,"#e1c58c");
+   }
+  }
  }
 }
 
-/* STUHL */
+/* KLEINER, NIEDLICHER STUHL */
 function drawChair(){
- const x=player.x,y=430-player.y;
- const bob=player.moving?Math.sin(player.walk)*1.5:Math.sin(time*2)*.6;
+ const x=player.x;
+ const y=430-player.y;
+ const bob=player.moving?Math.sin(player.walk)*1.2:Math.sin(time*2)*.45;
  const seat=colors[save.equipped.clothes]||"#b9a58c";
  const back=colors[save.equipped.seat]||seat;
 
@@ -324,85 +429,127 @@ function drawChair(){
  ctx.translate(x,y+bob);
  ctx.scale(player.facing,1);
 
- shadow(0,0,27,5,.15);
+ // Kleiner Bodenschatten
+ shadow(0,0,21,4,.15);
 
- // Beine und Rollen
+ // Rollen und Fußkreuz
  const leg=save.equipped.legs==="gold"?"#c5a46c":"#65635e";
- ctx.strokeStyle=leg;ctx.lineWidth=4;ctx.lineCap="round";
- for(const xx of [-19,19]){
-  line(xx,-30,xx+(xx<0?-2:2),-4,leg,3);
-  ellipse(xx,-3,3,3,"#62605a");
+ ctx.strokeStyle=leg;
+ ctx.lineWidth=3;
+ ctx.lineCap="round";
+
+ for(const xx of [-14,14]){
+  line(xx,-20,xx+(xx<0?-2:2),-4,leg,2.5);
+  ellipse(xx,-3,2.5,2.5,"#62605a");
  }
- line(-19,-12,19,-12,leg,3);
+ line(-14,-10,14,-10,leg,2.5);
+ line(0,-15,0,-23,leg,3);
 
  // Rückenlehne
- rounded(-26,-89,13,54,6,"#89694e");
- rounded(-23,-86,8,48,4,back);
- rounded(-27,-92,15,7,4,"#795b43");
+ rounded(-20,-76,40,45,7,"#89694e");
+ rounded(-17,-73,34,39,6,back);
+ rounded(-19,-79,38,7,4,"#795b43");
 
- // Sitz
- rounded(-27,-43,55,16,6,"#805f45");
- rounded(-25,-45,51,13,6,seat);
- line(-17,-40,16,-40,"#ffffff55",1);
+ // Sitzfläche
+ rounded(-23,-35,46,13,6,"#805f45");
+ rounded(-21,-37,42,11,5,seat);
+ line(-13,-33,13,-33,"#ffffff55",1);
 
- // kleine Armlehnen
- rounded(-30,-58,7,22,3,"#8a694b");
- rounded(23,-58,7,22,3,"#8a694b");
+ // Kleine feste Armlehnen
+ rounded(-24,-48,5,15,3,"#8a694b");
+ rounded(19,-48,5,15,3,"#8a694b");
 
- // Tragearme
- if(carrying){
-  const armWave=Math.sin(time*5)*1.5;
-  line(23,-55,34,-69,"#795a42",4);
-  line(34,-69,47,-68+armWave,"#795a42",4);
-  line(-23,-55,-34,-69,"#795a42",4);
-  line(-34,-69,-45,-68-armWave,"#795a42",4);
-  ellipse(47,-68+armWave,3,3,"#e1c18d");
-  ellipse(-45,-68-armWave,3,3,"#e1c18d");
+ // Ausfahrbare Arme
+ const armLength=player.armsOut?17:0;
+ const armDrop=player.armsOut?4:0;
+ const armColor="#806047";
+
+ ctx.lineWidth=3.5;
+ line(22,-48,25+armLength,-55-armDrop,armColor,3);
+ line(25+armLength,-55-armDrop,31+armLength,-55-armDrop,armColor,3);
+
+ line(-22,-48,-25-armLength,-55-armDrop,armColor,3);
+ line(-25-armLength,-55-armDrop,-31-armLength,-55-armDrop,armColor,3);
+
+ if(player.armsOut){
+  ellipse(31+armLength,-55-armDrop,3,3,"#e1c18d");
+  ellipse(-31-armLength,-55-armDrop,3,3,"#e1c18d");
  }
 
  // Klorollen-Hut
  if(save.equipped.head==="toiletroll"){
-  rounded(-22,-108,18,17,5,"#f5f1e8");
-  ellipse(-13,-100,4,4,"#bdb8ae");
-  ellipse(-13,-100,2,2,"#fdfbf5");
-  line(-21,-105,-21,-91,"#ded9d0",1);
+  rounded(-17,-94,15,16,5,"#f5f1e8");
+  ellipse(-9.5,-86,3.5,3.5,"#bdb8ae");
+  ellipse(-9.5,-86,1.8,1.8,"#fdfbf5");
+  line(-16,-91,-16,-78,"#ded9d0",1);
  }
 
  // Partyhut
  if(save.equipped.head==="partyhat"){
   ctx.fillStyle="#e7a64c";
-  ctx.beginPath();ctx.moveTo(-25,-90);ctx.lineTo(-3,-90);ctx.lineTo(-14,-121);ctx.closePath();ctx.fill();
-  ellipse(-14,-121,3,3,"#d77d78");
-  ellipse(-15,-105,2,2,"#fff0bd");
+  ctx.beginPath();
+  ctx.moveTo(-20,-78);
+  ctx.lineTo(1,-78);
+  ctx.lineTo(-10,-106);
+  ctx.closePath();
+  ctx.fill();
+  ellipse(-10,-106,3,3,"#d77d78");
+  ellipse(-11,-92,2,2,"#fff0bd");
  }
 
  // Doppelrolle
  if(save.equipped.back==="doubleRoll"){
-  for(const yy of [-78,-60]){
-   ellipse(-35,yy,7,7,"#f5f1e9");
-   ellipse(-35,yy,3,3,"#bdb8ae");
+  for(const yy of [-67,-52]){
+   ellipse(-26,yy,6,6,"#f5f1e9");
+   ellipse(-26,yy,2.5,2.5,"#bdb8ae");
   }
  }
 
  // Schleife
  if(save.equipped.extra==="bow"){
-  ellipse(-14,-91,7,4,"#d98b91");
-  ellipse(-2,-91,7,4,"#d98b91");
-  ellipse(-8,-91,3,3,"#ad606b");
+  ellipse(-12,-78,6,3.5,"#d98b91");
+  ellipse(-2,-78,6,3.5,"#d98b91");
+  ellipse(-7,-78,2.5,2.5,"#ad606b");
  }
 
- // getragenes Objekt
+ // GETRAGENES ITEM: Nur hier zeichnen!
+ // Es wird nicht mehr zusätzlich auf dem Boden dargestellt.
  if(carrying){
+  const itemX=player.armsOut?0:0;
+  const itemY=-57;
+
   if(carrying==="bucket"){
-   rounded(42,-91,17,18,4,"#8da6a5");
-   if(save.bucketWater>0)rounded(45,-81,11,6,2,"#7bc3d2");
+   rounded(itemX-9,itemY-10,18,19,4,"#8da6a5");
+   rounded(itemX-7,itemY-8,14,3,2,"#b8c8c3");
+   if(save.bucketWater>0){
+    rounded(itemX-7,itemY+1,14,6,2,"#7bc3d2");
+   }
   }else if(carrying==="teddy"){
-   drawTeddy(50,-81);
+   drawTinyTeddy(itemX,itemY);
+  }else if(carrying==="poster"){
+   rounded(itemX-12,itemY-10,24,18,3,"#927052");
+   rounded(itemX-9,itemY-7,18,12,2,"#c4d4c2");
+   ellipse(itemX,itemY,4,4,"#e7c99c");
+  }else if(carrying==="lamp"){
+   line(itemX,itemY+8,itemX,itemY-8,"#77766c",3);
+   rounded(itemX-9,itemY-16,18,9,4,"#e1c58c");
   }else{
-   rounded(43,-88,17,17,4,"#a5b8aa");
+   rounded(itemX-10,itemY-9,20,18,4,"#a5b8aa");
+   rounded(itemX-7,itemY-6,14,12,3,"#c6d5c4");
   }
  }
+
  ctx.restore();
+}
+
+function drawTinyTeddy(x,y){
+ ellipse(x,y+3,8,9,"#b98962");
+ ellipse(x-6,y-5,4,4,"#b98962");
+ ellipse(x+6,y-5,4,4,"#b98962");
+ ellipse(x,y-2,6,6,"#c99a70");
+ ellipse(x-2,y-3,1,1.5,"#453a31");
+ ellipse(x+2,y-3,1,1.5,"#453a31");
+ ellipse(x,y,2,1.5,"#e7c7a7");
 }
 
 /* PLATZIERTE DEKO */
@@ -411,7 +558,9 @@ function drawPlaced(){
   if(p.id==="plant")drawPlant(p.x,p.y,.8);
   if(p.id==="rug")ellipse(p.x,p.y,55,12,"#829b9b");
   if(p.id==="star"){
-   ctx.fillStyle="#d6b66f";ctx.font="22px Arial";ctx.fillText("★",p.x,p.y);
+   ctx.fillStyle="#d6b66f";
+   ctx.font="22px Arial";
+   ctx.fillText("★",p.x,p.y);
   }
  }
 }
@@ -429,6 +578,7 @@ const cosmetics=[
  {id:"bow",name:"Rosa Schleife",price:25,desc:"Eine kleine Schleife.",slot:"extra"},
  {id:"partyhat",name:"Partyhut",price:30,desc:"Für deinen Party-Stuhl.",slot:"head"}
 ];
+
 const shopItems=[
  {id:"plant",name:"Zimmerpflanze",price:35,desc:"Eine kleine Pflanze."},
  {id:"lamp",name:"Schreibtischlampe",price:45,desc:"Warmes Licht."},
@@ -439,172 +589,404 @@ const shopItems=[
 ];
 
 /* MENÜ */
-const panel=$("panel"),content=$("panelContent");
+const panel=$("panel");
+const content=$("panelContent");
 let activePanel=null;
-function openPanel(kind){activePanel=kind;panel.classList.remove("hidden");renderPanel()}
-function closePanel(){panel.classList.add("hidden");activePanel=null}
+
+function openPanel(kind){
+ activePanel=kind;
+ panel.classList.remove("hidden");
+ renderPanel();
+}
+
+function closePanel(){
+ panel.classList.add("hidden");
+ activePanel=null;
+}
+
 $("closePanel").onclick=closePanel;
 
 function button(text,fn,disabled=false){
- const b=document.createElement("button");b.className="action";b.textContent=text;b.disabled=disabled;b.onclick=fn;return b;
+ const b=document.createElement("button");
+ b.className="action";
+ b.textContent=text;
+ b.disabled=disabled;
+ b.onclick=fn;
+ return b;
 }
+
 function card(name,detail,action){
- const el=document.createElement("div");el.className="card";
+ const el=document.createElement("div");
+ el.className="card";
+
  const info=document.createElement("div");
- const strong=document.createElement("strong");strong.textContent=name;
- const small=document.createElement("small");small.textContent=detail;
- info.append(strong,small);el.append(info,action);return el;
+ const strong=document.createElement("strong");
+ strong.textContent=name;
+
+ const small=document.createElement("small");
+ small.textContent=detail;
+
+ info.append(strong,small);
+ el.append(info,action);
+ return el;
 }
+
 function renderPanel(){
  content.innerHTML="";
+
  const titles={
- computer:["DEIN ZUHAUSE","Bestellungen"],
- door:["LIEFERUNG","An deiner Tür"],
- wardrobe:["DEIN STUHL","Stuhl-Cosmetics"],
- sink:["WASSER","Waschbecken"],
- bucket:["EIMER","Wasser auffüllen"]
+  computer:["DEIN ZUHAUSE","Bestellungen"],
+  door:["LIEFERUNG","An deiner Tür"],
+  wardrobe:["DEIN STUHL","Stuhl-Cosmetics"],
+  sink:["WASSER","Waschbecken"],
+  bucket:["EIMER","Wasser auffüllen"]
  };
+
  const t=titles[activePanel]||["DEIN ZUHAUSE","Zimmer"];
- $("panelEyebrow").textContent=t[0];$("panelTitle").textContent=t[1];
+ $("panelEyebrow").textContent=t[0];
+ $("panelTitle").textContent=t[1];
+
  if(activePanel==="computer")renderShop();
  if(activePanel==="wardrobe")renderWardrobe();
  if(activePanel==="door")renderDoor();
  if(activePanel==="sink"||activePanel==="bucket")renderWater();
 }
+
 function renderShop(){
- const bal=document.createElement("div");bal.className="balance";bal.textContent=`Guthaben: ${save.money} Münzen`;content.append(bal);
- const grid=document.createElement("div");grid.className="grid";
+ const bal=document.createElement("div");
+ bal.className="balance";
+ bal.textContent=`Guthaben: ${save.money} Münzen`;
+ content.append(bal);
+
+ const grid=document.createElement("div");
+ grid.className="grid";
+
  for(const item of shopItems){
-  const owned=save.inventory.includes(item.id)||save.placed.some(p=>p.id===item.id)||save.orders.some(o=>o.id===item.id);
-  grid.append(card(item.name,`${item.desc} · ${item.price} Münzen`,button("Bestellen",()=>{
-   if(save.money<item.price)return;
-   save.money-=item.price;save.orders.push({id:item.id,status:"ordered",remaining:20});persist();renderPanel();
-  },owned||save.money<item.price)));
+  const owned=save.inventory.includes(item.id)||
+   save.placed.some(p=>p.id===item.id)||
+   save.orders.some(o=>o.id===item.id);
+
+  grid.append(card(item.name,`${item.desc} · ${item.price} Münzen`,
+   button("Bestellen",()=>{
+    if(save.money<item.price)return;
+    save.money-=item.price;
+    save.orders.push({id:item.id,status:"ordered",remaining:20});
+    persist();
+    renderPanel();
+   },owned||save.money<item.price)
+  ));
  }
+
  content.append(grid);
- const h=document.createElement("h3");h.className="section-title";h.textContent="Bestellungen";content.append(h);
+
+ const h=document.createElement("h3");
+ h.className="section-title";
+ h.textContent="Bestellungen";
+ content.append(h);
+
  for(const o of save.orders){
-  const row=document.createElement("div");row.className="order";
+  const row=document.createElement("div");
+  row.className="order";
   row.textContent=`${shopItems.find(i=>i.id===o.id)?.name||o.id} – ${o.status==="arrived"?"An der Tür":Math.ceil(o.remaining||0)+" Sekunden"}`;
   content.append(row);
  }
 }
+
 function renderWardrobe(){
- const intro=document.createElement("div");intro.className="notice";intro.textContent="Deine Cosmetics werden direkt am Stuhl angezeigt ♡";content.append(intro);
- for(const [slot,label] of [["head","Kopf"],["back","Rücken"],["clothes","Stuhlbezug"],["seat","Sitzfläche"],["extra","Extras"]]){
-  const heading=document.createElement("h3");heading.className="section-title";heading.textContent=label;content.append(heading);
-  const grid=document.createElement("div");grid.className="grid";
-  grid.append(card("Ohne Cosmetic","Normales Aussehen.",button(save.equipped[slot]?"Ablegen":"Ausgewählt",()=>{
-   save.equipped[slot]=null;persist();renderPanel();
-  },!save.equipped[slot])));
+ const intro=document.createElement("div");
+ intro.className="notice";
+ intro.textContent="Deine Cosmetics werden direkt am Stuhl angezeigt ♡";
+ content.append(intro);
+
+ for(const [slot,label] of [
+  ["head","Kopf"],
+  ["back","Rücken"],
+  ["clothes","Stuhlbezug"],
+  ["seat","Sitzfläche"],
+  ["extra","Extras"]
+ ]){
+  const heading=document.createElement("h3");
+  heading.className="section-title";
+  heading.textContent=label;
+  content.append(heading);
+
+  const grid=document.createElement("div");
+  grid.className="grid";
+
+  grid.append(card("Ohne Cosmetic","Normales Aussehen.",
+   button(save.equipped[slot]?"Ablegen":"Ausgewählt",()=>{
+    save.equipped[slot]=null;
+    persist();
+    renderPanel();
+   },!save.equipped[slot])
+  ));
+
   for(const item of cosmetics.filter(i=>i.slot===slot)){
-   const owned=save.unlocked.includes(item.id),active=save.equipped[slot]===item.id;
-   grid.append(card(item.name,`${item.desc} · ${owned?"Freigeschaltet":item.price+" Münzen"}`,button(!owned?"Kaufen":active?"Ablegen":"Anziehen",()=>{
-    if(!owned){if(save.money<item.price)return;save.money-=item.price;save.unlocked.push(item.id)}
-    save.equipped[slot]=active?null:item.id;persist();renderPanel();
-   },!owned&&save.money<item.price)));
+   const owned=save.unlocked.includes(item.id);
+   const active=save.equipped[slot]===item.id;
+
+   grid.append(card(item.name,
+    `${item.desc} · ${owned?"Freigeschaltet":item.price+" Münzen"}`,
+    button(!owned?"Kaufen":active?"Ablegen":"Anziehen",()=>{
+     if(!owned){
+      if(save.money<item.price)return;
+      save.money-=item.price;
+      save.unlocked.push(item.id);
+     }
+     save.equipped[slot]=active?null:item.id;
+     persist();
+     renderPanel();
+    },!owned&&save.money<item.price)
+   ));
   }
+
   content.append(grid);
  }
 }
+
 function renderDoor(){
  const arrived=save.orders.filter(o=>o.status==="arrived");
- if(!arrived.length){content.textContent="Momentan ist keine Lieferung angekommen.";return}
+
+ if(!arrived.length){
+  content.textContent="Momentan ist keine Lieferung angekommen.";
+  return;
+ }
+
  for(const o of arrived){
   const item=shopItems.find(i=>i.id===o.id);
-  content.append(card(item?.name||o.id,"Dein Paket ist angekommen.",button("Abholen",()=>{
-   o.status="received";save.received.push(o.id);save.inventory.push(o.id);persist();renderPanel();
-  })));
+
+  content.append(card(item?.name||o.id,"Dein Paket ist angekommen.",
+   button("Abholen",()=>{
+    o.status="received";
+    save.received.push(o.id);
+    save.inventory.push(o.id);
+    persist();
+    renderPanel();
+   })
+  ));
  }
 }
+
 function renderWater(){
- const status=document.createElement("div");status.className="balance";
- status.textContent=save.bucketWater>0?"Der Eimer enthält Wasser.":"Der Eimer ist leer.";content.append(status);
+ const status=document.createElement("div");
+ status.className="balance";
+ status.textContent=save.bucketWater>0?"Der Eimer enthält Wasser.":"Der Eimer ist leer.";
+ content.append(status);
+
  content.append(button(save.faucetOn?"Wasserhahn ausschalten":"Wasserhahn einschalten",()=>{
-  save.faucetOn=!save.faucetOn;persist();renderPanel();
+  save.faucetOn=!save.faucetOn;
+  persist();
+  renderPanel();
  }));
- content.append(button("Eimer auffüllen",()=>{save.bucketWater=1;persist();renderPanel()}));
+
+ content.append(button("Eimer auffüllen",()=>{
+  save.bucketWater=1;
+  persist();
+  renderPanel();
+ }));
 }
 
 /* INTERAKTION */
 function findNearby(){
- let best=null,dist=Infinity;
+ let best=null;
+ let dist=Infinity;
+
  for(const t of targets){
   const d=Math.hypot(player.x-t.x,430-t.y);
-  if(d<75&&d<dist){best=t;dist=d}
+  if(d<75&&d<dist){
+   best=t;
+   dist=d;
+  }
  }
  return best;
 }
+
+function findNearbyObject(){
+ let nearest=null;
+ let dist=55;
+
+ for(const o of objects){
+  if(o.id===carrying)continue;
+  const d=Math.hypot(player.x-o.x,430-o.y);
+  if(d<dist){
+   dist=d;
+   nearest=o;
+  }
+ }
+
+ return nearest;
+}
+
+function dropCarried(){
+ if(!carrying)return;
+
+ if(carrying==="bucket"){
+  bucketPosition.x=Math.max(35,Math.min(925,player.x+player.facing*32));
+  bucketPosition.y=425;
+ }else{
+  const o=objects.find(o=>o.id===carrying);
+
+  if(o){
+   o.x=Math.max(35,Math.min(925,player.x+player.facing*35));
+   o.y=390;
+  }else{
+   // Gegenstände aus dem Inventar werden beim Ablegen als Objekt angelegt.
+   objects.push({
+    id:carrying,
+    name:carrying,
+    x:Math.max(35,Math.min(925,player.x+player.facing*35)),
+    y:390
+   });
+  }
+ }
+
+ carrying=null;
+ player.armsOut=false;
+}
+
+function pickUpObject(id){
+ carrying=id;
+ player.armsOut=true;
+}
+
 function interact(){
  if(!panel.classList.contains("hidden"))return;
+
+ // Wenn ein Gegenstand getragen wird, klappt E die Arme ein oder aus.
  if(carrying){
-  if(carrying==="bucket"){
-   const t=targets.find(t=>t.id==="bucket");t.x=player.x+40;t.y=405;
-  }else{
-   const o=objects.find(o=>o.id===carrying);if(o){o.x=player.x+40;o.y=390}
-  }
-  carrying=null;return;
+  player.armsOut=!player.armsOut;
+  return;
  }
+
  const near=findNearby();
+
+ // Interaktive Möbel haben Vorrang.
  if(near){
   if(near.id==="wardrobe")openPanel("wardrobe");
   if(near.id==="computer")openPanel("computer");
+
   if(near.id==="door"){
    if(save.orders.some(o=>o.status==="arrived"))openPanel("door");
    else window.location.href="Stadt.html";
   }
+
   if(near.id==="sink")openPanel("sink");
-  if(near.id==="bucket")carrying="bucket";
+
+  if(near.id==="bucket"){
+   pickUpObject("bucket");
+  }
+
   if(near.id==="bed")player.x=300;
   return;
  }
- let nearest=null,dist=55;
- for(const o of objects){
-  const d=Math.hypot(player.x-o.x,430-o.y);
-  if(d<dist){dist=d;nearest=o}
+
+ // Gegenstände aufheben.
+ const object=findNearbyObject();
+
+ if(object){
+  pickUpObject(object.id);
+  return;
  }
- if(nearest){carrying=nearest.id;return}
+
+ // Inventargegenstände verwenden.
  if(save.inventory.length){
-  const id=save.inventory.shift();
-  if(id==="plant"||id==="rug"||id==="star")placedObjects.push({id,x:player.x,y:id==="star"?200:420});
-  else{
-   const o=objects.find(o=>o.id===id);
-   if(o){o.x=player.x+40;o.y=390;carrying=id}
+  const id=save.inventory[0];
+
+  if(id==="plant"||id==="rug"||id==="star"){
+   save.inventory.shift();
+
+   if(id==="plant")placedObjects.push({id,x:player.x,y:420});
+   if(id==="rug")placedObjects.push({id,x:player.x,y:420});
+   if(id==="star")placedObjects.push({id,x:player.x,y:200});
+
+   persist();
+   return;
   }
+
+  save.inventory.shift();
+  pickUpObject(id);
   persist();
+  return;
  }
+
+ // Wenn nichts in Reichweite ist, Arme aus- oder einklappen.
+ player.armsOut=!player.armsOut;
 }
 
+/* TASTATUR */
 window.addEventListener("keydown",e=>{
  const k=e.key.toLowerCase();
- if(["arrowleft","arrowright","arrowup","arrowdown"," "].includes(k))e.preventDefault();
- if(k==="escape"){if(!panel.classList.contains("hidden"))closePanel();else if(carrying)interact();return}
- if(k==="e"){interact();return}
- if(!panel.classList.contains("hidden"))return;
- keys.add(k);
- if(k==="w"&&!player.y&&!player.vy)player.vy=5.8;
-});
-window.addEventListener("keyup",e=>keys.delete(e.key.toLowerCase()));
-window.addEventListener("blur",()=>keys.clear());
 
+ if(["arrowleft","arrowright","arrowup","arrowdown"," "].includes(k)){
+  e.preventDefault();
+ }
+
+ if(k==="escape"){
+  if(!panel.classList.contains("hidden"))closePanel();
+  else if(carrying)dropCarried();
+  return;
+ }
+
+ if(k==="q"){
+  if(carrying)dropCarried();
+  return;
+ }
+
+ if(k==="e"){
+  interact();
+  return;
+ }
+
+ if(!panel.classList.contains("hidden"))return;
+
+ keys.add(k);
+
+ // Leertaste ist jetzt die Sprungtaste.
+ if(k===" "&&!player.y&&!player.vy){
+  player.vy=6.2;
+ }
+});
+
+window.addEventListener("keyup",e=>{
+ keys.delete(e.key.toLowerCase());
+});
+
+window.addEventListener("blur",()=>{
+ keys.clear();
+});
+
+/* BEWEGUNG */
 function move(dt){
  let dir=0;
+
  if(keys.has("a")||keys.has("arrowleft"))dir--;
  if(keys.has("d")||keys.has("arrowright"))dir++;
+
  player.moving=dir!==0;
+
  if(dir){
-  player.x+=dir*175*dt;player.facing=dir;player.walk+=dt*9;
+  player.x+=dir*175*dt;
+  player.facing=dir;
+  player.walk+=dt*9;
  }
+
  player.x=Math.max(30,Math.min(930,player.x));
+
  if(player.vy||player.y){
-  player.y+=player.vy;player.vy-=17*dt;
-  if(player.y<=0){player.y=0;player.vy=0}
+  player.y+=player.vy;
+  player.vy-=17*dt;
+
+  if(player.y<=0){
+   player.y=0;
+   player.vy=0;
+  }
  }
 }
 
 /* ANIMATION */
 function draw(){
  ctx.clearRect(0,0,W,H);
+
  drawRoom();
  drawWardrobe();
  drawBed();
@@ -616,30 +998,68 @@ function draw(){
  drawChair();
 
  nearby=findNearby();
+
  if(nearby&&!carrying&&panel.classList.contains("hidden")){
   rounded(player.x-45,350-player.y,90,24,8,"#394448e8");
-  ctx.fillStyle="#fff";ctx.font="bold 10px Arial";ctx.textAlign="center";
-  const names={wardrobe:"E · Schrank",computer:"E · Computer",bed:"E · Bett",sink:"E · Waschbecken",door:"E · Tür",bucket:"E · Eimer"};
+
+  ctx.fillStyle="#fff";
+  ctx.font="bold 10px Arial";
+  ctx.textAlign="center";
+
+  const names={
+   wardrobe:"E · Schrank",
+   computer:"E · Computer",
+   bed:"E · Bett",
+   sink:"E · Waschbecken",
+   door:"E · Tür",
+   bucket:"E · Eimer"
+  };
+
   ctx.fillText(names[nearby.id],player.x,366-player.y);
+  ctx.textAlign="left";
+ }else if(carrying&&panel.classList.contains("hidden")){
+  rounded(player.x-49,350-player.y,98,24,8,"#394448e8");
+  ctx.fillStyle="#fff";
+  ctx.font="bold 10px Arial";
+  ctx.textAlign="center";
+  ctx.fillText("E · Arme bewegen",player.x,366-player.y);
   ctx.textAlign="left";
  }
 }
+
 let last=performance.now();
+
 function animate(now){
- const dt=Math.min((now-last)/1000,.04);last=now;time+=dt;
+ const dt=Math.min((now-last)/1000,.04);
+ last=now;
+ time+=dt;
+
  if(panel.classList.contains("hidden"))move(dt);
+
  let changed=false;
+
  for(const o of save.orders){
   if(o.status==="ordered"){
    o.remaining-=dt;
-   if(o.remaining<=0){o.remaining=0;o.status="arrived";changed=true}
+
+   if(o.remaining<=0){
+    o.remaining=0;
+    o.status="arrived";
+    changed=true;
+   }
   }
  }
+
  if(changed)persist();
+
  draw();
  requestAnimationFrame(animate);
 }
-$("soundButton").onclick=()=>{$("soundButton").textContent=$("soundButton").textContent==="♫"?"♪":"♫"};
+
+$("soundButton").onclick=()=>{
+ $("soundButton").textContent=$("soundButton").textContent==="♫"?"♪":"♫";
+};
+
 $("money").textContent=save.money;
 requestAnimationFrame(animate);
 </script>
