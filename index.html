@@ -78,7 +78,8 @@ addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
 const player={
  x:180,y:FLOOR-68,vx:0,vy:0,
  width:48,height:68,
- grounded:true,facing:1,walk:0,held:null
+ grounded:true,facing:1,walk:0,held:null,
+ landing:0
 };
 
 const objects=[
@@ -134,13 +135,11 @@ function ellipse(x,y,rx,ry,fill){
  ctx.fill();
 }
 
-/* Zufällige, aber bei jedem Bild stabile Textur */
 function hash(n){
  const v=Math.sin(n*127.1+311.7)*43758.5453;
  return v-Math.floor(v);
 }
 
-/* Holz mit natürlicher Maserung und Kanten */
 function wood(x,y,w,h,base="#a8794e",seed=1){
  ctx.save();
 
@@ -179,7 +178,6 @@ function wood(x,y,w,h,base="#a8794e",seed=1){
  ctx.stroke();
 }
 
-/* Stoffstruktur für Polster, Kissen und Sofa */
 function fabricTexture(x,y,w,h,seed=1,alpha=.13){
  ctx.save();
  ctx.beginPath();
@@ -204,7 +202,6 @@ function fabricTexture(x,y,w,h,seed=1,alpha=.13){
  ctx.restore();
 }
 
-/* Weiche Bodenschatten */
 function shadow(x,y,rx,alpha=.2){
  ctx.save();
  ctx.globalAlpha=alpha;
@@ -222,27 +219,22 @@ function shadow(x,y,rx,alpha=.2){
 
 function drawWindow(x){
 
- // Tiefer Fensterschatten
  ctx.fillStyle="#766653";
  ctx.fillRect(x-12,48,264,220);
 
- // Äußerer Rahmen
  wood(x-8,49,256,10,"#806348",x);
  wood(x-8,251,256,12,"#806348",x+2);
  wood(x-8,49,11,214,"#876747",x+3);
  wood(x+237,49,11,214,"#876747",x+4);
 
- // Glasfläche
  const glass=gradient(x,60,240,190,"#91b9cd","#d5e0d9");
  ctx.fillStyle=glass;
  ctx.fillRect(x+4,60,232,190);
 
- // Landschaft draußen
  const sky=gradient(x,60,0,190,"#8bbbd5","#e4e7d9");
  ctx.fillStyle=sky;
  ctx.fillRect(x+5,61,230,188);
 
- // Entfernte Hügel
  ctx.fillStyle="#829a7c";
  ctx.beginPath();
  ctx.moveTo(x+5,184);
@@ -252,7 +244,6 @@ function drawWindow(x){
  ctx.lineTo(x+5,249);
  ctx.fill();
 
- // Gras und Büsche
  ctx.fillStyle="#6e8967";
  ctx.beginPath();
  ctx.moveTo(x+5,206);
@@ -269,7 +260,6 @@ function drawWindow(x){
    i%2?"#78936d":"#8ca17d");
  }
 
- // Dezente Spiegelungen auf dem Glas
  ctx.save();
  ctx.globalAlpha=.16;
  ctx.fillStyle="#ffffff";
@@ -285,27 +275,22 @@ function drawWindow(x){
  ctx.fillRect(x+19,62,2,184);
  ctx.restore();
 
- // Fensterkreuz und Rahmen
  wood(x+113,59,9,193,"#e7dfd0",x+5);
  wood(x+4,151,232,9,"#e7dfd0",x+6);
 
- // Innere Lichtkante
  ctx.strokeStyle="#ffffffa0";
  ctx.lineWidth=1;
  ctx.strokeRect(x+5,60,230,190);
 
- // Fensterbank
  wood(x-17,250,274,12,"#a38463",x+7);
  wood(x-12,246,264,5,"#d0b28d",x+8);
 }
 
 function drawRoom(){
 
- // Wand
  ctx.fillStyle=gradient(0,0,WORLD,FLOOR,"#eee7dc","#d2c6b6");
  ctx.fillRect(0,0,WORLD,FLOOR);
 
- // Dezente Putzstruktur
  ctx.save();
  for(let i=0;i<1500;i++){
   const x=hash(i+10)*WORLD;
@@ -316,7 +301,6 @@ function drawRoom(){
  }
  ctx.restore();
 
- // Wandabschnitte
  ctx.strokeStyle="#ffffff24";
  ctx.lineWidth=1;
  for(let x=0;x<WORLD;x+=160){
@@ -326,17 +310,14 @@ function drawRoom(){
   ctx.stroke();
  }
 
- // Fenster
  for(const x of [100,1040,1880])drawWindow(x);
 
- // Bilderrahmen
  for(const x of [490,1510]){
   shadow(x+40,191,48,.12);
   wood(x,92,82,94,"#70543b",x);
   ctx.fillStyle="#eee7d9";
   ctx.fillRect(x+6,98,70,82);
 
-  // kleines Landschaftsbild
   const g=gradient(x+7,100,68,80,"#b4c9c9","#e4d9c2");
   ctx.fillStyle=g;
   ctx.fillRect(x+7,100,68,80);
@@ -348,7 +329,6 @@ function drawRoom(){
   ctx.fill();
  }
 
- // Sockelleiste
  ctx.fillStyle="#9d856d";
  ctx.fillRect(0,416,WORLD,24);
  ctx.fillStyle="#d6c2a9";
@@ -356,11 +336,9 @@ function drawRoom(){
  ctx.fillStyle="#725b45";
  ctx.fillRect(0,438,WORLD,2);
 
- // Holzboden
  ctx.fillStyle=gradient(0,FLOOR,0,100,"#b08b66","#76563d");
  ctx.fillRect(0,FLOOR,WORLD,100);
 
- // Dielen
  for(let row=0;row<4;row++){
   const y=FLOOR+row*25;
   ctx.fillStyle=row%2?"#987451":"#a9825d";
@@ -394,7 +372,6 @@ function drawRoom(){
   }
  }
 
- // Licht auf dem Boden
  ctx.save();
  ctx.globalAlpha=.12;
  const light=ctx.createLinearGradient(160,250,420,440);
@@ -412,8 +389,8 @@ function drawRoom(){
 
 
 /* =====================================================
-   REALISTISCHER HOLZSTUHL
-   Seitenansicht: zwei sichtbare Beine.
+   ANIMIERTER HOLZSTUHL
+   Prozedurale Beinbewegung direkt in Canvas
 ===================================================== */
 
 function chairLeg(x,y,w,h,angle,seed){
@@ -422,48 +399,91 @@ function chairLeg(x,y,w,h,angle,seed){
  ctx.translate(x,y);
  ctx.rotate(angle);
 
+ // Form des massiven Holzbeins
  ctx.beginPath();
- ctx.moveTo(-w/2,0);
- ctx.lineTo(w/2,0);
- ctx.lineTo(w*.43,h);
- ctx.quadraticCurveTo(0,h+2,-w*.42,h);
+ ctx.moveTo(-w*.48,0);
+ ctx.quadraticCurveTo(-w*.55,2,-w*.48,7);
+ ctx.lineTo(-w*.39,h-3);
+ ctx.quadraticCurveTo(-w*.38,h+1,0,h+1);
+ ctx.quadraticCurveTo(w*.38,h+1,w*.39,h-3);
+ ctx.lineTo(w*.48,7);
+ ctx.quadraticCurveTo(w*.55,2,w*.48,0);
  ctx.closePath();
- ctx.fillStyle=gradient(-w/2,0,w,h,"#c18a58","#70462b");
+
+ ctx.fillStyle=gradient(-w/2,0,w,h,"#d4a16d","#80502f");
  ctx.fill();
- ctx.strokeStyle="#654027";
+
+ ctx.strokeStyle="#634027";
  ctx.lineWidth=1;
+ ctx.stroke();
+
+ // Lichtkante
+ ctx.strokeStyle="#f2c18b99";
+ ctx.lineWidth=1;
+ ctx.beginPath();
+ ctx.moveTo(-w*.22,5);
+ ctx.lineTo(-w*.16,h-5);
  ctx.stroke();
 
  // Holzmaserung
  for(let i=0;i<4;i++){
-  ctx.strokeStyle=i%2?"#e3b783":"#59391f";
-  ctx.globalAlpha=.24;
-  ctx.lineWidth=.7;
   ctx.beginPath();
-  ctx.moveTo(-w*.25+i*2,4);
-  ctx.quadraticCurveTo(-w*.1+i*2,h*.5,w*.18+i*2,h-3);
+  ctx.moveTo(-w*.18+i*1.5,8);
+  ctx.quadraticCurveTo(
+   -w*.1+i*1.2,h*.48,
+   w*.12+i*1.2,h-5
+  );
+  ctx.strokeStyle=i%2?"#624027":"#f0c18b";
+  ctx.globalAlpha=.23;
+  ctx.lineWidth=.65;
   ctx.stroke();
  }
- ctx.globalAlpha=1;
 
+ ctx.globalAlpha=1;
  ctx.restore();
 }
 
 function drawChair(){
 
  const moving=Math.abs(player.vx)>8&&player.grounded;
- const cycle=moving?Math.sin(player.walk):0;
- const bob=moving?Math.abs(cycle)*.45:0;
+ const phase=Math.sin(player.walk);
+
+ // Leichte Bewegung des gesamten Stuhls
+ const bodyBob=moving?Math.abs(phase)*1.1:0;
+
+ // Sprunganimation
+ const airborne=!player.grounded;
+ const jumpPower=airborne
+  ?clamp(Math.abs(player.vy)/465,0,1)
+  :0;
+
+ // Jedes Bein erhält einen eigenen Winkel
+ let leg1=0;
+ let leg2=0;
+
+ if(moving){
+  leg1=phase*.42;
+  leg2=-phase*.42;
+ }
+
+ // Beine ziehen sich beim Springen leicht an
+ if(airborne){
+  const movement=Math.sin(time*8)*.09;
+  leg1=-.22*jumpPower+movement;
+  leg2=.22*jumpPower-movement;
+ }
+
+ // Landefederung
+ const landingBob=player.landing*2.2;
 
  ctx.save();
  ctx.translate(player.x,player.y+player.height);
  ctx.scale(player.facing*.58,.58);
- ctx.translate(-42,-116+bob);
+ ctx.translate(-42,-116+bodyBob+landingBob);
 
- // Hintere Rückenstrebe
+ // Rückenstützen
  const backGrad=gradient(20,0,55,95,"#c39160","#75492c");
 
- // Linke und rechte Seitenkante der Rückenlehne
  ctx.beginPath();
  ctx.moveTo(23,3);
  ctx.lineTo(31,3);
@@ -482,26 +502,30 @@ function drawChair(){
  ctx.fillStyle=gradient(64,0,12,76,"#a97649","#5f3b25");
  ctx.fill();
 
- // Oberes Rückenbrett
+ // Rückenbretter
  wood(22,0,50,31,"#b98553",21);
-
- // Unteres Rückenbrett
  wood(29,39,43,24,"#ad7949",22);
 
- // Sitzfläche – eine massive Holzplatte
+ // Bewegliche Stuhlbeine
+ chairLeg(17,82,9,35,leg1,1);
+ chairLeg(76,82,9,35,leg2,2);
+
+ // Sitzfläche
  ctx.beginPath();
  ctx.moveTo(8,65);
  ctx.lineTo(85,65);
  ctx.lineTo(82,80);
  ctx.lineTo(10,80);
  ctx.closePath();
+
  ctx.fillStyle=gradient(8,65,77,15,"#d2a06a","#98613b");
  ctx.fill();
+
  ctx.strokeStyle="#68452c";
  ctx.lineWidth=1;
  ctx.stroke();
 
- // Sitzfläche Maserung
+ // Holzmaserung der Sitzfläche
  for(let i=0;i<7;i++){
   ctx.strokeStyle=i%2?"#6e482d":"#f0c18a";
   ctx.globalAlpha=.23;
@@ -511,16 +535,13 @@ function drawChair(){
   ctx.quadraticCurveTo(43,66+i*1.5,80,69+i*1.5);
   ctx.stroke();
  }
+
  ctx.globalAlpha=1;
 
- // Unterkante der Sitzplatte
+ // Unterkante
  wood(11,79,70,5,"#86532f",24);
 
- // Genau zwei sichtbare Beine
- chairLeg(17,82,9,35,cycle*.12,1);
- chairLeg(76,82,9,35,-cycle*.12,2);
-
- // Kleiner natürlicher Lichtreflex
+ // Lichtreflex
  ctx.strokeStyle="#f2c18a88";
  ctx.lineWidth=1;
  ctx.beginPath();
@@ -528,7 +549,7 @@ function drawChair(){
  ctx.lineTo(79,66);
  ctx.stroke();
 
- // Getragener Gegenstand liegt auf der Sitzfläche
+ // Getragener Gegenstand
  if(player.held){
   const o=player.held;
   ctx.save();
@@ -542,24 +563,20 @@ function drawChair(){
 
 
 /* =====================================================
-   SOFA – STOFF, POLSTER UND NATÜRLICHE FORMEN
+   SOFA
 ===================================================== */
 
 function drawSofa(f){
 
  const x=f.x,y=f.y,w=f.w;
-
  shadow(x+w/2,y+4,w*.55,.25);
 
- // Füße aus Holz
  wood(x+17,y-10,13,12,"#765039",30);
  wood(x+w-30,y-10,13,12,"#765039",31);
 
- // Unterer Korpus
  rounded(x+5,y-47,w-10,43,10,
   gradient(x,y-47,w,43,"#737c76","#414a46"),"#3c4541");
 
- // Rückenlehne mit weicher Silhouette
  ctx.beginPath();
  ctx.moveTo(x+13,y-40);
  ctx.lineTo(x+13,y-91);
@@ -576,7 +593,6 @@ function drawSofa(f){
 
  fabricTexture(x+15,y-108,w-30,65,55,.18);
 
- // Rückenpolster
  for(let i=0;i<3;i++){
   const px=x+40+i*56;
   const pw=52;
@@ -601,7 +617,6 @@ function drawSofa(f){
 
   fabricTexture(px+3,y-100,pw-6,55,80+i,.13);
 
-  // Polsternaht
   ctx.strokeStyle="#d9dfd466";
   ctx.lineWidth=1;
   ctx.beginPath();
@@ -609,7 +624,6 @@ function drawSofa(f){
   ctx.quadraticCurveTo(px+7,y-70,px+5,y-50);
   ctx.stroke();
 
-  // Lichtkante
   ctx.strokeStyle="#ffffff48";
   ctx.beginPath();
   ctx.moveTo(px+8,y-98);
@@ -617,7 +631,6 @@ function drawSofa(f){
   ctx.stroke();
  }
 
- // Armlehnen, mit abgerundeten Stoffkanten
  for(const side of [0,1]){
   const ax=side===0?x:x+w-43;
 
@@ -648,7 +661,6 @@ function drawSofa(f){
   ctx.stroke();
  }
 
- // Sitzfläche – weiche, leicht gewölbte Kissen
  for(let i=0;i<3;i++){
   const px=x+37+i*57;
   const pw=54;
@@ -670,7 +682,6 @@ function drawSofa(f){
 
   fabricTexture(px+3,y-49,pw-6,32,150+i,.18);
 
-  // feine Sitznaht
   ctx.strokeStyle="#e3e5dd88";
   ctx.beginPath();
   ctx.moveTo(px+9,y-43);
@@ -678,7 +689,6 @@ function drawSofa(f){
   ctx.stroke();
  }
 
- // Schatten unter Sitzkante
  ctx.strokeStyle="#303b35aa";
  ctx.lineWidth=3;
  ctx.beginPath();
@@ -686,7 +696,6 @@ function drawSofa(f){
  ctx.lineTo(x+w-43,y-10);
  ctx.stroke();
 
- // Korpusvorderkante
  ctx.strokeStyle="#c3c9bd55";
  ctx.lineWidth=1;
  ctx.beginPath();
@@ -703,12 +712,10 @@ function drawSofa(f){
 function drawTable(f){
  shadow(f.x+f.w/2,FLOOR+3,f.w*.55,.2);
 
- // Tischplatte
  wood(f.x-4,f.y-13,f.w+8,14,"#9b6c43",50);
  wood(f.x+5,f.y-1,14,f.h-1,"#805536",51);
  wood(f.x+f.w-19,f.y-1,14,f.h-1,"#805536",52);
 
- // Maserung auf der Platte
  for(let i=0;i<8;i++){
   ctx.strokeStyle=i%2?"#68462c":"#e6bd8b";
   ctx.globalAlpha=.2;
@@ -722,7 +729,7 @@ function drawTable(f){
 
 
 /* =====================================================
-   REGAL UND BÜCHER
+   REGAL
 ===================================================== */
 
 function drawShelf(f){
@@ -740,8 +747,10 @@ function drawShelf(f){
  }
 
  const colors=["#895447","#526d7d","#b08c58","#687b60","#a16d4d"];
+
  for(let row=0;row<2;row++){
   let xx=x+19;
+
   for(let i=0;i<5;i++){
    const bh=25+(i%3)*5;
    const bw=12;
@@ -773,18 +782,15 @@ function drawLamp(f){
  const x=f.x,y=f.y;
  shadow(x+34,y+2,35,.18);
 
- // Standfuß
  ctx.beginPath();
  ctx.ellipse(x+34,y-4,28,5,0,0,Math.PI*2);
  ctx.fillStyle="#6e5945";
  ctx.fill();
 
- // Ständer
  const metal=gradient(x+30,y-145,8,145,"#d4c6a9","#655747");
  ctx.fillStyle=metal;
  ctx.fillRect(x+31,y-145,7,142);
 
- // Lampenschirm
  ctx.beginPath();
  ctx.moveTo(x+3,y-143);
  ctx.quadraticCurveTo(x+12,y-175,x+20,y-181);
@@ -797,13 +803,11 @@ function drawLamp(f){
  ctx.lineWidth=1;
  ctx.stroke();
 
- // Innenlicht
  ctx.fillStyle="#fff0c9";
  ctx.beginPath();
  ctx.ellipse(x+35,y-143,31,4,0,0,Math.PI*2);
  ctx.fill();
 
- // Lichtschein
  ctx.save();
  ctx.globalAlpha=.07;
  ctx.fillStyle="#ffe6a7";
@@ -825,11 +829,8 @@ function drawLamp(f){
 function drawPlant(x,y,w,h){
 
  shadow(x+w/2,y+2,w*.55,.16);
-
- // Erde
  ellipse(x+w/2,y-30,w*.32,4,"#49372b");
 
- // Topf
  ctx.beginPath();
  ctx.moveTo(x+7,y-31);
  ctx.lineTo(x+w-7,y-31);
@@ -841,17 +842,15 @@ function drawPlant(x,y,w,h){
  ctx.strokeStyle="#69432f";
  ctx.stroke();
 
- // Topfrand
  ctx.fillStyle="#d09a73";
  ctx.beginPath();
  ctx.ellipse(x+w/2,y-30,w*.43,5,0,0,Math.PI*2);
  ctx.fill();
 
- // Stängel und Blätter
  const leaves=[
-  [.5,.35,-.1,13,24], [.28,.52,.5,11,23],
-  [.72,.55,-.5,12,24], [.18,.72,.8,10,22],
-  [.82,.75,-.8,11,23], [.45,.85,.2,12,26]
+  [.5,.35,-.1,13,24],[.28,.52,.5,11,23],
+  [.72,.55,-.5,12,24],[.18,.72,.8,10,22],
+  [.82,.75,-.8,11,23],[.45,.85,.2,12,26]
  ];
 
  for(const a of leaves){
@@ -890,26 +889,20 @@ function drawSink(f){
  const x=f.x,y=f.y;
  shadow(x+f.w/2,y+2,f.w*.55,.2);
 
- // Unterschrank
  wood(x,y-76,f.w,76,"#a77b52",90);
  wood(x+8,y-67,f.w/2-13,56,"#b4875b",91);
  wood(x+f.w/2+5,y-67,f.w/2-13,56,"#a77a50",92);
 
- // Schranktüren
  ctx.strokeStyle="#68472f";
  ctx.lineWidth=1;
  ctx.strokeRect(x+12,y-64,f.w/2-21,49);
  ctx.strokeRect(x+f.w/2+9,y-64,f.w/2-21,49);
 
- // Griffe
- ctx.fillStyle="#d4bd93";
  rounded(x+f.w/2-15,y-43,3,14,2,"#d8c8a5");
  rounded(x+f.w-27,y-43,3,14,2,"#d8c8a5");
 
- // Arbeitsplatte
  wood(x-5,y-86,f.w+10,11,"#d0b18b",93);
 
- // Metallspüle
  ctx.beginPath();
  ctx.roundRect(x+40,y-81,101,37,8);
  ctx.fillStyle=gradient(x+40,y-81,101,37,"#e1e5e1","#727e7e");
@@ -928,7 +921,6 @@ function drawSink(f){
 
  ellipse(x+90,y-58,7,3,"#3d4949");
 
- // Wasserhahn
  ctx.save();
  ctx.translate(x+94,y-84);
  ctx.lineCap="round";
@@ -960,7 +952,6 @@ function drawSink(f){
 
  ctx.restore();
 
- // Wasser
  if(waterOn){
   ctx.save();
   ctx.strokeStyle="#8bd8f0";
@@ -993,7 +984,7 @@ function drawFurniture(){
 
 
 /* =====================================================
-   KLEIDERSCHRANK UND STADT-TÜR
+   KLEIDERSCHRANK UND STADT
 ===================================================== */
 
 function drawDoor(d){
@@ -1001,17 +992,14 @@ function drawDoor(d){
  const x=d.x;
  shadow(x+50,FLOOR+3,55,.2);
 
- // Rahmen
  wood(x-5,244,110,198,"#68452e",100);
  wood(x+4,251,92,185,"#b58a60",101);
 
- // Türblatt
  ctx.fillStyle=gradient(x+8,255,84,174,
   d.type==="wardrobe"?"#b88b60":"#a77b52",
   "#765035");
  ctx.fillRect(x+9,256,82,176);
 
- // Maserung
  ctx.save();
  ctx.beginPath();
  ctx.rect(x+10,257,80,174);
@@ -1029,7 +1017,6 @@ function drawDoor(d){
  }
  ctx.restore();
 
- // Kassetten
  ctx.strokeStyle="#6b482f";
  ctx.lineWidth=3;
  ctx.strokeRect(x+18,267,64,65);
@@ -1040,12 +1027,9 @@ function drawDoor(d){
  ctx.strokeRect(x+21,270,58,59);
  ctx.strokeRect(x+21,346,58,70);
 
- // Türgriff
- ctx.fillStyle="#d4b77d";
  ellipse(x+76,345,4,4,"#d4b77d");
  rounded(x+73,345,3,15,2,"#c6a46c");
 
- // Beschriftung
  ctx.save();
  ctx.fillStyle="#f4eadb";
  ctx.font="12px Arial";
@@ -1058,7 +1042,7 @@ function drawDoor(d){
 
 
 /* =====================================================
-   ITEMS – MATERIALIEN UND TEXTUREN
+   ITEMS
 ===================================================== */
 
 function drawBook(o){
@@ -1066,15 +1050,12 @@ function drawBook(o){
  ctx.save();
  ctx.translate(o.x,o.y);
 
- // Buchdeckel
  rounded(0,0,o.w,o.h,2,
   gradient(0,0,o.w,o.h,o.color,"#302e2b"),"#3e342d");
 
- // Seitenblock
  ctx.fillStyle="#e8ddc6";
  ctx.fillRect(4,2,o.w-7,o.h-4);
 
- // Papierkanten
  ctx.strokeStyle="#b5a68d";
  ctx.lineWidth=.5;
  for(let i=0;i<3;i++){
@@ -1084,7 +1065,6 @@ function drawBook(o){
   ctx.stroke();
  }
 
- // Buchrücken
  ctx.fillStyle="#ffffff45";
  ctx.fillRect(1,1,3,o.h-2);
 
@@ -1103,7 +1083,6 @@ function drawBox(o){
  ctx.lineWidth=1;
  ctx.strokeRect(.5,.5,o.w-1,o.h-1);
 
- // Kartonlaschen
  ctx.fillStyle="#e0bc8d";
  ctx.beginPath();
  ctx.moveTo(0,0);
@@ -1112,7 +1091,6 @@ function drawBox(o){
  ctx.closePath();
  ctx.fill();
 
- // Paketband
  ctx.fillStyle="#e8d2a1";
  ctx.fillRect(o.w*.43,0,o.w*.14,o.h);
 
@@ -1147,7 +1125,6 @@ function drawPillow(o){
 
  fabricTexture(o.x+4,o.y+3,o.w-8,o.h-6,200,.2);
 
- // Mittlere Stofffalte
  ctx.strokeStyle="#ffffff70";
  ctx.lineWidth=1;
  ctx.beginPath();
@@ -1298,22 +1275,39 @@ function update(dt){
  player.x=clamp(player.x+player.vx*dt,35,WORLD-35);
 
  // Schwerkraft
+ const wasGrounded=player.grounded;
+
  player.vy+=1350*dt;
  player.y+=player.vy*dt;
 
+ // Bodenberührung und Landung
  if(player.y+player.height>=FLOOR){
+
+  if(!wasGrounded&&player.vy>100){
+   player.landing=1;
+  }
+
   player.y=FLOOR-player.height;
   player.vy=0;
   player.grounded=true;
+
  }else{
   player.grounded=false;
  }
 
+ // Landefederung klingt weich ab
+ player.landing*=Math.pow(.025,dt);
+
+ if(player.landing<.015){
+  player.landing=0;
+ }
+
+ // Laufanimation
  if(Math.abs(player.vx)>8&&player.grounded){
   player.walk+=dt*10;
  }
 
- // Gegenstände fallen und bleiben auf dem Boden liegen
+ // Gegenstände fallen und bleiben auf dem Boden
  for(const o of objects){
   o.vx=(o.vx||0)*Math.pow(.08,dt);
   o.vy=(o.vy||0)+1150*dt;
@@ -1377,10 +1371,10 @@ function draw(){
  for(const d of doors)drawDoor(d);
  for(const o of objects)drawObject(o);
 
- // Schatten bleibt am Fußboden, auch beim Springen
+ // Schatten bleibt auf dem Fußboden
  drawPlayerShadow();
 
- // Stuhl
+ // Animierter Stuhl
  drawChair();
 
  ctx.restore();
