@@ -388,63 +388,26 @@ function drawRoom(){
 
 
 /* =====================================================
-   REALISTISCHER HOLZSTUHL
+   GANZ EINFACHER HOLZSTUHL
+   Nur Rückenlehne, Sitzfläche und zwei Beine
 ===================================================== */
 
-function chairLeg(x,y,w,h,angle,front=true){
-
+function drawChairLeg(x,y,angle){
  ctx.save();
  ctx.translate(x,y);
  ctx.rotate(angle);
 
- const g=ctx.createLinearGradient(-w/2,0,w/2,0);
- g.addColorStop(0,"#694329");
- g.addColorStop(.22,"#b47b49");
- g.addColorStop(.55,"#d5a16a");
- g.addColorStop(.82,"#a16b40");
- g.addColorStop(1,"#684128");
+ ctx.fillStyle=gradient(-4,0,8,42,"#d0a06b","#80502f");
+ ctx.strokeStyle="#604027";
+ ctx.lineWidth=1;
 
  ctx.beginPath();
- ctx.moveTo(-w*.48,0);
- ctx.lineTo(-w*.38,h-4);
- ctx.quadraticCurveTo(-w*.36,h,w*.0,h);
- ctx.quadraticCurveTo(w*.36,h,w*.38,h-4);
- ctx.lineTo(w*.48,0);
+ ctx.moveTo(-4,0);
+ ctx.lineTo(-3,39);
+ ctx.quadraticCurveTo(0,43,3,39);
+ ctx.lineTo(4,0);
  ctx.closePath();
-
- ctx.fillStyle=g;
  ctx.fill();
- ctx.strokeStyle="#573820";
- ctx.lineWidth=1;
- ctx.stroke();
-
- ctx.save();
- ctx.beginPath();
- ctx.rect(-w/2,2,w,h-3);
- ctx.clip();
-
- ctx.strokeStyle="#f0c28c";
- ctx.globalAlpha=.3;
- ctx.lineWidth=.7;
-
- for(let i=0;i<3;i++){
-  ctx.beginPath();
-  ctx.moveTo(-w*.2+i*2,5);
-  ctx.bezierCurveTo(
-   -w*.1+i*2,h*.35,
-   w*.1+i*2,h*.65,
-   w*.12+i*2,h-5
-  );
-  ctx.stroke();
- }
-
- ctx.restore();
-
- ctx.strokeStyle="#5d3b25";
- ctx.lineWidth=1;
- ctx.beginPath();
- ctx.moveTo(-w*.35,h-2);
- ctx.lineTo(w*.35,h-2);
  ctx.stroke();
 
  ctx.restore();
@@ -458,163 +421,54 @@ function drawChair(){
 
  let rearAngle=0;
  let frontAngle=0;
- let rearLift=0;
- let frontLift=0;
 
  if(moving){
-  rearAngle=Math.sin(phase)*.30;
-  frontAngle=Math.sin(phase+Math.PI)*.30;
-  rearLift=Math.max(0,Math.sin(phase))*3;
-  frontLift=Math.max(0,Math.sin(phase+Math.PI))*3;
+  rearAngle=Math.sin(phase)*.13;
+  frontAngle=Math.sin(phase+Math.PI)*.13;
  }
 
  if(airborne){
-  const jump=clamp(-player.vy/465,-.5,1);
-  const kick=Math.sin(time*7)*.07;
-
-  rearAngle=-.12-jump*.15+kick;
-  frontAngle=.12+jump*.15-kick;
-  rearLift=0;
-  frontLift=0;
+  rearAngle=-.08;
+  frontAngle=.08;
  }
 
- const bodyBob=moving?Math.abs(Math.sin(phase))*.5:0;
- const landingBob=player.landing*1.2;
+ const bodyBob=moving?Math.abs(Math.sin(phase))*.4:0;
+ const landingBob=player.landing*.7;
 
  ctx.save();
  ctx.translate(player.x,player.y+player.height);
  ctx.scale(player.facing*.58,.58);
  ctx.translate(-42,-116+bodyBob+landingBob);
 
- // Hinteres Stuhlbein
- chairLeg(22,80-rearLift,9,37,rearAngle,false);
+ // Hinteres Bein
+ drawChairLeg(29,75,rearAngle);
 
- // Rückenlehnen-Holme
- ctx.beginPath();
- ctx.moveTo(19,4);
- ctx.lineTo(28,4);
- ctx.lineTo(34,82);
- ctx.lineTo(25,82);
- ctx.closePath();
- ctx.fillStyle=gradient(19,4,15,78,"#d3a16c","#75482b");
- ctx.fill();
+ // Ein einziges gerades Rückenteil
+ ctx.fillStyle=gradient(23,5,13,70,"#d4a16b","#80502f");
  ctx.strokeStyle="#604027";
- ctx.lineWidth=1;
- ctx.stroke();
-
+ ctx.lineWidth=1.3;
  ctx.beginPath();
- ctx.moveTo(69,4);
- ctx.lineTo(78,4);
- ctx.lineTo(83,82);
- ctx.lineTo(74,82);
- ctx.closePath();
- ctx.fillStyle=gradient(69,4,14,78,"#bd8955","#684128");
+ ctx.roundRect(23,5,13,70,2);
  ctx.fill();
- ctx.strokeStyle="#604027";
  ctx.stroke();
-
- // Rückenlehne
- ctx.beginPath();
- ctx.moveTo(23,3);
- ctx.quadraticCurveTo(23,-1,28,-1);
- ctx.lineTo(69,-1);
- ctx.quadraticCurveTo(75,-1,75,4);
- ctx.lineTo(77,59);
- ctx.quadraticCurveTo(76,65,71,65);
- ctx.lineTo(28,65);
- ctx.quadraticCurveTo(23,65,23,59);
- ctx.closePath();
-
- ctx.fillStyle=gradient(23,0,54,65,"#d0a06b","#87532f");
- ctx.fill();
- ctx.strokeStyle="#654027";
- ctx.lineWidth=1.5;
- ctx.stroke();
-
- // Maserung der Rückenlehne
- ctx.save();
- ctx.beginPath();
- ctx.roundRect(25,2,49,60,3);
- ctx.clip();
-
- for(let i=0;i<10;i++){
-  const yy=5+i*5.5;
-  ctx.beginPath();
-  ctx.moveTo(26,yy);
-  ctx.bezierCurveTo(42,yy-2,57,yy+2,73,yy);
-  ctx.strokeStyle=i%2?"#6b452c":"#f2c38d";
-  ctx.globalAlpha=.22;
-  ctx.lineWidth=.8;
-  ctx.stroke();
- }
- ctx.restore();
- ctx.globalAlpha=1;
-
- ctx.strokeStyle="#f4d0a0";
- ctx.globalAlpha=.5;
- ctx.lineWidth=1;
- ctx.beginPath();
- ctx.moveTo(27,4);
- ctx.lineTo(69,4);
- ctx.stroke();
- ctx.globalAlpha=1;
-
- // Verbindung unter dem Sitz
- wood(22,75,57,7,"#88552f",31);
 
  // Sitzfläche
- ctx.beginPath();
- ctx.moveTo(10,65);
- ctx.lineTo(85,65);
- ctx.lineTo(88,69);
- ctx.lineTo(86,78);
- ctx.quadraticCurveTo(85,82,80,82);
- ctx.lineTo(14,82);
- ctx.quadraticCurveTo(9,82,9,77);
- ctx.closePath();
-
- ctx.fillStyle=gradient(10,65,78,17,"#e0b47e","#99613a");
- ctx.fill();
- ctx.strokeStyle="#68432a";
+ ctx.fillStyle=gradient(20,67,78,12,"#e2b77f","#956039");
+ ctx.strokeStyle="#604027";
  ctx.lineWidth=1.3;
+ ctx.beginPath();
+ ctx.roundRect(20,67,78,12,2);
+ ctx.fill();
  ctx.stroke();
 
- // Maserung der Sitzfläche
- ctx.save();
- ctx.beginPath();
- ctx.rect(12,67,72,12);
- ctx.clip();
+ // Vorderes Bein
+ drawChairLeg(88,77,frontAngle);
 
- for(let i=0;i<7;i++){
-  const yy=68+i*1.7;
-  ctx.beginPath();
-  ctx.moveTo(12,yy);
-  ctx.bezierCurveTo(34,yy-1.5,59,yy+1.5,85,yy);
-  ctx.strokeStyle=i%2?"#70472b":"#f8d2a0";
-  ctx.globalAlpha=.25;
-  ctx.lineWidth=.8;
-  ctx.stroke();
- }
- ctx.restore();
- ctx.globalAlpha=1;
-
- ctx.strokeStyle="#f4ca91";
- ctx.globalAlpha=.55;
- ctx.lineWidth=1;
- ctx.beginPath();
- ctx.moveTo(13,66);
- ctx.lineTo(82,66);
- ctx.stroke();
- ctx.globalAlpha=1;
-
- // Vorderes Stuhlbein
- chairLeg(78,80-frontLift,10,37,frontAngle,true);
-
- // Getragener Gegenstand
+ // Gegenstand in der Hand
  if(player.held){
   const o=player.held;
   ctx.save();
-  ctx.translate(45,53);
+  ctx.translate(48,53);
   drawHeldObject(o);
   ctx.restore();
  }
