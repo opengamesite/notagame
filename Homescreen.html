@@ -1,0 +1,559 @@
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mein Zimmer – Pixel Adventure</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+:root {
+    --bg: #171a27;
+    --panel: #252a3d;
+    --screen: #a8c9a0;
+    --dark: #202638;
+    --yellow: #f5d66e;
+    --orange: #e99b56;
+    --white: #f4edda;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    background:
+        linear-gradient(rgba(23,26,39,.94), rgba(23,26,39,.96)),
+        repeating-linear-gradient(0deg, #30364b 0 2px, transparent 2px 4px);
+    color: var(--white);
+    font-family: 'Press Start 2P', monospace;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow-x: hidden;
+    padding: 25px 15px;
+}
+
+button, input {
+    font-family: inherit;
+}
+
+.page {
+    width: 100%;
+    max-width: 1050px;
+    text-align: center;
+}
+
+.logo {
+    margin-bottom: 28px;
+}
+
+.logo h1 {
+    color: var(--yellow);
+    font-size: clamp(20px, 4vw, 34px);
+    line-height: 1.6;
+    margin: 0;
+    text-shadow: 4px 4px 0 #8b603d;
+}
+
+.logo p {
+    font-size: 9px;
+    color: #b9c0d2;
+    letter-spacing: 2px;
+    margin-top: 12px;
+}
+
+/* COMPUTER */
+
+.computer {
+    width: min(100%, 570px);
+    margin: 0 auto 28px;
+    position: relative;
+    filter: drop-shadow(0 15px 0 rgba(0,0,0,.2));
+}
+
+.monitor {
+    background: #b6b1a1;
+    border: 8px solid #77776d;
+    border-bottom: 13px solid #77776d;
+    border-radius: 22px 22px 12px 12px;
+    padding: 17px;
+    box-shadow:
+        inset 5px 5px 0 rgba(255,255,255,.22),
+        inset -5px -5px 0 rgba(0,0,0,.12);
+}
+
+.screen {
+    background: var(--screen);
+    border: 7px solid #343b39;
+    border-radius: 12px;
+    height: 260px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #344b43;
+    box-shadow: inset 0 0 18px rgba(0,0,0,.25);
+}
+
+.screen::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+        transparent 0 3px,
+        rgba(0,0,0,.045) 3px 5px
+    );
+}
+
+.screen-content {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    padding: 12px;
+}
+
+.pixel-sun {
+    width: 44px;
+    height: 44px;
+    background: #e9b95f;
+    margin: 0 auto 15px;
+    box-shadow:
+        0 -8px 0 -3px #e9b95f,
+        0 8px 0 -3px #e9b95f,
+        8px 0 0 -3px #e9b95f,
+        -8px 0 0 -3px #e9b95f;
+}
+
+.screen-title {
+    font-size: clamp(13px, 3vw, 19px);
+    line-height: 1.8;
+    color: #344b43;
+    text-shadow: 2px 2px rgba(255,255,255,.25);
+}
+
+.screen-subtitle {
+    font-size: 8px;
+    margin-top: 12px;
+    color: #52695b;
+}
+
+.monitor-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    padding-top: 11px;
+}
+
+.monitor-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #424a43;
+}
+
+.monitor-light {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #9acb73;
+    box-shadow: 0 0 8px #9acb73;
+}
+
+.monitor-button {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: #555b52;
+    border: 2px solid #77776d;
+}
+
+.monitor-neck {
+    width: 95px;
+    height: 30px;
+    background: #858477;
+    margin: 0 auto;
+}
+
+.monitor-base {
+    width: 180px;
+    height: 17px;
+    background: #aaa594;
+    border-radius: 5px 5px 12px 12px;
+    margin: 0 auto;
+    box-shadow: inset 0 -4px 0 rgba(0,0,0,.12);
+}
+
+/* MENU */
+
+.menu {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin: 25px auto;
+}
+
+.menu-button {
+    min-width: 210px;
+    padding: 19px 16px;
+    border: 4px solid #101522;
+    background: var(--yellow);
+    color: #343044;
+    font-size: 10px;
+    cursor: pointer;
+    box-shadow: 0 6px 0 #a17d3c;
+    transition: transform .12s, box-shadow .12s;
+}
+
+.menu-button:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 0 #a17d3c;
+    background: #ffe79a;
+}
+
+.menu-button:active {
+    transform: translateY(3px);
+    box-shadow: 0 2px 0 #a17d3c;
+}
+
+.menu-button.multiplayer {
+    background: #a9c9a0;
+    box-shadow: 0 6px 0 #64846a;
+}
+
+.menu-button.multiplayer:hover {
+    background: #c5e3b9;
+}
+
+.menu-button.settings {
+    background: #e8a16b;
+    box-shadow: 0 6px 0 #a56642;
+}
+
+.menu-button.settings:hover {
+    background: #ffc08c;
+}
+
+.button-icon {
+    display: block;
+    font-size: 23px;
+    margin-bottom: 13px;
+}
+
+/* FOOTER */
+
+.footer {
+    color: #777f96;
+    font-size: 8px;
+    margin-top: 30px;
+    line-height: 2;
+}
+
+/* MODALS */
+
+.modal-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    background: rgba(8,10,17,.82);
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+}
+
+.modal-backdrop.open {
+    display: flex;
+}
+
+.modal {
+    width: 100%;
+    max-width: 440px;
+    background: var(--panel);
+    border: 5px solid #596078;
+    box-shadow: 9px 9px 0 rgba(0,0,0,.35);
+    padding: 25px;
+    text-align: center;
+}
+
+.modal h2 {
+    color: var(--yellow);
+    font-size: 13px;
+    line-height: 1.8;
+    margin: 0 0 22px;
+}
+
+.modal p {
+    font-family: Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    color: #d3d8e5;
+}
+
+.modal input {
+    width: 100%;
+    padding: 14px;
+    background: #171b29;
+    border: 3px solid #69718a;
+    color: white;
+    outline: none;
+    font-size: 13px;
+    margin: 8px 0 15px;
+}
+
+.modal input:focus {
+    border-color: var(--yellow);
+}
+
+.modal-button {
+    width: 100%;
+    padding: 15px 10px;
+    margin-top: 9px;
+    border: 3px solid #111522;
+    background: var(--yellow);
+    color: #272b39;
+    font-size: 9px;
+    cursor: pointer;
+}
+
+.modal-button.secondary {
+    background: #a9c9a0;
+}
+
+.modal-button.close {
+    background: #d38b7b;
+}
+
+.modal-button:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+.note {
+    font-size: 12px !important;
+    color: #aab2c5 !important;
+}
+
+.setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font-family: Arial, sans-serif;
+    font-size: 15px;
+    margin: 18px 0;
+}
+
+.setting-row input {
+    width: 20px;
+    margin: 0;
+}
+
+@media(max-width: 600px) {
+    .screen {
+        height: 210px;
+    }
+
+    .menu {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .menu-button {
+        width: min(100%, 300px);
+    }
+
+    .logo p {
+        font-size: 7px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="page">
+
+    <div class="logo">
+        <h1>MEIN ZIMMER</h1>
+        <p>PIXEL ADVENTURE</p>
+    </div>
+
+    <div class="computer">
+        <div class="monitor">
+            <div class="screen">
+                <div class="screen-content">
+                    <div class="pixel-sun"></div>
+                    <div class="screen-title">
+                        MEIN ZIMMER
+                    </div>
+                    <div class="screen-subtitle">
+                        DEIN ABENTEUER BEGINNT ...
+                    </div>
+                </div>
+            </div>
+
+            <div class="monitor-controls">
+                <div class="monitor-dot"></div>
+                <div class="monitor-light"></div>
+                <div class="monitor-button"></div>
+            </div>
+        </div>
+
+        <div class="monitor-neck"></div>
+        <div class="monitor-base"></div>
+    </div>
+
+    <div class="menu">
+
+        <button class="menu-button" onclick="startGame()">
+            <span class="button-icon">▶</span>
+            EINZELSPIELER
+        </button>
+
+        <button class="menu-button multiplayer" onclick="openModal('multiplayerModal')">
+            <span class="button-icon">👥</span>
+            MEHRSPIELER
+        </button>
+
+        <button class="menu-button settings" onclick="openModal('settingsModal')">
+            <span class="button-icon">⚙</span>
+            EINSTELLUNGEN
+        </button>
+
+    </div>
+
+    <div class="footer">
+        EIN KLEINES PIXEL-ABENTEUER<br>
+        MADE WITH PIXELS ♥
+    </div>
+
+</div>
+
+<!-- MULTIPLAYER -->
+
+<div class="modal-backdrop" id="multiplayerModal">
+    <div class="modal">
+        <h2>MEHRSPIELER</h2>
+
+        <p>
+            Spiele gemeinsam mit deinen Freunden in einer eigenen Welt!
+        </p>
+
+        <input
+            id="playerName"
+            maxlength="18"
+            placeholder="Dein Spielername"
+        >
+
+        <button class="modal-button secondary" onclick="showMultiplayerInfo()">
+            WELT ERSTELLEN
+        </button>
+
+        <input
+            id="roomCode"
+            maxlength="12"
+            placeholder="Einladungscode eingeben"
+        >
+
+        <button class="modal-button" onclick="showMultiplayerInfo()">
+            WELT BEITRETEN
+        </button>
+
+        <p class="note" id="multiplayerMessage">
+            Das Online-System wird gerade vorbereitet.
+        </p>
+
+        <button class="modal-button close" onclick="closeModal('multiplayerModal')">
+            ZURÜCK
+        </button>
+    </div>
+</div>
+
+<!-- SETTINGS -->
+
+<div class="modal-backdrop" id="settingsModal">
+    <div class="modal">
+        <h2>EINSTELLUNGEN</h2>
+
+        <div class="setting-row">
+            <span>Pixel-Effekte</span>
+            <input type="checkbox" id="pixelEffects" checked>
+        </div>
+
+        <div class="setting-row">
+            <span>Animationen</span>
+            <input type="checkbox" id="animations" checked>
+        </div>
+
+        <button class="modal-button" onclick="saveSettings()">
+            SPEICHERN
+        </button>
+
+        <button class="modal-button close" onclick="closeModal('settingsModal')">
+            ZURÜCK
+        </button>
+    </div>
+</div>
+
+<script>
+function startGame() {
+    window.location.href = "index.html";
+}
+
+function openModal(id) {
+    document.getElementById(id).classList.add("open");
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.remove("open");
+}
+
+function showMultiplayerInfo() {
+    document.getElementById("multiplayerMessage").textContent =
+        "Die Online-Verbindung ist noch nicht angeschlossen. Spielerprofile und Einladungen folgen mit unserem Server.";
+}
+
+function saveSettings() {
+    localStorage.setItem(
+        "pixel-settings-v1",
+        JSON.stringify({
+            effects: document.getElementById("pixelEffects").checked,
+            animations: document.getElementById("animations").checked
+        })
+    );
+
+    closeModal("settingsModal");
+}
+
+function loadSettings() {
+    try {
+        const settings = JSON.parse(
+            localStorage.getItem("pixel-settings-v1")
+        );
+
+        if (!settings) return;
+
+        document.getElementById("pixelEffects").checked =
+            settings.effects !== false;
+
+        document.getElementById("animations").checked =
+            settings.animations !== false;
+    } catch (error) {
+        console.warn("Einstellungen konnten nicht geladen werden.");
+    }
+}
+
+loadSettings();
+</script>
+
+</body>
+</html>
