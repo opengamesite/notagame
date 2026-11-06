@@ -6,42 +6,120 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>MEIN ZIMMER – Kleiderschrank</title>
 <style>
-:root{--paper:#f5eddf;--ink:#292e35;--accent:#d9b46c;--border:#c8b69e}
+:root{
+ --paper:#f5eddf;
+ --ink:#292e35;
+ --accent:#d9b46c;
+ --border:#c8b69e
+}
 *{box-sizing:border-box}
-body{margin:0;background:#252a30;color:var(--ink);font-family:"Courier New",monospace;height:100vh;overflow:hidden}
+body{
+ margin:0;background:#252a30;color:var(--ink);
+ font-family:"Courier New",monospace;height:100vh;overflow:hidden
+}
 button{font:inherit;cursor:pointer}
-header{height:62px;background:var(--paper);border-bottom:3px solid #a88c6b;display:flex;align-items:center;justify-content:space-between;padding:0 22px}
+header{
+ height:62px;background:var(--paper);border-bottom:3px solid #a88c6b;
+ display:flex;align-items:center;justify-content:space-between;padding:0 22px
+}
 header strong{font-size:17px;letter-spacing:2px}
-.back{background:#292e35;color:white;border:2px solid #111;padding:9px 14px;font-weight:bold}
-main{height:calc(100vh - 62px);display:grid;grid-template-columns:minmax(0,1fr) 360px}
-.preview{position:relative;display:flex;align-items:center;justify-content:center;background-color:#d9cbb6;background-image:linear-gradient(45deg,#d1c1aa 25%,transparent 25%),linear-gradient(-45deg,#d1c1aa 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#d1c1aa 75%),linear-gradient(-45deg,transparent 75%,#d1c1aa 75%);background-size:36px 36px;background-position:0 0,0 18px,18px -18px,-18px 0}
-.preview:after{content:"";position:absolute;bottom:10%;left:50%;transform:translateX(-50%);width:260px;height:16px;background:#6b5742;border-radius:50%;opacity:.25;filter:blur(6px)}
-.preview-label{position:absolute;top:25px;left:30px;color:#766b5d;font-size:11px;letter-spacing:3px}
-#skin{width:min(72%,480px);height:min(83%,420px);position:relative;z-index:1}
-.right{background:var(--paper);border-left:4px solid #a88c6b;display:flex;flex-direction:column;min-height:0}
+.back{
+ background:#292e35;color:white;border:2px solid #111;
+ padding:9px 14px;font-weight:bold
+}
+main{
+ height:calc(100vh - 62px);
+ display:grid;grid-template-columns:minmax(0,1fr) 360px
+}
+.preview{
+ position:relative;display:flex;align-items:center;justify-content:center;
+ background-color:#d9cbb6;
+ background-image:
+ linear-gradient(45deg,#d1c1aa 25%,transparent 25%),
+ linear-gradient(-45deg,#d1c1aa 25%,transparent 25%),
+ linear-gradient(45deg,transparent 75%,#d1c1aa 75%),
+ linear-gradient(-45deg,transparent 75%,#d1c1aa 75%);
+ background-size:36px 36px;
+ background-position:0 0,0 18px,18px -18px,-18px 0
+}
+.preview:after{
+ content:"";position:absolute;bottom:10%;left:50%;
+ transform:translateX(-50%);width:260px;height:16px;
+ background:#6b5742;border-radius:50%;opacity:.25;filter:blur(6px)
+}
+.preview-label{
+ position:absolute;top:25px;left:30px;color:#766b5d;
+ font-size:11px;letter-spacing:3px
+}
+#skin{
+ width:min(72%,480px);height:min(83%,420px);
+ position:relative;z-index:1
+}
+.right{
+ background:var(--paper);border-left:4px solid #a88c6b;
+ display:flex;flex-direction:column;min-height:0
+}
 .panel-head{padding:20px 19px 13px;border-bottom:2px solid var(--border)}
 .panel-head small{font-size:10px;color:#88765f;letter-spacing:2px}
 .panel-head h2{font-size:19px;margin:7px 0 0}
-.categories{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:14px 12px 12px}
-.category{height:62px;background:#e8dcc9;border:2px solid #c8b69e;color:#51483e;display:grid;place-items:center;font-size:23px;position:relative}
-.category.active{background:#292e35;color:#f5eddf;border-color:#292e35;box-shadow:inset 0 -4px var(--accent)}
-.category span{position:absolute;bottom:5px;font-size:7px;letter-spacing:.5px}
-.items-head{padding:5px 17px 10px;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#766b5d}
-.items{overflow-y:auto;padding:0 13px 15px;display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
-.item{height:91px;position:relative;display:grid;place-items:center;background:#fffaf1;border:2px solid #d8c9b5;box-shadow:2px 2px 0 #6b50301a;color:#292e35}
+.categories{
+ display:grid;grid-template-columns:repeat(5,1fr);
+ gap:6px;padding:14px 12px 12px
+}
+.category{
+ height:62px;background:#e8dcc9;border:2px solid #c8b69e;
+ color:#51483e;display:grid;place-items:center;font-size:23px;position:relative
+}
+.category.active{
+ background:#292e35;color:#f5eddf;border-color:#292e35;
+ box-shadow:inset 0 -4px var(--accent)
+}
+.category span{
+ position:absolute;bottom:5px;font-size:7px;letter-spacing:.5px
+}
+.items-head{
+ padding:5px 17px 10px;display:flex;justify-content:space-between;
+ align-items:center;font-size:11px;color:#766b5d
+}
+.items{
+ overflow-y:auto;padding:0 13px 15px;
+ display:grid;grid-template-columns:repeat(3,1fr);gap:9px
+}
+.item{
+ height:91px;position:relative;display:grid;place-items:center;
+ background:#fffaf1;border:2px solid #d8c9b5;
+ box-shadow:2px 2px 0 #6b50301a;color:#292e35
+}
 .item:hover{background:#f1e4cf;transform:translateY(-2px)}
-.item.selected{border:3px solid #587e96;background:#e4eceb;box-shadow:inset 0 0 0 2px #fff}
-.item.locked{opacity:.78}
+.item.selected{
+ border:3px solid #587e96;background:#e4eceb;
+ box-shadow:inset 0 0 0 2px #fff
+}
 .item .symbol{font-size:34px;filter:drop-shadow(2px 2px 0 #0002)}
-.item .check{position:absolute;right:4px;top:3px;font-size:12px;color:#416d5b;font-weight:bold}
-.item .price{position:absolute;bottom:5px;right:5px;font-size:9px;color:#80653c;background:#f5eddf;padding:2px 4px}
-.item .tooltip{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#292e35;color:white;padding:5px 7px;font-size:9px;white-space:nowrap;opacity:0;pointer-events:none;z-index:5}
+.item .check{
+ position:absolute;right:4px;top:3px;font-size:12px;
+ color:#416d5b;font-weight:bold
+}
+.item .tooltip{
+ position:absolute;bottom:100%;left:50%;transform:translateX(-50%);
+ background:#292e35;color:white;padding:5px 7px;
+ font-size:9px;white-space:nowrap;opacity:0;pointer-events:none;z-index:5
+}
 .item:hover .tooltip{opacity:1}
-.footer{margin-top:auto;padding:13px 16px;border-top:2px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.footer{
+ margin-top:auto;padding:13px 16px;border-top:2px solid var(--border);
+ display:flex;align-items:center;justify-content:space-between;gap:8px
+}
 .balance{font-size:12px;color:#766b5d}
 .balance b{color:#292e35}
-.remove{background:#e8dcc9;border:2px solid #c8b69e;padding:9px 10px;font-size:10px;color:#51483e}
-#status{min-height:22px;text-align:center;padding:4px;font-size:10px;color:#71877b}
+.remove{
+ background:#e8dcc9;border:2px solid #c8b69e;
+ padding:9px 10px;font-size:10px;color:#51483e
+}
+#status{
+ min-height:22px;text-align:center;padding:4px;
+ font-size:10px;color:#71877b
+}
 @media(max-width:700px){
  body{height:auto;min-height:100vh;overflow:auto}
  main{height:auto;min-height:calc(100vh - 62px);grid-template-columns:1fr}
@@ -51,6 +129,7 @@ main{height:calc(100vh - 62px);display:grid;grid-template-columns:minmax(0,1fr) 
 }
 </style>
 </head>
+
 <body>
 <header>
  <button class="back" onclick="location.href='index.html'">← ZURÜCK</button>
@@ -63,22 +142,33 @@ main{height:calc(100vh - 62px);display:grid;grid-template-columns:minmax(0,1fr) 
   <div class="preview-label">DEIN STUHL · OUTFIT-VORSCHAU</div>
   <canvas id="skin" width="480" height="420"></canvas>
  </section>
+
  <aside class="right">
-  <div class="panel-head"><small>CHARAKTER EDITOR</small><h2>Dein Outfit</h2></div>
-  <div class="categories">
-   <button class="category active" data-type="Kopf" title="Kopf">♛<span>KOPF</span></button>
-   <button class="category" data-type="Gesicht" title="Gesicht">◉<span>GESICHT</span></button>
-   <button class="category" data-type="Rücken" title="Rücken">▣<span>RÜCKEN</span></button>
-   <button class="category" data-type="Oberteil" title="Oberteil">▤<span>OBEN</span></button>
-   <button class="category" data-type="Hose" title="Hose">▥<span>HOSE</span></button>
+  <div class="panel-head">
+   <small>CHARAKTER EDITOR</small>
+   <h2>Dein Outfit</h2>
   </div>
-  <div class="items-head"><b id="categoryName">KOPF-ITEMS</b><span id="itemCount">ITEMS</span></div>
+
+  <div class="categories">
+   <button class="category active" data-type="Kopf">♛<span>KOPF</span></button>
+   <button class="category" data-type="Gesicht">🎈<span>BALLONS</span></button>
+   <button class="category" data-type="Rücken">▣<span>RÜCKEN</span></button>
+   <button class="category" data-type="Oberteil">▤<span>OBEN</span></button>
+   <button class="category" data-type="Hose">▥<span>HOSE</span></button>
+  </div>
+
+  <div class="items-head">
+   <b id="categoryName">KOPF-ITEMS</b>
+   <span id="itemCount">ITEMS</span>
+  </div>
+
   <div class="items" id="items"></div>
+
   <div class="footer">
    <div class="balance">¢ <b id="money">120</b></div>
    <button class="remove" id="remove">ABLEGEN</button>
   </div>
-  <div id="status">Änderungen werden automatisch gespeichert.</div>
+  <div id="status">Alle Cosmetics sind kostenlos.</div>
  </aside>
 </main>
 
@@ -88,87 +178,104 @@ main{height:calc(100vh - 62px);display:grid;grid-template-columns:minmax(0,1fr) 
 const STORAGE_KEY="mein-zimmer-save-v1";
 
 const defaults={
- money:120,unlocked:[],
+ money:120,
+ unlocked:[],
  equipped:{head:null,face:null,clothes:null,back:null,pants:null},
- inventory:[],placed:[],orders:[],received:[],faucetOn:false,bucketWater:0
+ inventory:[],
+ placed:[],
+ orders:[],
+ received:[],
+ faucetOn:false,
+ bucketWater:0
 };
+
+function cloneDefaults(){
+ return JSON.parse(JSON.stringify(defaults));
+}
 
 function loadSave(){
  try{
   const s=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
-  if(!s)return structuredClone(defaults);
-  return {...structuredClone(defaults),...s,
+  if(!s)return cloneDefaults();
+
+  return {
+   ...cloneDefaults(),
+   ...s,
    equipped:{...defaults.equipped,...(s.equipped||{})},
    unlocked:Array.isArray(s.unlocked)?s.unlocked:[]
   };
- }catch{return structuredClone(defaults)}
+ }catch{
+  return cloneDefaults();
+ }
 }
 
 let save=loadSave();
 
 const cosmetics=[
-{id:"cap",name:"Blaue Cap",type:"Kopf",price:25,symbol:"🧢"},
-{id:"crown",name:"Goldene Krone",type:"Kopf",price:80,symbol:"👑"},
-{id:"tp_hat",name:"Toilettenpapier",type:"Kopf",price:20,symbol:"🧻"},
-{id:"traffic_hat",name:"Baustellenhütchen",type:"Kopf",price:35,symbol:"🚧"},
-{id:"gold_helmet",name:"Goldhelm",type:"Kopf",price:100,symbol:"⛑️"},
-{id:"cowboy",name:"Cowboyhut",type:"Kopf",price:55,symbol:"🤠"},
-{id:"viking",name:"Wikingerhelm",type:"Kopf",price:75,symbol:"🪖"},
-{id:"chef",name:"Kochmütze",type:"Kopf",price:40,symbol:"👨‍🍳"},
-{id:"paper_crown",name:"Pappkrone",type:"Kopf",price:15,symbol:"♛"},
-{id:"frog_hat",name:"Froschhut",type:"Kopf",price:60,symbol:"🐸"},
-{id:"wizard",name:"Zauberhut",type:"Kopf",price:70,symbol:"🧙"},
-{id:"bucket_hat",name:"Eimer-Kopf",type:"Kopf",price:45,symbol:"🪣"},
-{id:"party_hat",name:"Partyhut",type:"Kopf",price:20,symbol:"🎉"},
+{id:"cap",name:"Blaue Cap",type:"Kopf",price:0,symbol:"🧢"},
+{id:"crown",name:"Goldene Krone",type:"Kopf",price:0,symbol:"👑"},
+{id:"tp_hat",name:"Toilettenpapier",type:"Kopf",price:0,symbol:"🧻"},
+{id:"traffic_hat",name:"Baustellenhütchen",type:"Kopf",price:0,symbol:"🚧"},
+{id:"gold_helmet",name:"Goldhelm",type:"Kopf",price:0,symbol:"⛑️"},
+{id:"cowboy",name:"Cowboyhut",type:"Kopf",price:0,symbol:"🤠"},
+{id:"viking",name:"Wikingerhelm",type:"Kopf",price:0,symbol:"🪖"},
+{id:"chef",name:"Kochmütze",type:"Kopf",price:0,symbol:"👨‍🍳"},
+{id:"paper_crown",name:"Pappkrone",type:"Kopf",price:0,symbol:"♛"},
+{id:"frog_hat",name:"Froschhut",type:"Kopf",price:0,symbol:"🐸"},
+{id:"wizard",name:"Zauberhut",type:"Kopf",price:0,symbol:"🧙"},
+{id:"bucket_hat",name:"Eimer-Kopf",type:"Kopf",price:0,symbol:"🪣"},
+{id:"party_hat",name:"Partyhut",type:"Kopf",price:0,symbol:"🎉"},
 
-{id:"glasses",name:"Pixelbrille",type:"Gesicht",price:35,symbol:"👓"},
-{id:"sunglasses",name:"Sonnenbrille",type:"Gesicht",price:40,symbol:"🕶️"},
-{id:"heart_glasses",name:"Herzbrille",type:"Gesicht",price:45,symbol:"💖"},
-{id:"monocle",name:"Monokel",type:"Gesicht",price:50,symbol:"🧐"},
-{id:"mustache",name:"Schnurrbart",type:"Gesicht",price:25,symbol:"🥸"},
-{id:"big_nose",name:"Riesennase",type:"Gesicht",price:20,symbol:"👃"},
-{id:"eyepatch",name:"Augenklappe",type:"Gesicht",price:30,symbol:"🏴"},
-{id:"diving",name:"Taucherbrille",type:"Gesicht",price:65,symbol:"🥽"},
-{id:"star_glasses",name:"Sternenbrille",type:"Gesicht",price:55,symbol:"⭐"},
+{id:"balloon_red",name:"Roter Luftballon",type:"Gesicht",price:0,symbol:"🎈"},
+{id:"balloon_blue",name:"Blauer Luftballon",type:"Gesicht",price:0,symbol:"🎈"},
+{id:"balloon_yellow",name:"Gelber Luftballon",type:"Gesicht",price:0,symbol:"🎈"},
+{id:"balloon_pink",name:"Rosa Luftballon",type:"Gesicht",price:0,symbol:"🎈"},
+{id:"balloon_green",name:"Grüner Luftballon",type:"Gesicht",price:0,symbol:"🎈"},
+{id:"balloon_purple",name:"Lila Luftballon",type:"Gesicht",price:0,symbol:"🎈"},
+{id:"balloon_party",name:"Bunte Ballons",type:"Gesicht",price:0,symbol:"🎈"},
+{id:"balloon_heart",name:"Herzballon",type:"Gesicht",price:0,symbol:"💗"},
+{id:"balloon_star",name:"Sternballon",type:"Gesicht",price:0,symbol:"⭐"},
 
-{id:"backpack",name:"Rucksack",type:"Rücken",price:45,symbol:"🎒"},
-{id:"schoolbag",name:"Schulranzen",type:"Rücken",price:35,symbol:"🎒"},
-{id:"hikingbag",name:"Wanderrucksack",type:"Rücken",price:65,symbol:"🎒"},
-{id:"jetpack",name:"Jetpack",type:"Rücken",price:120,symbol:"🚀"},
-{id:"wings",name:"Flügel",type:"Rücken",price:100,symbol:"🪽"},
-{id:"guitarbag",name:"Gitarrentasche",type:"Rücken",price:75,symbol:"🎸"},
-{id:"parachute",name:"Fallschirm",type:"Rücken",price:90,symbol:"🪂"},
-{id:"toolbox",name:"Werkzeugkiste",type:"Rücken",price:60,symbol:"🧰"},
+{id:"backpack",name:"Rucksack",type:"Rücken",price:0,symbol:"🎒"},
+{id:"schoolbag",name:"Schulranzen",type:"Rücken",price:0,symbol:"🎒"},
+{id:"hikingbag",name:"Wanderrucksack",type:"Rücken",price:0,symbol:"🎒"},
+{id:"jetpack",name:"Jetpack",type:"Rücken",price:0,symbol:"🚀"},
+{id:"wings",name:"Flügel",type:"Rücken",price:0,symbol:"🪽"},
+{id:"guitarbag",name:"Gitarrentasche",type:"Rücken",price:0,symbol:"🎸"},
+{id:"parachute",name:"Fallschirm",type:"Rücken",price:0,symbol:"🪂"},
+{id:"toolbox",name:"Werkzeugkiste",type:"Rücken",price:0,symbol:"🧰"},
 
-{id:"scarf",name:"Grüner Schal",type:"Oberteil",price:30,symbol:"🧣"},
-{id:"shirt",name:"Rotes Shirt",type:"Oberteil",price:45,symbol:"👕"},
-{id:"hoodie",name:"Blauer Hoodie",type:"Oberteil",price:65,symbol:"🧥"},
-{id:"leather",name:"Lederjacke",type:"Oberteil",price:85,symbol:"🧥"},
-{id:"raincoat",name:"Regenjacke",type:"Oberteil",price:55,symbol:"🌧️"},
-{id:"football",name:"Fußballtrikot",type:"Oberteil",price:50,symbol:"⚽"},
-{id:"suit",name:"Anzug",type:"Oberteil",price:100,symbol:"🤵"},
-{id:"pajamas",name:"Schlafanzug",type:"Oberteil",price:40,symbol:"🌙"},
-{id:"vest",name:"Warnweste",type:"Oberteil",price:35,symbol:"🦺"},
-{id:"astronaut",name:"Astronautenanzug",type:"Oberteil",price:150,symbol:"🚀"},
-{id:"armor",name:"Ritterrüstung",type:"Oberteil",price:130,symbol:"🛡️"},
-{id:"hawaii",name:"Hawaiihemd",type:"Oberteil",price:60,symbol:"🌺"},
-{id:"wintercoat",name:"Wintermantel",type:"Oberteil",price:90,symbol:"🧥"},
+{id:"scarf",name:"Grüner Schal",type:"Oberteil",price:0,symbol:"🧣"},
+{id:"shirt",name:"Rotes Shirt",type:"Oberteil",price:0,symbol:"👕"},
+{id:"hoodie",name:"Blauer Hoodie",type:"Oberteil",price:0,symbol:"🧥"},
+{id:"leather",name:"Lederjacke",type:"Oberteil",price:0,symbol:"🧥"},
+{id:"raincoat",name:"Regenjacke",type:"Oberteil",price:0,symbol:"🌧️"},
+{id:"football",name:"Fußballtrikot",type:"Oberteil",price:0,symbol:"⚽"},
+{id:"suit",name:"Anzug",type:"Oberteil",price:0,symbol:"🤵"},
+{id:"pajamas",name:"Schlafanzug",type:"Oberteil",price:0,symbol:"🌙"},
+{id:"vest",name:"Warnweste",type:"Oberteil",price:0,symbol:"🦺"},
+{id:"astronaut",name:"Astronautenanzug",type:"Oberteil",price:0,symbol:"🚀"},
+{id:"armor",name:"Ritterrüstung",type:"Oberteil",price:0,symbol:"🛡️"},
+{id:"hawaii",name:"Hawaiihemd",type:"Oberteil",price:0,symbol:"🌺"},
+{id:"wintercoat",name:"Wintermantel",type:"Oberteil",price:0,symbol:"🧥"},
 
-{id:"jeans",name:"Jeans",type:"Hose",price:45,symbol:"👖"},
-{id:"joggers",name:"Jogginghose",type:"Hose",price:35,symbol:"👖"},
-{id:"cargo",name:"Cargo-Hose",type:"Hose",price:60,symbol:"👖"},
-{id:"shorts",name:"Shorts",type:"Hose",price:25,symbol:"🩳"},
-{id:"sleep_pants",name:"Schlafanzughose",type:"Hose",price:35,symbol:"🌙"},
-{id:"baggy",name:"Baggy-Hose",type:"Hose",price:55,symbol:"👖"},
-{id:"knight_pants",name:"Ritterhose",type:"Hose",price:80,symbol:"⚔️"},
-{id:"rain_pants",name:"Regenhose",type:"Hose",price:50,symbol:"🌧️"},
-{id:"camo",name:"Tarnhose",type:"Hose",price:65,symbol:"🌲"},
-{id:"gold_pants",name:"Goldhose",type:"Hose",price:110,symbol:"✨"},
-{id:"ski_pants",name:"Skihose",type:"Hose",price:70,symbol:"❄️"},
-{id:"overalls",name:"Latzhose",type:"Hose",price:55,symbol:"👖"}
+{id:"jeans",name:"Jeans",type:"Hose",price:0,symbol:"👖"},
+{id:"joggers",name:"Jogginghose",type:"Hose",price:0,symbol:"👖"},
+{id:"cargo",name:"Cargo-Hose",type:"Hose",price:0,symbol:"👖"},
+{id:"shorts",name:"Shorts",type:"Hose",price:0,symbol:"🩳"},
+{id:"sleep_pants",name:"Schlafanzughose",type:"Hose",price:0,symbol:"🌙"},
+{id:"baggy",name:"Baggy-Hose",type:"Hose",price:0,symbol:"👖"},
+{id:"knight_pants",name:"Ritterhose",type:"Hose",price:0,symbol:"⚔️"},
+{id:"rain_pants",name:"Regenhose",type:"Hose",price:0,symbol:"🌧️"},
+{id:"camo",name:"Tarnhose",type:"Hose",price:0,symbol:"🌲"},
+{id:"gold_pants",name:"Goldhose",type:"Hose",price:0,symbol:"✨"},
+{id:"ski_pants",name:"Skihose",type:"Hose",price:0,symbol:"❄️"},
+{id:"overalls",name:"Latzhose",type:"Hose",price:0,symbol:"👖"}
 ];
 
-let currentCategory="Kopf",audio=null;
+let currentCategory="Kopf";
+let audio=null;
+
 const canvas=document.getElementById("skin");
 const ctx=canvas.getContext("2d");
 
@@ -200,6 +307,13 @@ function line(x1,y1,x2,y2,color,width=1){
  ctx.stroke();
 }
 
+function ellipse(x,y,rx,ry,color){
+ ctx.fillStyle=color;
+ ctx.beginPath();
+ ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);
+ ctx.fill();
+}
+
 function woodGradient(x,y,w,h){
  const g=ctx.createLinearGradient(x,y,x+w,y+h);
  g.addColorStop(0,"#d4a16b");
@@ -208,10 +322,8 @@ function woodGradient(x,y,w,h){
  return g;
 }
 
-/* Holzmaserung wie im Spiel */
 function woodPart(x,y,w,h,r=1){
  ctx.save();
-
  ctx.fillStyle="#35271d33";
  ctx.fillRect(x+2,y+2,w,h);
 
@@ -247,7 +359,6 @@ function woodPart(x,y,w,h,r=1){
  ctx.moveTo(x+2,y+1);
  ctx.lineTo(x+w-2,y+1);
  ctx.stroke();
-
  ctx.restore();
 }
 
@@ -276,7 +387,6 @@ function drawLeg(x,y,angle,color){
  ctx.lineTo(-1,36);
  ctx.stroke();
 
- /* Hosenstoff um die Stuhlbeine */
  if(color){
   ctx.fillStyle=color;
   ctx.fillRect(-3,13,6,19);
@@ -314,7 +424,7 @@ function fabric(x,y,w,h,color){
  ctx.restore();
 }
 
-/* Rucksack und Zubehör hinter der Lehne */
+/* Rücken-Accessoires */
 function drawBackItem(){
  const id=save.equipped.back;
  if(!id)return;
@@ -324,14 +434,20 @@ function drawBackItem(){
   ctx.strokeStyle="#a99c88";
   ctx.lineWidth=1;
   ctx.beginPath();
-  ctx.moveTo(29,30);ctx.quadraticCurveTo(-8,5,5,57);
-  ctx.quadraticCurveTo(17,63,30,49);ctx.closePath();
-  ctx.fill();ctx.stroke();
+  ctx.moveTo(29,30);
+  ctx.quadraticCurveTo(-8,5,5,57);
+  ctx.quadraticCurveTo(17,63,30,49);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
 
   ctx.beginPath();
-  ctx.moveTo(35,30);ctx.quadraticCurveTo(72,5,59,57);
-  ctx.quadraticCurveTo(47,63,34,49);ctx.closePath();
-  ctx.fill();ctx.stroke();
+  ctx.moveTo(35,30);
+  ctx.quadraticCurveTo(72,5,59,57);
+  ctx.quadraticCurveTo(47,63,34,49);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
   return;
  }
 
@@ -346,8 +462,9 @@ function drawBackItem(){
  }
 
  const colors={
-  backpack:"#a66b3c",schoolbag:"#d45c45",hikingbag:"#547d57",
-  guitarbag:"#553b31",parachute:"#d95b4b",toolbox:"#b37a38"
+  backpack:"#a66b3c",schoolbag:"#d45c45",
+  hikingbag:"#547d57",guitarbag:"#553b31",
+  parachute:"#d95b4b",toolbox:"#b37a38"
  };
  const c=colors[id]||"#986b49";
 
@@ -381,7 +498,7 @@ function drawBackItem(){
  }
 }
 
-/* Kopf-Items sitzen oben auf der Rückenlehne */
+/* Hüte */
 function drawHeadItem(){
  const id=save.equipped.head;
  if(!id)return;
@@ -398,10 +515,16 @@ function drawHeadItem(){
   ctx.strokeStyle="#805d29";
   ctx.lineWidth=1;
   ctx.beginPath();
-  ctx.moveTo(18,3);ctx.lineTo(18,-9);ctx.lineTo(26,-3);
-  ctx.lineTo(32,-15);ctx.lineTo(38,-3);ctx.lineTo(47,-10);
-  ctx.lineTo(47,3);ctx.closePath();
-  ctx.fill();ctx.stroke();
+  ctx.moveTo(18,3);
+  ctx.lineTo(18,-9);
+  ctx.lineTo(26,-3);
+  ctx.lineTo(32,-15);
+  ctx.lineTo(38,-3);
+  ctx.lineTo(47,-10);
+  ctx.lineTo(47,3);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
   rect(19,1,27,4,c);
   if(id!=="paper_crown")rect(30,-2,5,4,"#d94e55");
  }
@@ -410,14 +533,22 @@ function drawHeadItem(){
   ctx.fillRect(22,-13,20,16);
   ctx.strokeStyle="#c9c1b4";
   ctx.strokeRect(22,-13,20,16);
-  ctx.beginPath();ctx.ellipse(32,-13,10,3,0,0,Math.PI*2);
-  ctx.fillStyle="#fff";ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(32,-13,10,3,0,0,Math.PI*2);
+  ctx.fillStyle="#fff";
+  ctx.fill();
   rect(27,-9,10,8,"#e8e2d7");
  }
  else if(id==="traffic_hat"){
   ctx.fillStyle="#ef8e23";
-  ctx.beginPath();ctx.moveTo(32,-17);ctx.lineTo(20,3);ctx.lineTo(44,3);ctx.closePath();
-  ctx.fill();ctx.strokeStyle="#9a5c20";ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(32,-17);
+  ctx.lineTo(20,3);
+  ctx.lineTo(44,3);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle="#9a5c20";
+  ctx.stroke();
   rect(25,-5,14,3,"#fff0c9");
   rect(17,2,30,4,"#f3a52e");
  }
@@ -435,10 +566,14 @@ function drawHeadItem(){
  else if(id==="chef"){
   fabric(20,-1,25,5,"#fff");
   ctx.fillStyle="#fff";
-  ctx.beginPath();ctx.arc(32,-9,11,Math.PI,0);ctx.fill();
-  ctx.strokeStyle="#d3c8b8";ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(32,-9,11,Math.PI,0);
+  ctx.fill();
+  ctx.strokeStyle="#d3c8b8";
+  ctx.stroke();
  }
  else if(id==="frog_hat"){
+  /* Unveränderter Froschhut */
   fabric(18,-1,28,7,"#4b9d56");
   ellipse(23,-9,7,8,"#5cbf65");
   ellipse(41,-9,7,8,"#5cbf65");
@@ -447,8 +582,14 @@ function drawHeadItem(){
  }
  else if(id==="wizard"){
   ctx.fillStyle="#51468c";
-  ctx.beginPath();ctx.moveTo(16,2);ctx.lineTo(32,-22);ctx.lineTo(48,2);ctx.closePath();
-  ctx.fill();ctx.strokeStyle="#30264e";ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(16,2);
+  ctx.lineTo(32,-22);
+  ctx.lineTo(48,2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle="#30264e";
+  ctx.stroke();
   fabric(14,0,36,5,"#483e75");
   rect(29,-14,5,5,"#f6d56c");
  }
@@ -459,72 +600,148 @@ function drawHeadItem(){
  }
  else if(id==="party_hat"){
   ctx.fillStyle="#e95e70";
-  ctx.beginPath();ctx.moveTo(32,-20);ctx.lineTo(21,2);ctx.lineTo(43,2);ctx.closePath();
+  ctx.beginPath();
+  ctx.moveTo(32,-20);
+  ctx.lineTo(21,2);
+  ctx.lineTo(43,2);
+  ctx.closePath();
   ctx.fill();
   rect(26,-9,12,3,"#f3ce63");
   rect(18,2,28,4,"#f1e0c0");
  }
 }
 
-/* Gesichtszubehör wird zu Dekoration an der Lehne */
-function drawFaceItem(){
- const id=save.equipped.face;
- if(!id)return;
+/* Ballons */
+const balloonColors={
+ balloon_red:"#e34d4d",
+ balloon_blue:"#438bd1",
+ balloon_yellow:"#efc84b",
+ balloon_pink:"#ed83ad",
+ balloon_green:"#55a96c",
+ balloon_purple:"#9871cf",
+ balloon_party:"#e65c64",
+ balloon_heart:"#e85b85",
+ balloon_star:"#e8bd48"
+};
 
- if(["glasses","sunglasses","heart_glasses","star_glasses","diving"].includes(id)){
-  const color=id==="sunglasses"?"#17232c":id==="diving"?"#6ba9bd":"#29323c";
+function balloonShape(id,x,y,scale){
+ ctx.save();
+ ctx.translate(x,y);
+ ctx.scale(scale,scale);
 
-  if(id==="diving"){
-   fabric(17,27,31,15,"#4b8fa8");
-   fabric(21,30,23,8,"#a9dbe0");
-   return;
+ const color=balloonColors[id]||"#e34d4d";
+
+ if(id==="balloon_heart"){
+  ctx.fillStyle=color;
+  ctx.beginPath();
+  ctx.moveTo(0,13);
+  ctx.bezierCurveTo(-25,-2,-17,-19,-5,-15);
+  ctx.bezierCurveTo(0,-13,0,-8,0,-8);
+  ctx.bezierCurveTo(0,-8,8,-20,18,-13);
+  ctx.bezierCurveTo(32,-3,15,9,0,13);
+  ctx.fill();
+  ctx.strokeStyle="#a83d61";
+  ctx.lineWidth=1;
+  ctx.stroke();
+ }
+ else if(id==="balloon_star"){
+  ctx.fillStyle=color;
+  ctx.beginPath();
+  for(let i=0;i<10;i++){
+   const a=-Math.PI/2+i*Math.PI/5;
+   const r=i%2?10:20;
+   const px=Math.cos(a)*r;
+   const py=Math.sin(a)*r;
+   if(i===0)ctx.moveTo(px,py);
+   else ctx.lineTo(px,py);
   }
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle="#a17b2d";
+  ctx.stroke();
+ }
+ else{
+  ctx.beginPath();
+  ctx.ellipse(0,0,13,18,0,0,Math.PI*2);
+  const g=ctx.createRadialGradient(-5,-7,1,0,0,20);
+  g.addColorStop(0,"#ffffffcc");
+  g.addColorStop(.22,color);
+  g.addColorStop(1,color);
+  ctx.fillStyle=g;
+  ctx.fill();
+  ctx.strokeStyle="#7a4b4b66";
+  ctx.lineWidth=.8;
+  ctx.stroke();
 
-  if(id==="heart_glasses"){
-   ctx.fillStyle="#d94d6c";
-   ctx.beginPath();ctx.arc(24,33,6,0,Math.PI*2);ctx.arc(30,33,6,0,Math.PI*2);ctx.lineTo(27,44);ctx.closePath();ctx.fill();
-   ctx.beginPath();ctx.arc(37,33,6,0,Math.PI*2);ctx.arc(43,33,6,0,Math.PI*2);ctx.lineTo(40,44);ctx.closePath();ctx.fill();
-  }else if(id==="star_glasses"){
-   ctx.fillStyle="#e9bd46";
-   for(const x of [25,40]){
-    ctx.beginPath();
-    for(let i=0;i<10;i++){
-     const a=-Math.PI/2+i*Math.PI/5;
-     const r=i%2?3:7;
-     const px=x+Math.cos(a)*r,py=35+Math.sin(a)*r;
-     if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
-    }
-    ctx.closePath();ctx.fill();
-   }
-  }else{
-   fabric(19,29,12,9,color);
-   fabric(34,29,12,9,color);
-   line(30,33,34,33,color,2);
-  }
- }
- else if(id==="monocle"){
-  ctx.beginPath();ctx.arc(39,35,7,0,Math.PI*2);
-  ctx.strokeStyle="#d6a94d";ctx.lineWidth=2;ctx.stroke();
-  ctx.beginPath();ctx.arc(39,35,4,0,Math.PI*2);
-  ctx.fillStyle="#b8d2d9";ctx.fill();
-  line(44,41,48,51,"#9b793d",1.5);
- }
- else if(id==="mustache"){
-  fabric(22,39,11,5,"#493328");
-  fabric(34,39,11,5,"#493328");
- }
- else if(id==="big_nose"){
-  ctx.fillStyle="#e6a77c";
-  ctx.beginPath();ctx.moveTo(31,31);ctx.lineTo(25,43);ctx.lineTo(38,43);ctx.closePath();
+  ctx.beginPath();
+  ctx.ellipse(-5,-7,2.5,5,-.4,0,Math.PI*2);
+  ctx.fillStyle="#ffffff99";
   ctx.fill();
  }
- else if(id==="eyepatch"){
-  fabric(20,28,14,12,"#25252a");
-  line(20,29,45,22,"#25252a",2);
- }
+
+ ctx.beginPath();
+ ctx.moveTo(-2,16);
+ ctx.lineTo(2,16);
+ ctx.lineTo(0,20);
+ ctx.closePath();
+ ctx.fillStyle=color;
+ ctx.fill();
+
+ ctx.restore();
 }
 
-/* Oberteile werden zu Stoffbezügen für Lehne und Sitz */
+function drawBalloonString(startX,startY,endX,endY,phase){
+ ctx.save();
+ ctx.strokeStyle="#766b60";
+ ctx.lineWidth=.8;
+ ctx.globalAlpha=.9;
+ ctx.beginPath();
+ ctx.moveTo(startX,startY);
+ const sway=Math.sin(phase)*5;
+ ctx.bezierCurveTo(
+  startX-10+sway,startY-17,
+  endX+12-sway,endY+20,
+  endX,endY
+ );
+ ctx.stroke();
+ ctx.restore();
+}
+
+function drawBalloons(time){
+ const id=save.equipped.face;
+ if(!id||!id.startsWith("balloon_"))return;
+
+ const t=time/1000;
+
+ if(id==="balloon_party"){
+  const balloons=[
+   {x:5,y:-56,phase:0,scale:.85,id:"balloon_pink"},
+   {x:35,y:-76,phase:2.1,scale:1,id:"balloon_blue"},
+   {x:65,y:-55,phase:4.2,scale:.82,id:"balloon_yellow"}
+  ];
+
+  balloons.forEach((b,i)=>{
+   const sway=Math.sin(t*1.5+b.phase)*5;
+   const float=Math.sin(t*2+b.phase)*4;
+   const bx=b.x+sway;
+   const by=b.y+float;
+
+   drawBalloonString(30+i*3,8,bx,by+18,t*1.5+b.phase);
+   balloonShape(b.id,bx,by,b.scale);
+  });
+  return;
+ }
+
+ const sway=Math.sin(t*1.6)*5;
+ const float=Math.sin(t*2.1)*4;
+ const bx=35+sway;
+ const by=-70+float;
+
+ drawBalloonString(30,8,bx,by+18,t*1.6);
+ balloonShape(id,bx,by,1.08);
+}
+
+/* Kleidung */
 function drawClothes(){
  const id=save.equipped.clothes;
  if(!id)return;
@@ -536,15 +753,12 @@ function drawClothes(){
   astronaut:"#d9e0e4",armor:"#89969e",hawaii:"#d96b5b",
   wintercoat:"#587f9d"
  };
+
  const c=colors[id]||"#b98552";
 
- /* Bezug auf der Rückenlehne */
  fabric(25,9,9,53,c);
-
- /* Stoff auf der Sitzfläche */
  fabric(21,68,76,8,c);
 
- /* Details */
  if(id==="scarf"){
   fabric(20,10,18,8,"#4d995f");
   fabric(35,14,6,25,"#4d995f");
@@ -588,7 +802,7 @@ function drawClothes(){
  }
 }
 
-/* Hosen werden zu Bezügen an den Stuhlbeinen */
+/* Hosen */
 function drawPants(){
  const id=save.equipped.pants;
  if(!id)return;
@@ -601,7 +815,6 @@ function drawPants(){
  };
  const c=colors[id]||"#343c52";
 
- /* Stoffstreifen auf den beiden sichtbaren Beinen */
  fabric(26,88,7,20,c);
  fabric(85,89,7,20,c);
 
@@ -632,13 +845,10 @@ function drawPants(){
  }
 }
 
-/* Der echte Holzstuhl – gleiche Seitenansicht wie in index.html */
-function drawChair(){
- const head=save.equipped.head;
- const face=save.equipped.face;
+/* Stuhl */
+function drawChair(time){
  const back=save.equipped.back;
 
- /* Schatten */
  ctx.save();
  ctx.globalAlpha=.2;
  ctx.fillStyle="#17130f";
@@ -647,58 +857,50 @@ function drawChair(){
  ctx.fill();
  ctx.restore();
 
- /* Zubehör hinter dem Stuhl */
  if(back)drawBackItem();
 
- /* Hinteres Stuhlbein */
  drawLeg(29,75,0,null);
-
- /* Rückenlehne: ein einziges schlichtes Brett */
  woodPart(23,5,13,70,2);
-
- /* Sitzfläche */
  woodPart(20,67,78,12,2);
-
- /* Vorderes Stuhlbein */
  drawLeg(88,77,0,null);
 
- /* Hosenbezüge */
  drawPants();
-
- /* Oberteil / Stoffbezüge */
  drawClothes();
 
- /* Kleine Holzdetails */
  line(25,8,25,70,"#f1c18b99",1);
  line(23,69,95,69,"#f3d0a0aa",1);
 
- /* Gesichtszubehör auf der oberen Lehne */
- if(face)drawFaceItem();
+ drawHeadItem();
+ drawBalloons(time);
 
- /* Kopfzubehör oben auf der Lehne */
- if(head)drawHeadItem();
-
- /* Bodenkontakt */
  ctx.fillStyle="#513a29";
  ctx.globalAlpha=.25;
  ctx.fillRect(25,116,69,1);
  ctx.globalAlpha=1;
 }
 
-function drawSkin(){
+function drawSkin(time=0){
  ctx.clearRect(0,0,canvas.width,canvas.height);
  ctx.save();
 
- /* Stuhl groß und mittig anzeigen */
- ctx.translate(82,22);
- ctx.scale(3.1,3.1);
+ /* Mehr Platz oberhalb für die Ballons */
+ ctx.translate(115,145);
+ ctx.scale(2.1,2.1);
 
- drawChair();
+ drawChair(time);
 
  ctx.restore();
 }
 
-/* Soundeffekte */
+/* Animation */
+const animationStart=performance.now();
+
+function animate(now){
+ drawSkin(now-animationStart);
+ requestAnimationFrame(animate);
+}
+
+/* Sound */
 function playSound(kind="click"){
  try{
   audio=audio||new(window.AudioContext||window.webkitAudioContext)();
@@ -706,7 +908,8 @@ function playSound(kind="click"){
 
   const osc=audio.createOscillator();
   const gain=audio.createGain();
-  osc.connect(gain);gain.connect(audio.destination);
+  osc.connect(gain);
+  gain.connect(audio.destination);
 
   const now=audio.currentTime;
   const settings={
@@ -719,8 +922,10 @@ function playSound(kind="click"){
   osc.type=settings[2];
   osc.frequency.setValueAtTime(settings[0],now);
 
-  if(kind==="buy")osc.frequency.exponentialRampToValueAtTime(1250,now+.12);
-  if(kind==="error")osc.frequency.exponentialRampToValueAtTime(100,now+.14);
+  if(kind==="buy")
+   osc.frequency.exponentialRampToValueAtTime(1250,now+.12);
+  if(kind==="error")
+   osc.frequency.exponentialRampToValueAtTime(100,now+.14);
 
   gain.gain.setValueAtTime(.055,now);
   gain.gain.exponentialRampToValueAtTime(.001,now+settings[1]);
@@ -738,34 +943,34 @@ function persist(){
  try{
   localStorage.setItem(STORAGE_KEY,JSON.stringify(save));
   document.getElementById("money").textContent=save.money;
-  document.getElementById("status").textContent="✓ Gespeichert";
+  document.getElementById("status").textContent="✓ Kostenlos gespeichert";
  }catch{
   document.getElementById("status").textContent="Speichern nicht möglich";
  }
 }
 
+/* Cosmetics kostenlos */
 function renderItems(){
  const list=document.getElementById("items");
  list.innerHTML="";
 
- document.getElementById("categoryName").textContent=currentCategory.toUpperCase()+"-ITEMS";
+ document.getElementById("categoryName").textContent=
+  currentCategory==="Gesicht"?"BALLONS":currentCategory.toUpperCase()+"-ITEMS";
 
  const filtered=cosmetics.filter(i=>i.type===currentCategory);
  document.getElementById("itemCount").textContent=filtered.length+" ITEMS";
 
  filtered.forEach(item=>{
-  const unlocked=save.unlocked.includes(item.id);
   const selected=save.equipped[slotFor(item.type)]===item.id;
 
   const button=document.createElement("button");
-  button.className="item"+(selected?" selected":"")+(unlocked?"":" locked");
+  button.className="item"+(selected?" selected":"");
   button.title=item.name;
 
   button.innerHTML=
    `<span class="symbol">${item.symbol}</span>`+
    (selected?'<span class="check">✓</span>':"")+
-   (!unlocked?`<span class="price">¢ ${item.price}</span>`:"")+
-   `<span class="tooltip">${item.name}</span>`;
+   `<span class="tooltip">${item.name} · KOSTENLOS</span>`;
 
   button.addEventListener("click",()=>chooseItem(item));
   list.appendChild(button);
@@ -774,28 +979,17 @@ function renderItems(){
 
 function chooseItem(item){
  const slot=slotFor(item.type);
- const unlocked=save.unlocked.includes(item.id);
 
- if(!unlocked){
-  if(save.money<item.price){
-   playSound("error");
-   document.getElementById("status").textContent="Nicht genug Münzen!";
-   return;
-  }
-
-  save.money-=item.price;
+ if(!save.unlocked.includes(item.id)){
   save.unlocked.push(item.id);
-  playSound("buy");
- }else{
-  playSound("select");
  }
 
- /* Pro Kategorie nur ein Item gleichzeitig */
  save.equipped[slot]=item.id;
 
+ playSound("select");
  persist();
  renderItems();
- drawSkin();
+ drawSkin(performance.now()-animationStart);
 }
 
 document.querySelectorAll(".category").forEach(button=>{
@@ -813,13 +1007,13 @@ document.getElementById("remove").addEventListener("click",()=>{
  playSound("click");
  persist();
  renderItems();
- drawSkin();
+ drawSkin(performance.now()-animationStart);
 });
 
 document.getElementById("money").textContent=save.money;
 
 renderItems();
-drawSkin();
+requestAnimationFrame(animate);
 </script>
 </body>
 </html>
