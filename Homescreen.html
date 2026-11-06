@@ -469,7 +469,6 @@ button, input { font-family: inherit; }
     </div>
 </div>
 
-<!-- Supabase zuerst laden -->
 <script src="supabase.js"></script>
 
 <script>
@@ -506,7 +505,9 @@ function getPlayerName() {
 
 async function loginPlayer() {
     if (!window.GameOnline) {
-        throw new Error("supabase.js wurde nicht geladen. Bitte Dateiname und GitHub-Pfad prüfen.");
+        throw new Error(
+            "supabase.js wurde nicht geladen. Bitte Dateiname und GitHub-Pfad prüfen."
+        );
     }
 
     const name = getPlayerName();
@@ -518,10 +519,63 @@ async function loginPlayer() {
     const result = await GameOnline.login(name);
 
     if (!result || result.error) {
-        throw new Error(result?.error?.message || "Spieleranmeldung fehlgeschlagen.");
+        throw new Error(
+            result?.error?.message || "Spieleranmeldung fehlgeschlagen."
+        );
     }
 
     return result;
+}
+
+/* Einheitliche Verarbeitung verschiedener Supabase-Rückgabeformen */
+function normalizeRoomResponse(result) {
+    if (!result) return null;
+
+    if (result.error) {
+        throw new Error(result.error.message || "Supabase-Fehler.");
+    }
+
+    let room = result.data ?? result.room ?? result;
+
+    if (Array.isArray(room)) {
+        room = room[0] ?? null;
+    }
+
+    if (typeof room === "string") {
+        try {
+            room = JSON.parse(room);
+        } catch {
+            room = { invite_code: room };
+        }
+    }
+
+    if (room && typeof room === "object" && room.data) {
+        room = room.data;
+
+        if (Array.isArray(room)) {
+            room = room[0] ?? null;
+        }
+    }
+
+    if (!room || typeof room !== "object") {
+        console.error("Unerwartete Supabase-Raumantwort:", result);
+        return null;
+    }
+
+    return room;
+}
+
+function getInviteCode(room) {
+    if (!room) return null;
+
+    return (
+        room.invite_code ||
+        room.code ||
+        room.inviteCode ||
+        room.room_code ||
+        room.invitation_code ||
+        null
+    );
 }
 
 async function createRoom() {
@@ -534,21 +588,36 @@ async function createRoom() {
     try {
         await loginPlayer();
 
+        setMessage("Deine Welt wird erstellt ...");
+
         const result = await GameOnline.createRoom("Meine Welt");
 
-        if (!result || result.error) {
-            throw new Error(result?.error?.message || "Die Welt konnte nicht erstellt werden.");
+        console.log("Supabase createRoom Antwort:", result);
+
+        const room = normalizeRoomResponse(result);
+
+        if (!room) {
+            throw new Error(
+                "Supabase hat keine Raumdaten zurückgegeben. Bitte prüfe die SQL-Funktion create_game_room."
+            );
         }
 
-        const room = result.data;
+        const code = getInviteCode(room);
+
+        if (!code) {
+            console.error("Raumdaten ohne Einladungscode:", room);
+
+            throw new Error(
+                "Die Serverantwort enthält keinen Einladungscode. Bitte öffne die Browser-Konsole (F12) und sende mir die Ausgabe."
+            );
+        }
 
         activeRoom = room;
 
-        const code = room.invite_code || room.code;
-
-        if (!code) {
-            throw new Error("Die Welt wurde erstellt, aber der Einladungscode fehlt in der Serverantwort.");
-        }
+        sessionStorage.setItem(
+            "mein-zimmer-active-room",
+            JSON.stringify(activeRoom)
+        );
 
         document.getElementById("createdRoomCode").textContent = code;
         document.getElementById("roomResult").style.display = "block";
@@ -556,7 +625,7 @@ async function createRoom() {
         setMessage("Deine Welt wurde erfolgreich erstellt!");
 
     } catch (error) {
-        console.error(error);
+        console.error("Fehler beim Erstellen der Welt:", error);
         setMessage(error.message || "Ein unbekannter Fehler ist aufgetreten.", true);
     } finally {
         setBusy(false);
@@ -581,23 +650,31 @@ async function joinRoom() {
 
         const result = await GameOnline.joinRoom(code);
 
-        if (!result || result.error) {
-            throw new Error(result?.error?.message || "Beitritt fehlgeschlagen.");
+        console.log("Supabase joinRoom Antwort:", result);
+
+        const room = normalizeRoomResponse(result);
+
+        if (!room) {
+            throw new Error(
+                "Supabase hat keine Raumdaten zurückgegeben."
+            );
         }
 
-        activeRoom = result.data;
+        activeRoom = room;
+
+        sessionStorage.setItem(
+            "mein-zimmer-active-room",
+            JSON.stringify(activeRoom)
+        );
 
         setMessage("Du bist der Welt erfolgreich beigetreten!");
-
-        // Raumdaten für den nächsten Spielschritt lokal merken.
-        sessionStorage.setItem("mein-zimmer-active-room", JSON.stringify(activeRoom));
 
         setTimeout(() => {
             window.location.href = "index.html";
         }, 1000);
 
     } catch (error) {
-        console.error(error);
+        console.error("Fehler beim Beitreten:", error);
         setMessage(error.message || "Ein unbekannter Fehler ist aufgetreten.", true);
     } finally {
         setBusy(false);
@@ -629,12 +706,18 @@ function saveSettings() {
 
 function loadSettings() {
     try {
-        const settings = JSON.parse(localStorage.getItem("pixel-settings-v1"));
+        const settings = JSON.parse(
+            localStorage.getItem("pixel-settings-v1")
+        );
 
         if (!settings) return;
 
-        document.getElementById("pixelEffects").checked = settings.effects !== false;
-        document.getElementById("animations").checked = settings.animations !== false;
+        document.getElementById("pixelEffects").checked =
+            settings.effects !== false;
+
+        document.getElementById("animations").checked =
+            settings.animations !== false;
+
     } catch (error) {
         console.warn("Einstellungen konnten nicht geladen werden.");
     }
