@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -392,6 +393,145 @@ function drawChairLeg(x,y,angle){
  ctx.restore();
 }
 
+/* LUFTBALLONS */
+
+const balloonColors={
+ balloon_red:"#e95b59",
+ balloon_blue:"#579bd5",
+ balloon_yellow:"#edc64c",
+ balloon_pink:"#e77ca5",
+ balloon_green:"#65ae79",
+ balloon_purple:"#9b7bd3",
+ balloon_party:"#e95b59",
+ balloon_heart:"#e96b83",
+ balloon_star:"#e9bd46"
+};
+
+function drawBalloonString(ax,ay,bx,by,phase){
+ const sway=Math.sin(time*2.2+phase)*4;
+ const wind=Math.sin(time*1.3+phase)*2.5;
+
+ ctx.save();
+ ctx.strokeStyle="#8d8172";
+ ctx.lineWidth=1;
+ ctx.beginPath();
+ ctx.moveTo(ax,ay);
+ ctx.bezierCurveTo(
+  ax-7+sway,ay-18,
+  bx+wind,by+20,
+  bx,by+11
+ );
+ ctx.stroke();
+
+ ctx.strokeStyle="#ffffff80";
+ ctx.lineWidth=.45;
+ ctx.beginPath();
+ ctx.moveTo(ax+1,ay);
+ ctx.quadraticCurveTo(ax-5+sway,ay-15,bx+1,by+11);
+ ctx.stroke();
+ ctx.restore();
+}
+
+function drawBalloonShape(id,x,y,scale=1){
+ const color=balloonColors[id]||"#e95b59";
+
+ ctx.save();
+ ctx.translate(x,y);
+ ctx.scale(scale,scale);
+
+ if(id==="balloon_heart"){
+  ctx.beginPath();
+  ctx.moveTo(0,10);
+  ctx.bezierCurveTo(-5,5,-13,-1,-10,-8);
+  ctx.bezierCurveTo(-7,-15,0,-11,0,-6);
+  ctx.bezierCurveTo(0,-11,7,-15,10,-8);
+  ctx.bezierCurveTo(13,-1,5,5,0,10);
+  ctx.closePath();
+ }else if(id==="balloon_star"){
+  ctx.beginPath();
+  for(let i=0;i<10;i++){
+   const a=-Math.PI/2+i*Math.PI/5;
+   const r=i%2===0?12:5.5;
+   const px=Math.cos(a)*r;
+   const py=Math.sin(a)*r;
+   if(i===0)ctx.moveTo(px,py);
+   else ctx.lineTo(px,py);
+  }
+  ctx.closePath();
+ }else{
+  ctx.beginPath();
+  ctx.ellipse(0,0,8.5,11.5,0,0,Math.PI*2);
+ }
+
+ ctx.fillStyle=gradient(-8,-12,16,24,"#ffffff",color);
+ ctx.fill();
+ ctx.strokeStyle="#00000030";
+ ctx.lineWidth=.8;
+ ctx.stroke();
+
+ ctx.save();
+ ctx.globalAlpha=.65;
+ ellipse(-3,-5,2,4,"#ffffff");
+ ctx.restore();
+
+ ctx.fillStyle=color;
+ ctx.beginPath();
+ ctx.moveTo(-2,11);
+ ctx.lineTo(2,11);
+ ctx.lineTo(0,14);
+ ctx.closePath();
+ ctx.fill();
+
+ ctx.restore();
+}
+
+function drawWardrobeBalloons(){
+ const id=wardrobe.face;
+
+ if(!id||!id.startsWith("balloon_"))return;
+
+ const trail=clamp(-player.vx*player.facing*.045,-9,9);
+ const jumpSway=clamp(-player.vy*.012,-4,4);
+ const airborne=!player.grounded;
+ const motion=airborne?1.5:1;
+
+ let balloons=[];
+
+ if(id==="balloon_party"){
+  balloons=[
+   {id:"balloon_red",x:5,y:-45,phase:0},
+   {id:"balloon_blue",x:35,y:-66,phase:2},
+   {id:"balloon_yellow",x:67,y:-48,phase:4}
+  ];
+ }else{
+  balloons=[
+   {id:id,x:36,y:-56,phase:0}
+  ];
+ }
+
+ /* Erst die Schnüre zeichnen */
+
+ for(const b of balloons){
+  const float=Math.sin(time*2.1+b.phase)*3.5*motion;
+  const sway=Math.sin(time*1.5+b.phase)*3;
+  const bx=b.x+trail+sway;
+  const by=b.y+float+jumpSway;
+
+  drawBalloonString(29,13,bx,by,b.phase);
+ }
+
+ /* Danach die Ballons */
+
+ for(const b of balloons){
+  const float=Math.sin(time*2.1+b.phase)*3.5*motion;
+  const sway=Math.sin(time*1.5+b.phase)*3;
+  const bx=b.x+trail+sway;
+  const by=b.y+float+jumpSway;
+
+  drawBalloonShape(b.id,bx,by,1);
+ }
+}
+
 /* COSMETICS */
 
 function drawChairCosmetics(){
@@ -464,6 +604,10 @@ function drawChairCosmetics(){
 
   ctx.restore();
  }
+
+ /* Ballonschnüre und Ballons */
+
+ drawWardrobeBalloons();
 
  if(c.pants){
   const colors={
@@ -557,73 +701,6 @@ function drawChairCosmetics(){
    ctx.fillStyle="#b83f3f";
    ctx.fillRect(26,20,6,5);
    ctx.fillRect(26,39,6,5);
-  }
-
-  ctx.restore();
- }
-
- if(c.face){
-  ctx.save();
-  const x=29,y=36;
-
-  if(c.face==="glasses"||c.face==="sunglasses"){
-   ctx.strokeStyle=c.face==="glasses"?"#29323c":"#17232c";
-   ctx.lineWidth=1.5;
-
-   if(c.face==="sunglasses"){
-    ctx.fillStyle="#17232c";
-    ctx.fillRect(x-4,y-4,4,5);
-    ctx.fillRect(x+1,y-4,4,5);
-   }else{
-    ctx.strokeRect(x-4,y-4,4,5);
-    ctx.strokeRect(x+1,y-4,4,5);
-   }
-
-   ctx.beginPath();
-   ctx.moveTo(x,y-2);
-   ctx.lineTo(x+1,y-2);
-   ctx.stroke();
-  }
-
-  if(c.face==="heart_glasses"||c.face==="star_glasses"){
-   ctx.fillStyle=c.face==="heart_glasses"?"#d94d6c":"#e9bd46";
-   ctx.font="10px Arial";
-   ctx.fillText(c.face==="heart_glasses"?"♥":"★",x-5,y+3);
-  }
-
-  if(c.face==="monocle"){
-   ctx.strokeStyle="#d6a94d";
-   ctx.lineWidth=1.5;
-   ctx.beginPath();
-   ctx.arc(x,y,4,0,Math.PI*2);
-   ctx.stroke();
-  }
-
-  if(c.face==="mustache"){
-   ctx.fillStyle="#493328";
-   ctx.fillRect(x-4,y,8,2);
-  }
-
-  if(c.face==="big_nose"){
-   ctx.fillStyle="#e6a77c";
-   ctx.beginPath();
-   ctx.moveTo(x,y-4);
-   ctx.lineTo(x-3,y+3);
-   ctx.lineTo(x+3,y+3);
-   ctx.fill();
-  }
-
-  if(c.face==="eyepatch"){
-   ctx.fillStyle="#25252a";
-   ctx.fillRect(x-3,y-4,6,7);
-  }
-
-  if(c.face==="diving"){
-   ctx.strokeStyle="#6ba9bd";
-   ctx.lineWidth=2;
-   ctx.strokeRect(x-5,y-5,10,9);
-   ctx.fillStyle="#a9dbe0";
-   ctx.fillRect(x-3,y-3,6,5);
   }
 
   ctx.restore();
