@@ -14,8 +14,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:Arial,sans
 .brand,.money{background:#fffaf1ed;border:1px solid #e4d8c8;border-radius:14px;padding:10px 15px;box-shadow:0 5px 18px #51433317}
 .brand strong{display:block;font-size:14px;letter-spacing:1px}
 .brand small{color:#9a8977;font-size:11px}
-.money{font-size:15px}
-.money span{color:#bd9855}
+.money{font-size:15px}.money span{color:#bd9855}
 .bottom{position:absolute;bottom:14px;left:17px;right:17px;display:flex;justify-content:space-between;align-items:end;pointer-events:none}
 .controls{background:#343b3de8;color:white;border-radius:11px;padding:10px 13px;font-size:11px}
 button{cursor:pointer;font:inherit}
@@ -29,8 +28,7 @@ button{cursor:pointer;font:inherit}
 .content{padding:17px;overflow:auto}
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
 .card{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;background:white;border:1px solid #eee3d5;border-radius:12px}
-.card strong{font-size:12px}
-.card small{display:block;color:#978674;font-size:10px;margin-top:4px}
+.card strong{font-size:12px}.card small{display:block;color:#978674;font-size:10px;margin-top:4px}
 .action{border:0;border-radius:8px;background:#78958b;color:white;padding:9px 11px;font-size:11px}
 .action:disabled{opacity:.4}
 .balance,.notice{padding:11px;background:#edf2e9;border-radius:10px;margin-bottom:12px;font-size:12px}
@@ -69,26 +67,19 @@ const W=960,H=540;
 let dpr=1;
 
 function resize(){
- dpr=Math.min(devicePixelRatio||1,2);
- canvas.width=W*dpr;
- canvas.height=H*dpr;
- ctx.setTransform(dpr,0,0,dpr,0,0);
+ dpr=Math.min(window.devicePixelRatio||1,2);
+ canvas.width=Math.round(innerWidth*dpr);
+ canvas.height=Math.round(innerHeight*dpr);
+ ctx.setTransform(canvas.width/W,0,0,canvas.height/H,0,0);
 }
 window.addEventListener("resize",resize);
 resize();
 
 const defaults={
- money:120,
- unlocked:[],
+ money:120,unlocked:[],
  equipped:{head:null,face:null,clothes:null,back:null,pants:null,seat:null,legs:null,extra:null},
- inventory:[],
- placed:[],
- orders:[],
- received:[],
- faucetOn:false,
- bucketWater:0
+ inventory:[],placed:[],orders:[],received:[],faucetOn:false,bucketWater:0
 };
-
 const STORAGE_KEY="mein-zimmer-save-v1";
 
 function loadSave(){
@@ -98,25 +89,21 @@ function loadSave(){
   return {...structuredClone(defaults),...s,equipped:{...defaults.equipped,...(s.equipped||{})}};
  }catch{return structuredClone(defaults)}
 }
-
 let save=loadSave();
 
 function persist(){
- localStorage.setItem(STORAGE_KEY,JSON.stringify(save));
+ try{localStorage.setItem(STORAGE_KEY,JSON.stringify(save))}catch(e){}
  $("money").textContent=save.money;
 }
 persist();
 
 const player={
  x:465,y:0,vy:0,facing:1,moving:false,walk:0,
- armsOut:false
+ armsOut:false,armsAmount:0
 };
 
 const keys=new Set();
-let carrying=null;
-let nearby=null;
-let time=0;
-
+let carrying=null,nearby=null,time=0;
 let bucketPosition={x:790,y:425};
 
 const targets=[
@@ -136,129 +123,118 @@ const objects=[
 
 let placedObjects=[];
 
+// Bereits platzierte Gegenstände aus dem Spielstand wiederherstellen.
+for(const p of (save.placed||[])){
+ if(p.id==="bucket"){bucketPosition={x:p.x,y:p.y};continue}
+ if(["plant","rug","star"].includes(p.id)){
+  placedObjects.push({...p});
+  continue;
+ }
+ if(!objects.some(o=>o.id===p.id)){
+  objects.push({id:p.id,name:p.id,x:p.x,y:p.y});
+ }else{
+  const o=objects.find(o=>o.id===p.id);
+  o.x=p.x;o.y=p.y;
+ }
+}
+
 const colors={
- blue:"#668da8",
- red:"#bb7771",
- green:"#7d9c80",
- black:"#45494b",
- white:"#eee8df",
- gold:"#c5a46c"
+ blue:"#668da8",red:"#bb7771",green:"#7d9c80",
+ black:"#45494b",white:"#eee8df",gold:"#c5a46c"
 };
 
 function rounded(x,y,w,h,r,color){
  ctx.fillStyle=color;
- ctx.beginPath();
- ctx.roundRect(x,y,w,h,r);
- ctx.fill();
+ ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill();
 }
-
 function ellipse(x,y,rx,ry,color){
- ctx.fillStyle=color;
- ctx.beginPath();
- ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);
- ctx.fill();
+ ctx.fillStyle=color;ctx.beginPath();
+ ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fill();
 }
-
 function line(x1,y1,x2,y2,color,width=2){
- ctx.strokeStyle=color;
- ctx.lineWidth=width;
- ctx.lineCap="round";
- ctx.beginPath();
- ctx.moveTo(x1,y1);
- ctx.lineTo(x2,y2);
- ctx.stroke();
+ ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineCap="round";
+ ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
 }
-
 function gradient(x,y,w,h,a,b){
  const g=ctx.createLinearGradient(x,y,x,y+h);
- g.addColorStop(0,a);
- g.addColorStop(1,b);
- ctx.fillStyle=g;
- ctx.fillRect(x,y,w,h);
+ g.addColorStop(0,a);g.addColorStop(1,b);
+ ctx.fillStyle=g;ctx.fillRect(x,y,w,h);
 }
-
 function shadow(x,y,rx,ry,alpha=.12){
  ellipse(x,y,rx,ry,`rgba(55,43,33,${alpha})`);
 }
+function softGradient(x,y,w,h,stops){
+ const g=ctx.createLinearGradient(x,y,x+w,y+h);
+ stops.forEach(s=>g.addColorStop(s[0],s[1]));
+ return g;
+}
 
-/* HINTERGRUND */
+/* ZIMMER */
 function drawRoom(){
- gradient(0,0,W,430,"#f0e7d9","#e5d9c8");
+ gradient(0,0,W,430,"#f5ecdf","#e5d8c7");
 
- ctx.strokeStyle="#d5c8b7";
- ctx.lineWidth=1;
- for(let x=30;x<W;x+=115){
-  ctx.beginPath();
-  ctx.moveTo(x,0);
-  ctx.lineTo(x,420);
-  ctx.stroke();
+ // Dezente Wandstruktur statt Pixelraster
+ for(let i=0;i<12;i++){
+  const x=i*90;
+  line(x,0,x,418,"#d9cbbb22",1);
  }
-
  const glow=ctx.createRadialGradient(480,170,15,480,170,440);
- glow.addColorStop(0,"#fff9df55");
- glow.addColorStop(1,"#fff9df00");
- ctx.fillStyle=glow;
- ctx.fillRect(0,0,W,430);
+ glow.addColorStop(0,"#fff9df88");glow.addColorStop(1,"#fff9df00");
+ ctx.fillStyle=glow;ctx.fillRect(0,0,W,430);
 
- shadow(485,194,115,8,.09);
- rounded(380,55,205,140,7,"#927052");
- rounded(388,63,189,124,4,"#a9cbd0");
- gradient(392,67,180,112,"#b9d9dc","#e8e0cc");
- ellipse(530,100,28,24,"#fff1c6aa");
+ // Fensterrahmen und Glas
+ shadow(480,196,120,9,.08);
+ rounded(377,52,207,145,8,"#896849");
+ rounded(384,59,193,132,5,"#f4eee3");
+ rounded(390,65,181,120,3,softGradient(390,65,181,120,[[0,"#b8d6d9"],[.55,"#d9e4df"],[1,"#f2dcb8"]]));
+ ellipse(528,100,28,26,"#fff0c5");
+ ellipse(420,101,25,10,"#ffffffaa");
+ ellipse(440,96,18,11,"#ffffffaa");
+ ellipse(458,103,20,8,"#ffffffaa");
+ rounded(477,65,5,120,2,"#f5eee1");
+ rounded(390,121,181,5,2,"#f5eee1");
 
- ellipse(430,100,22,9,"#ffffff99");
- ellipse(447,96,17,11,"#ffffff99");
- ellipse(460,102,21,8,"#ffffff99");
-
- rounded(478,65,5,119,2,"#f6eee0");
- rounded(390,121,185,5,2,"#f6eee0");
-
+ // Vorhänge
  const sway=Math.sin(time*1.1)*3;
- ctx.fillStyle="#c5a995";
- ctx.beginPath();
- ctx.moveTo(370,50);
- ctx.quadraticCurveTo(360+sway,125,376,195);
- ctx.lineTo(397,190);
- ctx.lineTo(394,50);
- ctx.closePath();
- ctx.fill();
+ ctx.fillStyle="#c9ad9a";
+ ctx.beginPath();ctx.moveTo(370,48);
+ ctx.quadraticCurveTo(360+sway,125,376,196);
+ ctx.quadraticCurveTo(389,190,397,190);
+ ctx.lineTo(394,50);ctx.closePath();ctx.fill();
+ ctx.fillStyle="#bfa18f";
+ ctx.beginPath();ctx.moveTo(592,48);
+ ctx.quadraticCurveTo(606-sway,125,589,196);
+ ctx.quadraticCurveTo(578,190,570,190);
+ ctx.lineTo(573,50);ctx.closePath();ctx.fill();
+ line(379,58,383,184,"#ead6c7",2);
+ line(586,58,582,184,"#e8d1c0",2);
 
- ctx.beginPath();
- ctx.moveTo(592,50);
- ctx.quadraticCurveTo(606-sway,125,589,195);
- ctx.lineTo(570,190);
- ctx.lineTo(573,50);
- ctx.closePath();
- ctx.fill();
-
- rounded(55,90,105,83,4,"#947252");
- rounded(61,96,93,71,2,"#d4e0d0");
+ // Wandbild links
+ rounded(55,90,105,83,5,"#947252");
+ rounded(61,96,93,71,3,"#d4e0d0");
  ellipse(108,127,23,23,"#e7c99c");
  ellipse(87,143,19,15,"#8ea98e");
  ellipse(130,144,18,16,"#a9b99b");
 
- gradient(0,420,W,120,"#c49a72","#a77c5c");
-
- for(let y=435;y<540;y+=25)line(0,y,W,y,"#916c5050",1);
- for(let x=-30;x<W;x+=120)line(x,421,x+25,540,"#916c5030",1);
-
+ // Boden
+ gradient(0,420,W,120,"#cba47e","#a77c5c");
+ for(let y=435;y<540;y+=25)line(0,y,W,y,"#916c5028",1);
+ for(let x=-30;x<W;x+=120)line(x,421,x+25,540,"#916c5020",1);
  rounded(0,418,W,9,2,"#997354");
  rounded(0,418,W,3,1,"#d6b18b");
 
- shadow(490,468,215,35,.13);
+ // Teppich
+ shadow(490,468,215,35,.12);
  ellipse(490,463,205,33,"#829b9b");
  ellipse(490,460,187,25,"#9aafb0");
+ ctx.strokeStyle="#c5d2c9";ctx.lineWidth=2;
+ ctx.beginPath();ctx.ellipse(490,460,165,19,0,0,Math.PI*2);ctx.stroke();
 
- ctx.strokeStyle="#c5d2c9";
- ctx.lineWidth=2;
- ctx.beginPath();
- ctx.ellipse(490,460,165,19,0,0,Math.PI*2);
- ctx.stroke();
-
- for(let i=0;i<7;i++){
-  const px=(i*137+Math.sin(time*.7+i)*10)%W;
-  const py=70+(i*53)%270;
-  ctx.globalAlpha=.15+Math.sin(time*1.4+i)*.1;
+ // Schwebende Staubpartikel
+ for(let i=0;i<9;i++){
+  const px=(i*117+Math.sin(time*.7+i)*12)%W;
+  const py=65+(i*39)%280+Math.sin(time+i)*5;
+  ctx.globalAlpha=.16+Math.sin(time*1.4+i)*.08;
   ellipse(px,py,1.5,1.5,"#fffdf0");
  }
  ctx.globalAlpha=1;
@@ -274,10 +250,8 @@ function drawBed(){
  rounded(293,316,62,35,8,"#fff8ee");
  rounded(205,395,10,25,3,"#74533d");
  rounded(395,395,10,25,3,"#74533d");
-
- ctx.strokeStyle="#a8bdc0";
- ctx.lineWidth=1;
- for(let i=0;i<5;i++)line(225,348+i*7,380,348+i*7,"#ffffff30",1);
+ line(225,348,380,348,"#ffffff50",1);
+ line(225,367,380,367,"#ffffff40",1);
 }
 
 function drawWardrobe(){
@@ -287,9 +261,10 @@ function drawWardrobe(){
  rounded(114,229,3,184,2,"#79583e");
  rounded(63,236,47,169,3,"#c09268");
  rounded(120,236,48,169,3,"#c09268");
+ line(68,242,68,397,"#e4bd94",1);
+ line(125,242,125,397,"#e4bd94",1);
  ellipse(104,324,3,3,"#ead0a0");
  ellipse(126,324,3,3,"#ead0a0");
- line(62,245,62,396,"#e1b88b",1);
 }
 
 function drawDesk(){
@@ -297,22 +272,26 @@ function drawDesk(){
  rounded(565,302,230,15,4,"#956d4b");
  rounded(580,316,12,105,3,"#805a3d");
  rounded(768,316,12,105,3,"#805a3d");
-
- shadow(685,302,47,5,.08);
  rounded(640,220,94,76,7,"#41494b");
  rounded(646,226,82,62,4,"#6c9295");
- gradient(649,229,76,56,"#8eafb0","#547b82");
+ rounded(649,229,76,56,3,softGradient(649,229,76,56,[[0,"#a9c6c3"],[1,"#547b82"]]));
  rounded(680,296,13,9,2,"#5d6261");
  rounded(659,303,54,5,2,"#555b5b");
  rounded(656,237,40,3,2,"#d8e4d5");
  rounded(656,245,56,2,1,"#d8e4d566");
- rounded(656,252,33,2,1,"#d8e4d566");
  rounded(653,307,67,7,3,"#555d5c");
 
- line(610,302,610,272,"#77766c",4);
- line(610,272,625,257,"#77766c",4);
- rounded(614,246,28,14,5,"#e1c58c");
- ellipse(628,262,9,3,"#fff1c6");
+ // Lampe wird als echtes Objekt gezeichnet, damit sie aufgehoben werden kann.
+ if(carrying!=="lamp"&&!objects.some(o=>o.id==="lamp"&&(o.x!==650||o.y!==278))){
+  drawLamp(610,302);
+ }
+}
+function drawLamp(x,y){
+ shadow(x+2,y,15,3,.08);
+ line(x,y,x,y-25,"#77766c",4);
+ line(x,y-25,x+13,y-40,"#77766c",4);
+ rounded(x+2,y-49,27,14,5,"#e1c58c");
+ ellipse(x+15,y-35,9,3,"#fff1c6");
 }
 
 function drawSink(){
@@ -323,7 +302,6 @@ function drawSink(){
  ellipse(860,300,16,4,"#92a9a7");
  line(860,290,860,273,"#929b98",4);
  line(860,273,876,273,"#929b98",4);
-
  if(save.faucetOn){
   const drip=(time*35)%18;
   line(860,294,860,303+drip,"#79c5d4",2);
@@ -336,14 +314,13 @@ function drawDoor(){
  rounded(879,158,70,264,6,"#79563d");
  rounded(886,165,56,249,4,"#b28258");
  rounded(892,172,44,232,2,"#c29467");
+ rounded(898,179,32,75,3,"#d4a878");
+ rounded(898,266,32,139,3,"#bb895e");
  ellipse(931,300,4,4,"#e4c27b");
 }
 
 function drawPlant(x,y,scale=1){
- ctx.save();
- ctx.translate(x,y);
- ctx.scale(scale,scale);
-
+ ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);
  const sway=Math.sin(time*1.6+x)*3;
  shadow(0,0,15,4);
  rounded(-12,-23,24,23,4,"#b87960");
@@ -352,10 +329,9 @@ function drawPlant(x,y,scale=1){
  line(0,-43,-17+sway,-57,"#658c67",3);
  line(0,-48,18+sway,-65,"#658c67",3);
  ellipse(-19+sway,-58,10,5,"#83a780");
- ellipse(20+sway,-67,10,5,"#83a780");
+ ellipse(20+sway,-67,10,5,"#a0b98d");
  ellipse(0,-70,8,13,"#759b72");
  ellipse(-2,-72,3,7,"#a5c19a");
-
  ctx.restore();
 }
 
@@ -363,13 +339,8 @@ function drawBucket(x,y){
  shadow(x,y,17,4);
  rounded(x-13,y-25,26,25,5,"#8da6a5");
  rounded(x-10,y-23,20,3,2,"#b8c8c3");
-
- ctx.strokeStyle="#6e8583";
- ctx.lineWidth=2;
- ctx.beginPath();
- ctx.arc(x,y-23,14,Math.PI,Math.PI*2);
- ctx.stroke();
-
+ ctx.strokeStyle="#6e8583";ctx.lineWidth=2;
+ ctx.beginPath();ctx.arc(x,y-23,14,Math.PI,Math.PI*2);ctx.stroke();
  if(save.bucketWater>0){
   rounded(x-10,y-12,20,9,3,"#7bc3d2");
   line(x-8,y-10,x+8,y-10,"#c7eff0",1);
@@ -391,155 +362,19 @@ function drawTeddy(x,y){
 function drawObjects(){
  drawPlant(510,420,.85);
  drawPlant(845,420,.9);
-
- if(carrying!=="bucket"){
-  drawBucket(bucketPosition.x,bucketPosition.y);
- }
+ if(carrying!=="bucket")drawBucket(bucketPosition.x,bucketPosition.y);
 
  for(const o of objects){
   if(o.id===carrying)continue;
-
   if(o.id==="teddy")drawTeddy(o.x,o.y);
-
   if(o.id==="poster"){
+   shadow(o.x,o.y+23,22,3,.07);
    rounded(o.x-29,o.y-21,58,42,3,"#927052");
    rounded(o.x-24,o.y-16,48,32,2,"#c4d4c2");
    ellipse(o.x,o.y,11,11,"#e7c99c");
   }
-
-  if(o.id==="lamp"){
-   // Die Lampe bleibt auf dem Schreibtisch, solange sie nicht getragen wird.
-   if(o.x!==650||o.y!==278){
-    line(o.x,o.y,o.x,o.y-25,"#77766c",4);
-    rounded(o.x-13,o.y-38,26,14,5,"#e1c58c");
-   }
-  }
+  if(o.id==="lamp")drawLamp(o.x,o.y);
  }
-}
-
-/* KLEINER, NIEDLICHER STUHL */
-function drawChair(){
- const x=player.x;
- const y=430-player.y;
- const bob=player.moving?Math.sin(player.walk)*1.2:Math.sin(time*2)*.45;
- const seat=colors[save.equipped.clothes]||"#b9a58c";
- const back=colors[save.equipped.seat]||seat;
-
- ctx.save();
- ctx.translate(x,y+bob);
- ctx.scale(player.facing,1);
-
- // Kleiner Bodenschatten
- shadow(0,0,21,4,.15);
-
- // Rollen und Fußkreuz
- const leg=save.equipped.legs==="gold"?"#c5a46c":"#65635e";
- ctx.strokeStyle=leg;
- ctx.lineWidth=3;
- ctx.lineCap="round";
-
- for(const xx of [-14,14]){
-  line(xx,-20,xx+(xx<0?-2:2),-4,leg,2.5);
-  ellipse(xx,-3,2.5,2.5,"#62605a");
- }
- line(-14,-10,14,-10,leg,2.5);
- line(0,-15,0,-23,leg,3);
-
- // Rückenlehne
- rounded(-20,-76,40,45,7,"#89694e");
- rounded(-17,-73,34,39,6,back);
- rounded(-19,-79,38,7,4,"#795b43");
-
- // Sitzfläche
- rounded(-23,-35,46,13,6,"#805f45");
- rounded(-21,-37,42,11,5,seat);
- line(-13,-33,13,-33,"#ffffff55",1);
-
- // Kleine feste Armlehnen
- rounded(-24,-48,5,15,3,"#8a694b");
- rounded(19,-48,5,15,3,"#8a694b");
-
- // Ausfahrbare Arme
- const armLength=player.armsOut?17:0;
- const armDrop=player.armsOut?4:0;
- const armColor="#806047";
-
- ctx.lineWidth=3.5;
- line(22,-48,25+armLength,-55-armDrop,armColor,3);
- line(25+armLength,-55-armDrop,31+armLength,-55-armDrop,armColor,3);
-
- line(-22,-48,-25-armLength,-55-armDrop,armColor,3);
- line(-25-armLength,-55-armDrop,-31-armLength,-55-armDrop,armColor,3);
-
- if(player.armsOut){
-  ellipse(31+armLength,-55-armDrop,3,3,"#e1c18d");
-  ellipse(-31-armLength,-55-armDrop,3,3,"#e1c18d");
- }
-
- // Klorollen-Hut
- if(save.equipped.head==="toiletroll"){
-  rounded(-17,-94,15,16,5,"#f5f1e8");
-  ellipse(-9.5,-86,3.5,3.5,"#bdb8ae");
-  ellipse(-9.5,-86,1.8,1.8,"#fdfbf5");
-  line(-16,-91,-16,-78,"#ded9d0",1);
- }
-
- // Partyhut
- if(save.equipped.head==="partyhat"){
-  ctx.fillStyle="#e7a64c";
-  ctx.beginPath();
-  ctx.moveTo(-20,-78);
-  ctx.lineTo(1,-78);
-  ctx.lineTo(-10,-106);
-  ctx.closePath();
-  ctx.fill();
-  ellipse(-10,-106,3,3,"#d77d78");
-  ellipse(-11,-92,2,2,"#fff0bd");
- }
-
- // Doppelrolle
- if(save.equipped.back==="doubleRoll"){
-  for(const yy of [-67,-52]){
-   ellipse(-26,yy,6,6,"#f5f1e9");
-   ellipse(-26,yy,2.5,2.5,"#bdb8ae");
-  }
- }
-
- // Schleife
- if(save.equipped.extra==="bow"){
-  ellipse(-12,-78,6,3.5,"#d98b91");
-  ellipse(-2,-78,6,3.5,"#d98b91");
-  ellipse(-7,-78,2.5,2.5,"#ad606b");
- }
-
- // GETRAGENES ITEM: Nur hier zeichnen!
- // Es wird nicht mehr zusätzlich auf dem Boden dargestellt.
- if(carrying){
-  const itemX=player.armsOut?0:0;
-  const itemY=-57;
-
-  if(carrying==="bucket"){
-   rounded(itemX-9,itemY-10,18,19,4,"#8da6a5");
-   rounded(itemX-7,itemY-8,14,3,2,"#b8c8c3");
-   if(save.bucketWater>0){
-    rounded(itemX-7,itemY+1,14,6,2,"#7bc3d2");
-   }
-  }else if(carrying==="teddy"){
-   drawTinyTeddy(itemX,itemY);
-  }else if(carrying==="poster"){
-   rounded(itemX-12,itemY-10,24,18,3,"#927052");
-   rounded(itemX-9,itemY-7,18,12,2,"#c4d4c2");
-   ellipse(itemX,itemY,4,4,"#e7c99c");
-  }else if(carrying==="lamp"){
-   line(itemX,itemY+8,itemX,itemY-8,"#77766c",3);
-   rounded(itemX-9,itemY-16,18,9,4,"#e1c58c");
-  }else{
-   rounded(itemX-10,itemY-9,20,18,4,"#a5b8aa");
-   rounded(itemX-7,itemY-6,14,12,3,"#c6d5c4");
-  }
- }
-
- ctx.restore();
 }
 
 function drawTinyTeddy(x,y){
@@ -552,20 +387,134 @@ function drawTinyTeddy(x,y){
  ellipse(x,y,2,1.5,"#e7c7a7");
 }
 
+function drawHeldItem(x,y){
+ if(carrying==="bucket"){
+  rounded(x-9,y-10,18,19,4,"#8da6a5");
+  rounded(x-7,y-8,14,3,2,"#b8c8c3");
+  if(save.bucketWater>0)rounded(x-7,y+1,14,6,2,"#7bc3d2");
+ }else if(carrying==="teddy"){
+  drawTinyTeddy(x,y);
+ }else if(carrying==="poster"){
+  rounded(x-12,y-10,24,18,3,"#927052");
+  rounded(x-9,y-7,18,12,2,"#c4d4c2");
+  ellipse(x,y,4,4,"#e7c99c");
+ }else if(carrying==="lamp"){
+  line(x,y+8,x,y-8,"#77766c",3);
+  rounded(x-9,y-16,18,9,4,"#e1c58c");
+ }else{
+  rounded(x-10,y-9,20,18,4,"#a5b8aa");
+  rounded(x-7,y-6,14,12,3,"#c6d5c4");
+ }
+}
+
+/* STUHL – SEITENANSICHT */
+function drawChair(){
+ const x=player.x,y=430-player.y;
+ const bob=player.moving?Math.sin(player.walk*2)*1.1:Math.sin(time*2)*.35;
+ const step=player.moving?Math.sin(player.walk*2.2):0;
+ const seat=colors[save.equipped.clothes]||"#b9a58c";
+ const back=colors[save.equipped.seat]||seat;
+ const metal=save.equipped.seat==="gold"?"#c5a46c":"#77736c";
+ const arm=player.armsAmount;
+
+ ctx.save();
+ ctx.translate(x,y+bob);
+ ctx.scale(player.facing,1);
+
+ // Bodenschatten
+ shadow(0,0,24,4,.17);
+
+ // Stuhlbeine – zwei sichtbare Seitenbeine mit eigener Laufbewegung
+ const rearStep=step*3;
+ const frontStep=-step*3;
+ line(-5,-19,-8+rearStep,-3,metal,3.2);
+ line(11,-19,13+frontStep,-3,metal,3.2);
+ line(-8+rearStep,-3,-11+rearStep,-1,"#555b5a",2);
+ line(13+frontStep,-3,16+frontStep,-1,"#555b5a",2);
+
+ // kleine Rollen
+ ellipse(-11+rearStep,-1,3,2.3,"#5b5b58");
+ ellipse(16+frontStep,-1,3,2.3,"#5b5b58");
+ line(-5,-19,11,-19,metal,3);
+ line(3,-19,3,-29,metal,3);
+
+ // Sitzfläche mit weichen Kanten
+ rounded(-17,-39,39,13,5,"#76583f");
+ rounded(-16,-40,36,10,4,seat);
+ line(-11,-37,13,-37,"#ffffff70",1);
+
+ // Rückenlehne in Seitenansicht
+ rounded(-17,-79,13,43,5,"#795c45");
+ rounded(-15,-77,9,38,4,back);
+ rounded(-18,-81,15,5,3,"#8b6c50");
+ line(-12,-73,-12,-43,"#ffffff35",1);
+
+ // Rückenstütze
+ line(-10,-37,-7,-27,metal,3);
+
+ // Armlehne und ausfahrbarer Arm (nach vorne)
+ rounded(5,-51,17,5,2,"#805f45");
+ rounded(6,-52,15,3,2,"#b69a79");
+ const reach=arm*24;
+ const lift=arm*3;
+ line(17,-49,22+reach*.55,-58-lift,"#8b694b",3);
+ line(22+reach*.55,-58-lift,27+reach,-58-lift,"#8b694b",3);
+ ellipse(27+reach,-58-lift,2.8,2.8,"#e1c18d");
+
+ // Zweiter Arm auf der Rückseite
+ line(-15,-49,-19-arm*8,-56-lift*.4,"#8b694b",2.5);
+
+ // Kleine Dekorationen
+ if(save.equipped.head==="toiletroll"){
+  rounded(-18,-96,15,16,5,"#f5f1e8");
+  ellipse(-10.5,-88,3.5,3.5,"#bdb8ae");
+  ellipse(-10.5,-88,1.8,1.8,"#fdfbf5");
+ }
+ if(save.equipped.head==="partyhat"){
+  ctx.fillStyle="#e7a64c";ctx.beginPath();
+  ctx.moveTo(-19,-80);ctx.lineTo(2,-80);ctx.lineTo(-9,-106);
+  ctx.closePath();ctx.fill();ellipse(-9,-106,3,3,"#d77d78");
+ }
+ if(save.equipped.back==="doubleRoll"){
+  for(const yy of [-68,-54]){
+   ellipse(-22,yy,6,6,"#f5f1e9");
+   ellipse(-22,yy,2.5,2.5,"#bdb8ae");
+  }
+ }
+ if(save.equipped.extra==="bow"){
+  ellipse(-9,-78,6,3.5,"#d98b91");
+  ellipse(1,-78,6,3.5,"#d98b91");
+  ellipse(-4,-78,2.5,2.5,"#ad606b");
+ }
+
+ // Gegenstand bleibt an den Armen, auch wenn sie eingefahren werden.
+ if(carrying){
+  const heldX=27+reach*.55;
+  const heldY=-65-lift;
+  drawHeldItem(heldX,heldY);
+ }
+
+ ctx.restore();
+}
+
 /* PLATZIERTE DEKO */
 function drawPlaced(){
  for(const p of placedObjects){
   if(p.id==="plant")drawPlant(p.x,p.y,.8);
-  if(p.id==="rug")ellipse(p.x,p.y,55,12,"#829b9b");
+  if(p.id==="rug"){
+   shadow(p.x,p.y+3,55,9,.08);
+   ellipse(p.x,p.y,55,12,"#829b9b");
+   ctx.strokeStyle="#c5d2c9";ctx.lineWidth=1;
+   ctx.beginPath();ctx.ellipse(p.x,p.y,46,8,0,0,Math.PI*2);ctx.stroke();
+  }
   if(p.id==="star"){
-   ctx.fillStyle="#d6b66f";
-   ctx.font="22px Arial";
-   ctx.fillText("★",p.x,p.y);
+   ctx.save();ctx.fillStyle="#d6b66f";ctx.font="22px Georgia";
+   ctx.fillText("★",p.x,p.y);ctx.restore();
   }
  }
 }
 
-/* COSMETICS */
+/* COSMETICS UND SHOP */
 const cosmetics=[
  {id:"blue",name:"Blauer Stuhl",price:25,desc:"Blauer Stoffbezug.",slot:"clothes"},
  {id:"red",name:"Roter Stuhl",price:30,desc:"Roter Stoffbezug.",slot:"clothes"},
@@ -589,51 +538,32 @@ const shopItems=[
 ];
 
 /* MENÜ */
-const panel=$("panel");
-const content=$("panelContent");
+const panel=$("panel"),content=$("panelContent");
 let activePanel=null;
 
 function openPanel(kind){
- activePanel=kind;
- panel.classList.remove("hidden");
- renderPanel();
+ activePanel=kind;panel.classList.remove("hidden");renderPanel();
 }
-
 function closePanel(){
- panel.classList.add("hidden");
- activePanel=null;
+ panel.classList.add("hidden");activePanel=null;
 }
-
 $("closePanel").onclick=closePanel;
 
 function button(text,fn,disabled=false){
  const b=document.createElement("button");
- b.className="action";
- b.textContent=text;
- b.disabled=disabled;
- b.onclick=fn;
+ b.className="action";b.textContent=text;b.disabled=disabled;b.onclick=fn;
  return b;
 }
-
 function card(name,detail,action){
- const el=document.createElement("div");
- el.className="card";
-
+ const el=document.createElement("div");el.className="card";
  const info=document.createElement("div");
- const strong=document.createElement("strong");
- strong.textContent=name;
-
- const small=document.createElement("small");
- small.textContent=detail;
-
- info.append(strong,small);
- el.append(info,action);
- return el;
+ const strong=document.createElement("strong");strong.textContent=name;
+ const small=document.createElement("small");small.textContent=detail;
+ info.append(strong,small);el.append(info,action);return el;
 }
 
 function renderPanel(){
  content.innerHTML="";
-
  const titles={
   computer:["DEIN ZUHAUSE","Bestellungen"],
   door:["LIEFERUNG","An deiner Tür"],
@@ -641,11 +571,8 @@ function renderPanel(){
   sink:["WASSER","Waschbecken"],
   bucket:["EIMER","Wasser auffüllen"]
  };
-
  const t=titles[activePanel]||["DEIN ZUHAUSE","Zimmer"];
- $("panelEyebrow").textContent=t[0];
- $("panelTitle").textContent=t[1];
-
+ $("panelEyebrow").textContent=t[0];$("panelTitle").textContent=t[1];
  if(activePanel==="computer")renderShop();
  if(activePanel==="wardrobe")renderWardrobe();
  if(activePanel==="door")renderDoor();
@@ -653,195 +580,137 @@ function renderPanel(){
 }
 
 function renderShop(){
- const bal=document.createElement("div");
- bal.className="balance";
- bal.textContent=`Guthaben: ${save.money} Münzen`;
- content.append(bal);
-
- const grid=document.createElement("div");
- grid.className="grid";
+ const bal=document.createElement("div");bal.className="balance";
+ bal.textContent=`Guthaben: ${save.money} Münzen`;content.append(bal);
+ const grid=document.createElement("div");grid.className="grid";
 
  for(const item of shopItems){
   const owned=save.inventory.includes(item.id)||
    save.placed.some(p=>p.id===item.id)||
    save.orders.some(o=>o.id===item.id);
-
   grid.append(card(item.name,`${item.desc} · ${item.price} Münzen`,
    button("Bestellen",()=>{
     if(save.money<item.price)return;
     save.money-=item.price;
     save.orders.push({id:item.id,status:"ordered",remaining:20});
-    persist();
-    renderPanel();
+    persist();renderPanel();
    },owned||save.money<item.price)
   ));
  }
-
  content.append(grid);
-
- const h=document.createElement("h3");
- h.className="section-title";
- h.textContent="Bestellungen";
- content.append(h);
-
+ const h=document.createElement("h3");h.className="section-title";
+ h.textContent="Bestellungen";content.append(h);
  for(const o of save.orders){
-  const row=document.createElement("div");
-  row.className="order";
+  const row=document.createElement("div");row.className="order";
   row.textContent=`${shopItems.find(i=>i.id===o.id)?.name||o.id} – ${o.status==="arrived"?"An der Tür":Math.ceil(o.remaining||0)+" Sekunden"}`;
   content.append(row);
  }
 }
 
 function renderWardrobe(){
- const intro=document.createElement("div");
- intro.className="notice";
- intro.textContent="Deine Cosmetics werden direkt am Stuhl angezeigt ♡";
- content.append(intro);
-
+ const intro=document.createElement("div");intro.className="notice";
+ intro.textContent="Deine Cosmetics werden direkt am Stuhl angezeigt ♡";content.append(intro);
  for(const [slot,label] of [
-  ["head","Kopf"],
-  ["back","Rücken"],
-  ["clothes","Stuhlbezug"],
-  ["seat","Sitzfläche"],
-  ["extra","Extras"]
+  ["head","Kopf"],["back","Rücken"],["clothes","Stuhlbezug"],
+  ["seat","Sitzfläche"],["extra","Extras"]
  ]){
-  const heading=document.createElement("h3");
-  heading.className="section-title";
-  heading.textContent=label;
-  content.append(heading);
-
-  const grid=document.createElement("div");
-  grid.className="grid";
-
+  const heading=document.createElement("h3");heading.className="section-title";
+  heading.textContent=label;content.append(heading);
+  const grid=document.createElement("div");grid.className="grid";
   grid.append(card("Ohne Cosmetic","Normales Aussehen.",
    button(save.equipped[slot]?"Ablegen":"Ausgewählt",()=>{
-    save.equipped[slot]=null;
-    persist();
-    renderPanel();
+    save.equipped[slot]=null;persist();renderPanel();
    },!save.equipped[slot])
   ));
-
   for(const item of cosmetics.filter(i=>i.slot===slot)){
    const owned=save.unlocked.includes(item.id);
    const active=save.equipped[slot]===item.id;
-
-   grid.append(card(item.name,
-    `${item.desc} · ${owned?"Freigeschaltet":item.price+" Münzen"}`,
+   grid.append(card(item.name,`${item.desc} · ${owned?"Freigeschaltet":item.price+" Münzen"}`,
     button(!owned?"Kaufen":active?"Ablegen":"Anziehen",()=>{
      if(!owned){
       if(save.money<item.price)return;
-      save.money-=item.price;
-      save.unlocked.push(item.id);
+      save.money-=item.price;save.unlocked.push(item.id);
      }
      save.equipped[slot]=active?null:item.id;
-     persist();
-     renderPanel();
+     persist();renderPanel();
     },!owned&&save.money<item.price)
    ));
   }
-
   content.append(grid);
  }
 }
 
 function renderDoor(){
  const arrived=save.orders.filter(o=>o.status==="arrived");
-
- if(!arrived.length){
-  content.textContent="Momentan ist keine Lieferung angekommen.";
-  return;
- }
-
+ if(!arrived.length){content.textContent="Momentan ist keine Lieferung angekommen.";return}
  for(const o of arrived){
   const item=shopItems.find(i=>i.id===o.id);
-
   content.append(card(item?.name||o.id,"Dein Paket ist angekommen.",
    button("Abholen",()=>{
-    o.status="received";
-    save.received.push(o.id);
-    save.inventory.push(o.id);
-    persist();
-    renderPanel();
+    o.status="received";save.received.push(o.id);
+    save.inventory.push(o.id);persist();renderPanel();
    })
   ));
  }
 }
 
 function renderWater(){
- const status=document.createElement("div");
- status.className="balance";
+ const status=document.createElement("div");status.className="balance";
  status.textContent=save.bucketWater>0?"Der Eimer enthält Wasser.":"Der Eimer ist leer.";
  content.append(status);
-
  content.append(button(save.faucetOn?"Wasserhahn ausschalten":"Wasserhahn einschalten",()=>{
-  save.faucetOn=!save.faucetOn;
-  persist();
-  renderPanel();
+  save.faucetOn=!save.faucetOn;persist();renderPanel();
  }));
-
  content.append(button("Eimer auffüllen",()=>{
-  save.bucketWater=1;
-  persist();
-  renderPanel();
+  save.bucketWater=1;persist();renderPanel();
  }));
 }
 
-/* INTERAKTION */
-function findNearby(){
- let best=null;
- let dist=Infinity;
+/* SPEICHERN VON PLATZIERUNGEN */
+function saveObjectPosition(id,x,y){
+ save.placed=save.placed.filter(p=>p.id!==id);
+ save.placed.push({id,x,y});
+ persist();
+}
 
+function findNearby(){
+ let best=null,dist=Infinity;
  for(const t of targets){
   const d=Math.hypot(player.x-t.x,430-t.y);
-  if(d<75&&d<dist){
-   best=t;
-   dist=d;
-  }
+  if(d<75&&d<dist){best=t;dist=d}
  }
  return best;
 }
-
 function findNearbyObject(){
- let nearest=null;
- let dist=55;
-
+ let nearest=null,dist=58;
  for(const o of objects){
   if(o.id===carrying)continue;
   const d=Math.hypot(player.x-o.x,430-o.y);
-  if(d<dist){
-   dist=d;
-   nearest=o;
-  }
+  if(d<dist){dist=d;nearest=o}
  }
-
  return nearest;
 }
 
 function dropCarried(){
  if(!carrying)return;
+ const x=Math.max(35,Math.min(925,player.x+player.facing*38));
+ const y=carrying==="poster"?190:390;
 
  if(carrying==="bucket"){
-  bucketPosition.x=Math.max(35,Math.min(925,player.x+player.facing*32));
-  bucketPosition.y=425;
+  bucketPosition={x,y:425};
+  saveObjectPosition("bucket",bucketPosition.x,bucketPosition.y);
  }else{
-  const o=objects.find(o=>o.id===carrying);
-
-  if(o){
-   o.x=Math.max(35,Math.min(925,player.x+player.facing*35));
-   o.y=390;
-  }else{
-   // Gegenstände aus dem Inventar werden beim Ablegen als Objekt angelegt.
-   objects.push({
-    id:carrying,
-    name:carrying,
-    x:Math.max(35,Math.min(925,player.x+player.facing*35)),
-    y:390
-   });
+  let o=objects.find(o=>o.id===carrying);
+  if(!o){
+   o={id:carrying,name:carrying,x,y};
+   objects.push(o);
   }
+  o.x=x;o.y=y;
+  saveObjectPosition(o.id,o.x,o.y);
  }
-
  carrying=null;
  player.armsOut=false;
+ persist();
 }
 
 function pickUpObject(id){
@@ -852,116 +721,68 @@ function pickUpObject(id){
 function interact(){
  if(!panel.classList.contains("hidden"))return;
 
- // Wenn ein Gegenstand getragen wird, klappt E die Arme ein oder aus.
  if(carrying){
+  // E fährt die Arme sichtbar ein und aus; Q legt den Gegenstand ab.
   player.armsOut=!player.armsOut;
   return;
  }
 
  const near=findNearby();
-
- // Interaktive Möbel haben Vorrang.
  if(near){
   if(near.id==="wardrobe")openPanel("wardrobe");
   if(near.id==="computer")openPanel("computer");
-
   if(near.id==="door"){
    if(save.orders.some(o=>o.status==="arrived"))openPanel("door");
    else window.location.href="Stadt.html";
   }
-
   if(near.id==="sink")openPanel("sink");
-
-  if(near.id==="bucket"){
-   pickUpObject("bucket");
-  }
-
+  if(near.id==="bucket")pickUpObject("bucket");
   if(near.id==="bed")player.x=300;
   return;
  }
 
- // Gegenstände aufheben.
  const object=findNearbyObject();
+ if(object){pickUpObject(object.id);return}
 
- if(object){
-  pickUpObject(object.id);
-  return;
- }
-
- // Inventargegenstände verwenden.
  if(save.inventory.length){
   const id=save.inventory[0];
-
-  if(id==="plant"||id==="rug"||id==="star"){
+  if(["plant","rug","star"].includes(id)){
    save.inventory.shift();
-
-   if(id==="plant")placedObjects.push({id,x:player.x,y:420});
-   if(id==="rug")placedObjects.push({id,x:player.x,y:420});
-   if(id==="star")placedObjects.push({id,x:player.x,y:200});
-
-   persist();
-   return;
+   const p={id,x:player.x,y:id==="star"?200:420};
+   placedObjects.push(p);saveObjectPosition(id,p.x,p.y);
+   persist();return;
   }
-
-  save.inventory.shift();
-  pickUpObject(id);
-  persist();
-  return;
+  save.inventory.shift();pickUpObject(id);persist();return;
  }
 
- // Wenn nichts in Reichweite ist, Arme aus- oder einklappen.
  player.armsOut=!player.armsOut;
 }
 
 /* TASTATUR */
 window.addEventListener("keydown",e=>{
  const k=e.key.toLowerCase();
-
- if(["arrowleft","arrowright","arrowup","arrowdown"," "].includes(k)){
-  e.preventDefault();
- }
+ if(["arrowleft","arrowright","arrowup","arrowdown"," "].includes(k))e.preventDefault();
 
  if(k==="escape"){
   if(!panel.classList.contains("hidden"))closePanel();
   else if(carrying)dropCarried();
   return;
  }
-
- if(k==="q"){
-  if(carrying)dropCarried();
-  return;
- }
-
- if(k==="e"){
-  interact();
-  return;
- }
-
+ if(k==="q"){if(carrying)dropCarried();return}
+ if(k==="e"){interact();return}
  if(!panel.classList.contains("hidden"))return;
-
  keys.add(k);
 
- // Leertaste ist jetzt die Sprungtaste.
- if(k===" "&&!player.y&&!player.vy){
-  player.vy=6.2;
- }
+ if(k===" "&&!player.y&&!player.vy)player.vy=6.2;
 });
-
-window.addEventListener("keyup",e=>{
- keys.delete(e.key.toLowerCase());
-});
-
-window.addEventListener("blur",()=>{
- keys.clear();
-});
+window.addEventListener("keyup",e=>keys.delete(e.key.toLowerCase()));
+window.addEventListener("blur",()=>keys.clear());
 
 /* BEWEGUNG */
 function move(dt){
  let dir=0;
-
  if(keys.has("a")||keys.has("arrowleft"))dir--;
  if(keys.has("d")||keys.has("arrowright"))dir++;
-
  player.moving=dir!==0;
 
  if(dir){
@@ -969,24 +790,22 @@ function move(dt){
   player.facing=dir;
   player.walk+=dt*9;
  }
-
  player.x=Math.max(30,Math.min(930,player.x));
 
  if(player.vy||player.y){
   player.y+=player.vy;
   player.vy-=17*dt;
-
-  if(player.y<=0){
-   player.y=0;
-   player.vy=0;
-  }
+  if(player.y<=0){player.y=0;player.vy=0}
  }
+
+ // Weiche Arm-Animation statt sofortigem Ein-/Ausblenden
+ const target=player.armsOut?1:0;
+ player.armsAmount+=(target-player.armsAmount)*Math.min(1,dt*10);
 }
 
-/* ANIMATION */
+/* ZEICHNEN */
 function draw(){
  ctx.clearRect(0,0,W,H);
-
  drawRoom();
  drawWardrobe();
  drawBed();
@@ -1001,55 +820,39 @@ function draw(){
 
  if(nearby&&!carrying&&panel.classList.contains("hidden")){
   rounded(player.x-45,350-player.y,90,24,8,"#394448e8");
-
-  ctx.fillStyle="#fff";
-  ctx.font="bold 10px Arial";
-  ctx.textAlign="center";
-
+  ctx.fillStyle="#fff";ctx.font="bold 10px Arial";ctx.textAlign="center";
   const names={
-   wardrobe:"E · Schrank",
-   computer:"E · Computer",
-   bed:"E · Bett",
-   sink:"E · Waschbecken",
-   door:"E · Tür",
-   bucket:"E · Eimer"
+   wardrobe:"E · Schrank",computer:"E · Computer",bed:"E · Bett",
+   sink:"E · Waschbecken",door:"E · Tür",bucket:"E · Eimer"
   };
-
   ctx.fillText(names[nearby.id],player.x,366-player.y);
   ctx.textAlign="left";
  }else if(carrying&&panel.classList.contains("hidden")){
   rounded(player.x-49,350-player.y,98,24,8,"#394448e8");
-  ctx.fillStyle="#fff";
-  ctx.font="bold 10px Arial";
-  ctx.textAlign="center";
-  ctx.fillText("E · Arme bewegen",player.x,366-player.y);
+  ctx.fillStyle="#fff";ctx.font="bold 10px Arial";ctx.textAlign="center";
+  ctx.fillText("Q · Ablegen",player.x,366-player.y);
   ctx.textAlign="left";
  }
 }
 
 let last=performance.now();
-
 function animate(now){
  const dt=Math.min((now-last)/1000,.04);
- last=now;
- time+=dt;
+ last=now;time+=dt;
 
  if(panel.classList.contains("hidden"))move(dt);
+ else{
+  const target=player.armsOut?1:0;
+  player.armsAmount+=(target-player.armsAmount)*Math.min(1,dt*10);
+ }
 
  let changed=false;
-
  for(const o of save.orders){
   if(o.status==="ordered"){
    o.remaining-=dt;
-
-   if(o.remaining<=0){
-    o.remaining=0;
-    o.status="arrived";
-    changed=true;
-   }
+   if(o.remaining<=0){o.remaining=0;o.status="arrived";changed=true}
   }
  }
-
  if(changed)persist();
 
  draw();
