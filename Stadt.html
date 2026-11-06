@@ -1,530 +1,167 @@
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>MEIN ZIMMER – Stadt</title>
+
 <style>
 *{box-sizing:border-box}
 html,body{
  margin:0;width:100%;height:100%;overflow:hidden;
- background:#25292b;font-family:Arial,sans-serif
+ background:#20252b;font-family:Arial,sans-serif;
 }
 canvas{display:block;width:100%;height:100%}
 #hud{
- position:fixed;top:14px;left:14px;padding:12px 16px;
- background:#17191be8;color:white;border:1px solid #ffffff22;
- border-radius:11px;font-size:12px;line-height:1.7;
- pointer-events:none;z-index:3
+ position:fixed;top:16px;left:18px;z-index:5;
+ color:#fff;background:rgba(24,29,34,.86);
+ border:1px solid rgba(255,255,255,.15);
+ border-radius:10px;padding:11px 15px;
+ box-shadow:0 5px 20px #0004;
 }
-#players{
- position:fixed;top:14px;right:14px;padding:10px 14px;
- background:#17191be8;color:white;border:1px solid #ffffff22;
- border-radius:10px;font-size:12px;z-index:3;
- pointer-events:none
+#hud strong{font-size:14px;letter-spacing:1.5px}
+#hud small{display:block;margin-top:5px;color:#c5cbd0;font-size:11px}
+#online{
+ position:fixed;right:18px;top:18px;z-index:5;
+ padding:9px 13px;border-radius:20px;
+ background:#202a2d;color:#b9d8c3;
+ font-size:12px;border:1px solid #ffffff22;
 }
 #hint{
- position:fixed;bottom:15px;left:50%;
- transform:translateX(-50%);
- padding:10px 15px;background:#17191be8;color:white;
- border-radius:10px;font-size:12px;white-space:nowrap;
- pointer-events:none;z-index:3
-}
-#prompt{
- position:fixed;bottom:65px;left:50%;
- transform:translateX(-50%);
- padding:10px 16px;background:#17191bed;color:white;
- border-radius:9px;font-size:13px;display:none;
- white-space:nowrap;z-index:3
+ position:fixed;bottom:17px;left:50%;transform:translateX(-50%);
+ z-index:5;background:rgba(20,24,28,.88);
+ color:#e8e8e8;padding:10px 18px;border-radius:8px;
+ font-size:12px;white-space:nowrap;
 }
 #message{
- position:fixed;top:50%;left:50%;
- transform:translate(-50%,-50%);
- background:#222a29f2;color:white;padding:22px 28px;
- border:1px solid #ffffff33;border-radius:13px;
- text-align:center;display:none;max-width:340px;
- line-height:1.6;z-index:5
+ position:fixed;bottom:65px;left:50%;transform:translateX(-50%);
+ z-index:6;background:rgba(22,27,31,.94);
+ color:white;padding:12px 20px;border-radius:9px;
+ font-size:13px;opacity:0;pointer-events:none;
+ transition:opacity .2s;text-align:center;
 }
-#message button{
- margin-top:12px;padding:9px 18px;border:0;
- border-radius:7px;background:#d9b987;color:#29231d;
- cursor:pointer;font-weight:bold
+#message.show{opacity:1}
+#fade{
+ position:fixed;inset:0;background:#111;
+ opacity:0;pointer-events:none;z-index:10;
+ transition:opacity .35s;
 }
-#sound{
- position:fixed;right:14px;bottom:14px;
- padding:8px 11px;border:1px solid #ffffff33;
- border-radius:8px;background:#17191be8;color:white;
- font-size:11px;cursor:pointer;z-index:4
+@media(max-width:600px){
+ #hint{font-size:10px;padding:9px 11px}
+ #hud{top:9px;left:9px}
+ #online{top:9px;right:9px}
 }
 </style>
 </head>
-<body>
 
+<body>
 <canvas id="world"></canvas>
 
 <div id="hud">
- <b>MEIN ZIMMER – STADT</b><br>
- <span id="status">Unterwegs in der Stadt</span><br>
- <span id="held">Hände frei</span>
+ <strong>MEIN ZIMMER <span style="color:#d8b477">/ STADT</span></strong>
+ <small>Eine kleine Stadt voller Möglichkeiten</small>
 </div>
 
-<div id="players">Online: <span id="playerCount">1</span></div>
-<div id="prompt"></div>
+<div id="online">● Offline</div>
 <div id="message"></div>
-
-<div id="hint">
- A / D · Laufen | LEERTASTE · Springen | E · Interagieren | Q · Ablegen
-</div>
-
-<button id="sound" onclick="toggleSound()">🔊 Sound an</button>
+<div id="hint">A / D · Laufen &nbsp; | &nbsp; LEERTASTE · Springen &nbsp; | &nbsp; E · Interagieren</div>
+<div id="fade"></div>
 
 <script src="supabase.js"></script>
+
 <script>
 "use strict";
 
 /* =====================================================
-   GRUNDLAGEN
+   GRUNDEINSTELLUNGEN
 ===================================================== */
 
 const canvas=document.getElementById("world");
 const ctx=canvas.getContext("2d");
 
-const statusText=document.getElementById("status");
-const heldText=document.getElementById("held");
-const prompt=document.getElementById("prompt");
-const message=document.getElementById("message");
-const playerCount=document.getElementById("playerCount");
-const soundButton=document.getElementById("sound");
-
 const W=960,H=540;
 const FLOOR=440;
-const WORLD=3900;
+const WORLD=4700;
 const SAVE_KEY="mein-zimmer-save-v1";
-const ROOM_KEY="mein-zimmer-active-room";
 
-let sx=1,sy=1,cameraX=0,last=0,time=0;
+let dpr=1;
+let camera=0;
+let lastTime=0;
+let messageTimer=null;
+let interactPressed=false;
 
 function resize(){
- const d=Math.min(devicePixelRatio||1,2);
- canvas.width=innerWidth*d;
- canvas.height=innerHeight*d;
- sx=canvas.width/W;
- sy=canvas.height/H;
+ dpr=Math.min(window.devicePixelRatio||1,2);
+ canvas.width=Math.round(innerWidth*dpr);
+ canvas.height=Math.round(innerHeight*dpr);
+ ctx.setTransform(canvas.width/W,0,0,canvas.height/H,0,0);
 }
-addEventListener("resize",resize);
+window.addEventListener("resize",resize);
 resize();
 
-const keys={};
-
-addEventListener("keydown",e=>{
- const k=e.key.toLowerCase();
- keys[k]=true;
-
- if([" ","arrowleft","arrowright","arrowup"].includes(k))
-  e.preventDefault();
-
- startAudio();
-
- if(!e.repeat){
-  if(k===" "||k==="arrowup"||k==="w")jump();
-  if(k==="e")interact();
-  if(k==="q")dropItem();
-  if(k==="escape")closeMessage();
- }
-});
-
-addEventListener("keyup",e=>{
- keys[e.key.toLowerCase()]=false;
-});
-
 /* =====================================================
-   SPEICHER UND KOSMETIK
+   SPEICHERSTAND UND ACCESSOIRES
 ===================================================== */
-
-const defaults={
- money:120,
- unlocked:[],
- equipped:{
-  head:null,face:null,clothes:null,
-  back:null,pants:null
- },
- inventory:[],
- placed:[],
- orders:[],
- received:[],
- faucetOn:false,
- bucketWater:0
-};
 
 function readSave(){
  try{
-  const s=JSON.parse(localStorage.getItem(SAVE_KEY)||"null");
-  return s?{
-   ...defaults,
-   ...s,
-   equipped:{...defaults.equipped,...(s.equipped||{})}
-  }:structuredClone(defaults);
- }catch{
-  return structuredClone(defaults);
- }
+  return JSON.parse(localStorage.getItem(SAVE_KEY)||"{}");
+ }catch(e){return {}}
 }
 
-let save=readSave();
-let wardrobe=save.equipped;
-
-addEventListener("storage",e=>{
- if(e.key===SAVE_KEY){
-  save=readSave();
-  wardrobe=save.equipped;
- }
-});
+const save=readSave();
+const wardrobe=save.equipped||{
+ head:null,face:null,clothes:null,back:null,pants:null
+};
 
 /* =====================================================
    SPIELER
 ===================================================== */
 
 const player={
- x:180,y:FLOOR-68,
+ x:115,y:FLOOR-68,
  vx:0,vy:0,
  width:48,height:68,
  grounded:true,
  facing:1,
  walk:0,
- held:null,
  landing:0
 };
 
-const objects=[
- {id:"Zeitung",type:"book",x:820,y:0,w:42,h:12,color:"#d4d0c3"},
- {id:"Paket",type:"box",x:1800,y:0,w:42,h:36},
- {id:"Einkaufstasche",type:"bag",x:2700,y:0,w:28,h:35}
-];
+const keys={};
+window.addEventListener("keydown",e=>{
+ const k=e.key.toLowerCase();
+ keys[k]=true;
+
+ if([" ","arrowup","arrowleft","arrowright"].includes(k))
+  e.preventDefault();
+
+ if(k==="e"&&!e.repeat)interact();
+ if(k==="escape")location.href="index.html";
+});
+window.addEventListener("keyup",e=>{
+ keys[e.key.toLowerCase()]=false;
+});
 
 /* =====================================================
    HILFSFUNKTIONEN
 ===================================================== */
 
-function clamp(v,a,b){
- return Math.max(a,Math.min(b,v));
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function rnd(n){return Math.sin(n*127.1+311.7)*43758.5453%1}
+function rect(x,y,w,h,c){
+ ctx.fillStyle=c;ctx.fillRect(x,y,w,h);
 }
-
-function lerp(a,b,t){
- return a+(b-a)*t;
+function line(x1,y1,x2,y2,c,width=1){
+ ctx.strokeStyle=c;ctx.lineWidth=width;
+ ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
 }
-
-function hash(n){
- const v=Math.sin(n*127.1+311.7)*43758.5453;
- return v-Math.floor(v);
-}
-
-function gradient(x,y,w,h,c1,c2){
- const g=ctx.createLinearGradient(x,y,x+w,y+h);
- g.addColorStop(0,c1);
- g.addColorStop(1,c2);
- return g;
-}
-
-function rounded(x,y,w,h,r,fill,stroke){
+function roundRect(x,y,w,h,r,c){
+ ctx.fillStyle=c;
  ctx.beginPath();
  ctx.roundRect(x,y,w,h,r);
- if(fill){
-  ctx.fillStyle=fill;
-  ctx.fill();
- }
- if(stroke){
-  ctx.strokeStyle=stroke;
-  ctx.stroke();
- }
-}
-
-function ellipse(x,y,rx,ry,color){
- ctx.beginPath();
- ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);
- ctx.fillStyle=color;
  ctx.fill();
-}
-
-function shadow(x,y,rx,alpha=.2){
- ctx.save();
- ctx.globalAlpha=alpha;
- ellipse(x,y,rx,5,"#161514");
- ctx.restore();
-}
-
-/* =====================================================
-   MULTIPLAYER
-===================================================== */
-
-let onlineReady=false;
-let onlineRoomId=null;
-let myPlayerId=null;
-let myPlayerName="Spieler";
-let remotePlayers=new Map();
-let stopWatching=null;
-let lastPositionSend=0;
-let lastPlayerFetch=0;
-
-function getRoomId(room){
- if(!room)return null;
-
- if(typeof room==="string")return room;
-
- return room.room_id||
-  room.id||
-  room.roomId||
-  room.uuid||
-  room.data?.room_id||
-  room.data?.id||
-  null;
-}
-
-function getRoom(){
- try{
-  return JSON.parse(sessionStorage.getItem(ROOM_KEY)||"null");
- }catch{
-  return null;
- }
-}
-
-function setOnlineStatus(text){
- statusText.textContent=text;
-}
-
-async function connectMultiplayer(){
- const activeRoom=getRoom();
- onlineRoomId=getRoomId(activeRoom);
-
- if(!onlineRoomId){
-  setOnlineStatus("Offline – kein Raum aktiv");
-  return;
- }
-
- if(!window.GameOnline){
-  setOnlineStatus("Multiplayer konnte nicht geladen werden");
-  return;
- }
-
- try{
-  /*
-   * login() stellt die vorhandene anonyme
-   * Supabase-Sitzung wieder her.
-   */
-  const loginResult=await GameOnline.login("Spieler");
-
-  const client=GameOnline.getClient();
-
-  if(client){
-   const {data:{user}}=await client.auth.getUser();
-   myPlayerId=user?.id||null;
-
-   if(myPlayerId){
-    const {data:profile}=await client
-     .from("profiles")
-     .select("player_name")
-     .eq("id",myPlayerId)
-     .maybeSingle();
-
-    if(profile?.player_name){
-     myPlayerName=profile.player_name;
-    }
-   }
-  }
-
-  /*
-   * Bestehende Raumverbindung abonnieren.
-   * Nur Spieler aus demselben Raum und
-   * demselben Spielbereich anzeigen.
-   */
-  stopWatching=GameOnline.watchPlayers(
-   onlineRoomId,
-   rows=>{
-    updateRemotePlayers(rows||[]);
-   }
-  );
-
-  onlineReady=true;
-  setOnlineStatus("Mitspieler werden verbunden …");
-
- }catch(error){
-  console.error("Multiplayer:",error);
-  setOnlineStatus("Multiplayer-Verbindung fehlgeschlagen");
- }
-}
-
-function updateRemotePlayers(rows){
- const now=Date.now();
- const next=new Map();
-
- for(const row of rows){
-  if(!row.player_id)continue;
-  if(row.player_id===myPlayerId)continue;
-  if(row.area!=="stadt")continue;
-
-  const old=remotePlayers.get(row.player_id);
-
-  next.set(row.player_id,{
-   id:row.player_id,
-   x:Number(row.x)||0,
-   y:Number(row.y)||FLOOR-68,
-   targetX:Number(row.x)||0,
-   targetY:Number(row.y)||FLOOR-68,
-   name:old?.name||"Spieler",
-   updatedAt:now
-  });
- }
-
- remotePlayers=next;
- playerCount.textContent=String(remotePlayers.size+1);
-
- fetchPlayerNames();
-}
-
-async function fetchPlayerNames(){
- if(!window.GameOnline)return;
-
- const client=GameOnline.getClient();
- if(!client)return;
-
- const ids=[...remotePlayers.keys()];
- if(!ids.length)return;
-
- try{
-  const {data}=await client
-   .from("profiles")
-   .select("id,player_name")
-   .in("id",ids);
-
-  if(!data)return;
-
-  for(const profile of data){
-   const p=remotePlayers.get(profile.id);
-   if(p&&profile.player_name){
-    p.name=profile.player_name;
-   }
-  }
- }catch(error){
-  console.warn("Spielernamen konnten nicht geladen werden",error);
- }
-}
-
-async function sendMyPosition(){
- if(!onlineReady||!onlineRoomId)return;
-
- try{
-  await GameOnline.updatePosition(
-   onlineRoomId,
-   "stadt",
-   player.x,
-   player.y
-  );
- }catch(error){
-  console.warn("Position konnte nicht gesendet werden",error);
- }
-}
-
-function updateRemoteMovement(dt){
- for(const p of remotePlayers.values()){
-  p.x=lerp(p.x,p.targetX,1-Math.pow(.0001,dt));
-  p.y=lerp(p.y,p.targetY,1-Math.pow(.0001,dt));
- }
-}
-
-connectMultiplayer();
-
-/* =====================================================
-   AUDIO – LEISE MOTORGERÄUSCHE
-===================================================== */
-
-let audioContext=null;
-let engineOscillator=null;
-let engineOscillator2=null;
-let engineGain=null;
-let engineFilter=null;
-let soundEnabled=true;
-let audioStarted=false;
-
-function startAudio(){
- if(audioStarted||!soundEnabled)return;
-
- try{
-  const AudioContextClass=
-   window.AudioContext||window.webkitAudioContext;
-
-  if(!AudioContextClass)return;
-
-  audioContext=new AudioContextClass();
-
-  engineOscillator=audioContext.createOscillator();
-  engineOscillator2=audioContext.createOscillator();
-  engineFilter=audioContext.createBiquadFilter();
-  engineGain=audioContext.createGain();
-
-  engineOscillator.type="sawtooth";
-  engineOscillator.frequency.value=58;
-
-  engineOscillator2.type="sine";
-  engineOscillator2.frequency.value=116;
-
-  engineFilter.type="lowpass";
-  engineFilter.frequency.value=170;
-
-  engineGain.gain.value=0;
-
-  engineOscillator.connect(engineFilter);
-  engineOscillator2.connect(engineFilter);
-  engineFilter.connect(engineGain);
-  engineGain.connect(audioContext.destination);
-
-  engineOscillator.start();
-  engineOscillator2.start();
-
-  audioStarted=true;
- }catch(error){
-  console.warn("Audio nicht verfügbar",error);
- }
-}
-
-function toggleSound(){
- soundEnabled=!soundEnabled;
-
- soundButton.textContent=
-  soundEnabled?"🔊 Sound an":"🔇 Sound aus";
-
- if(soundEnabled){
-  startAudio();
- }else if(engineGain&&audioContext){
-  engineGain.gain.setTargetAtTime(
-   0,audioContext.currentTime,.15
-  );
- }
-}
-
-function updateAudio(){
- if(!audioStarted||!audioContext||!engineGain)return;
-
- let nearest=9999;
-
- for(const car of cars){
-  const d=Math.abs(car.x+55-player.x);
-  nearest=Math.min(nearest,d);
- }
-
- const volume=soundEnabled?
-  clamp(1-nearest/650,0,1)*.018:0;
-
- engineGain.gain.setTargetAtTime(
-  volume,audioContext.currentTime,.3
- );
-
- const frequency=55+clamp(500-nearest,0,500)*.045;
-
- engineOscillator.frequency.setTargetAtTime(
-  frequency,audioContext.currentTime,.3
- );
-
- engineOscillator2.frequency.setTargetAtTime(
-  frequency*2,audioContext.currentTime,.3
- );
 }
 
 /* =====================================================
@@ -532,1283 +169,1164 @@ function updateAudio(){
 ===================================================== */
 
 function drawSky(){
- ctx.fillStyle=gradient(0,0,0,390,"#8eb4c7","#e0ded0");
- ctx.fillRect(0,0,WORLD,390);
+ const g=ctx.createLinearGradient(0,0,0,H);
+ g.addColorStop(0,"#71899a");
+ g.addColorStop(.55,"#b7c0bb");
+ g.addColorStop(1,"#e1cdb0");
+ rect(0,0,W,H,g);
 
- const sunX=760,sunY=86;
+ // Abendsonne
+ const sun=ctx.createRadialGradient(740,100,5,740,100,95);
+ sun.addColorStop(0,"#ffe7b7");
+ sun.addColorStop(1,"#ffe7b700");
+ ctx.fillStyle=sun;
+ ctx.fillRect(640,0,200,200);
 
- const glow=ctx.createRadialGradient(
-  sunX,sunY,5,sunX,sunY,125
- );
- glow.addColorStop(0,"#fff3d6a0");
- glow.addColorStop(1,"#fff3d600");
+ // Wolken
+ for(let i=0;i<8;i++){
+  let x=((i*190-camera*.12)%1100+1100)%1100-50;
+  let y=65+(i%3)*48;
+  ctx.fillStyle="#f1eee5";
+  ctx.globalAlpha=.22;
+  ctx.beginPath();
+  ctx.ellipse(x,y,48,12,0,0,Math.PI*2);
+  ctx.ellipse(x+28,y-7,29,15,0,0,Math.PI*2);
+  ctx.ellipse(x+53,y,38,11,0,0,Math.PI*2);
+  ctx.fill();
+  ctx.globalAlpha=1;
+ }
 
- ctx.fillStyle=glow;
- ctx.fillRect(sunX-125,sunY-125,250,250);
-
- ellipse(sunX,sunY,27,27,"#f4e5bd");
-
- /* Entfernte Stadtsilhouette */
-
- for(let i=0;i<45;i++){
-  const x=i*100;
-  const h=75+hash(i+20)*145;
-  const w=55+hash(i+30)*35;
-  const y=350-h;
-
-  ctx.fillStyle=i%2?"#929f9e":"#a5aaa3";
-  ctx.fillRect(x,y,w,h);
-
-  ctx.fillStyle="#b9cbd0";
-  for(let r=0;r<4;r++){
-   for(let c=0;c<2;c++){
-    ctx.fillRect(x+10+c*22,y+15+r*27,11,15);
+ // Entfernte Häuser
+ for(let i=0;i<18;i++){
+  let x=i*125-(camera*.25)%225;
+  let h=95+(i*37%90);
+  rect(x,350-h,110,h,"#78858a");
+  for(let wy=0;wy<4;wy++){
+   for(let wx=0;wx<3;wx++){
+    rect(x+13+wx*30,365-h+wy*27,12,15,"#aeb9b5");
    }
   }
  }
 }
 
 /* =====================================================
-   GEBÄUDE
+   GEBÄUDE UND GESCHÄFTE
 ===================================================== */
 
-const buildings=[
- {x:0,w:330,h:290,type:"home",wall:"#d7c5a9",roof:"#795847",label:"WOHNHAUS"},
- {x:360,w:340,h:310,type:"pizza",wall:"#d9c5a7",roof:"#794e3e",label:"PIZZERIA"},
- {x:730,w:370,h:270,type:"cafe",wall:"#c7c6b6",roof:"#4f5d59",label:"CAFÉ"},
- {x:1130,w:410,h:330,type:"market",wall:"#d8d2c2",roof:"#6e5142",label:"SUPERMARKT"},
- {x:1570,w:330,h:285,type:"home",wall:"#d9bfa7",roof:"#6b4c40",label:"WOHNHAUS"},
- {x:1930,w:380,h:305,type:"shop",wall:"#d4c9b4",roof:"#66544b",label:"BLUMENLADEN"},
- {x:2340,w:390,h:275,type:"home",wall:"#c7c9bd",roof:"#6e5b4a",label:"WOHNHAUS"},
- {x:2760,w:390,h:320,type:"pharmacy",wall:"#d8d4c7",roof:"#687d79",label:"APOTHEKE"},
- {x:3180,w:390,h:290,type:"home",wall:"#d5bfa7",roof:"#76513f",label:"WOHNHAUS"},
- {x:3590,w:310,h:280,type:"home",wall:"#c8c6b5",roof:"#675448",label:"WOHNHAUS"}
+const shops=[
+ {
+  x:130,w:370,name:"CAFÉ MORGENROT",
+  type:"cafe",subtitle:"Kaffee · Kuchen · Frühstück"
+ },
+ {
+  x:590,w:390,name:"CITY MARKET",
+  type:"market",subtitle:"Lebensmittel · Getränke"
+ },
+ {
+  x:1040,w:370,name:"PIZZERIA BELLA",
+  type:"pizza",subtitle:"Pizza · Pasta · Amore",
+  open:true
+ },
+ {
+  x:1510,w:390,name:"BOOKS & MORE",
+  type:"book",subtitle:"Bücher · Magazine · Geschenke"
+ },
+ {
+  x:2000,w:390,name:"FLOWER HOUSE",
+  type:"flower",subtitle:"Blumen · Pflanzen · Dekoration"
+ },
+ {
+  x:2490,w:400,name:"FASHION STUDIO",
+  type:"fashion",subtitle:"Mode · Accessoires"
+ },
+ {
+  x:2990,w:390,name:"GAME ZONE",
+  type:"game",subtitle:"Games · Technik · Spaß"
+ },
+ {
+  x:3470,w:390,name:"BAKERY NO. 7",
+  type:"bakery",subtitle:"Brot · Brötchen · Gebäck"
+ },
+ {
+  x:3940,w:400,name:"HOME & LIVING",
+  type:"home",subtitle:"Wohnen · Möbel · Design"
+ }
 ];
 
-function drawWindow(x,y,w,h){
- ctx.fillStyle="#594b40";
- ctx.fillRect(x-3,y-3,w+6,h+6);
+function drawUpperBuilding(s){
+ const x=s.x-camera;
+ const w=s.w;
 
- ctx.fillStyle=gradient(x,y,w,h,"#b8d0d4","#526c78");
- ctx.fillRect(x+3,y+3,w-6,h-6);
+ // Fassade
+ const facade=["#b8a89a","#9eaaa7","#c0b4a5","#aeb1a9"][Math.floor(s.x/400)%4];
+ rect(x,100,w,218,facade);
 
- ctx.fillStyle="#ffffff38";
- ctx.beginPath();
- ctx.moveTo(x+5,y+5);
- ctx.lineTo(x+w*.35,y+5);
- ctx.lineTo(x+w*.68,y+h-5);
- ctx.lineTo(x+w*.48,y+h-5);
- ctx.closePath();
- ctx.fill();
+ // Fassadenstruktur
+ rect(x,100,w,8,"#ded4c5");
+ rect(x,311,w,8,"#827b70");
+ for(let i=0;i<5;i++){
+  let bx=x+20+i*(w-40)/5;
+  rect(bx,125,54,75,"#59666a");
+  rect(bx+4,129,46,67,"#b5c3c1");
+  rect(bx+25,129,3,67,"#647579");
+  rect(bx,160,54,3,"#647579");
+  rect(bx-4,201,62,5,"#817d75");
+  rect(bx-7,206,68,4,"#ded4c5");
+ }
 
- ctx.fillStyle="#5e5145";
- ctx.fillRect(x+w*.48,y+2,3,h-4);
- ctx.fillRect(x+2,y+h*.48,w-4,3);
+ // Balkone
+ for(let i=0;i<3;i++){
+  let bx=x+60+i*130;
+  rect(bx,225,75,5,"#777a75");
+  line(bx+5,230,bx+5,254,"#555d5d",2);
+  line(bx+70,230,bx+70,254,"#555d5d",2);
+  line(bx+5,238,bx+70,238,"#555d5d",2);
+  line(bx+5,254,bx+70,254,"#555d5d",2);
+  rect(bx+10,214,16,12,"#566e58");
+  rect(bx+44,214,18,12,"#566e58");
+ }
 
- ctx.fillStyle="#d9c6a8";
- ctx.fillRect(x-4,y+h-5,w+8,7);
+ // Dachkante
+ rect(x-5,94,w+10,8,"#6d706b");
+ rect(x,88,w,5,"#ded4c5");
 }
 
-function drawBalcony(x,y,w){
- ctx.fillStyle="#574e46";
- ctx.fillRect(x,y,w,4);
- ctx.fillRect(x,y,3,20);
- ctx.fillRect(x+w-3,y,3,20);
+/* =====================================================
+   SCHAUFENSTER-INNENRÄUME
+===================================================== */
 
- ctx.strokeStyle="#655b50";
- ctx.lineWidth=2;
+function drawInterior(s,x,w){
+ const top=322;
+ const bottom=419;
+
+ // Innenraum hinter dem Glas
+ const wall=ctx.createLinearGradient(0,top,0,bottom);
+ wall.addColorStop(0,"#343d40");
+ wall.addColorStop(1,"#20282a");
+ rect(x,top,w,bottom-top,wall);
+
+ // Warme Deckenbeleuchtung
+ for(let i=0;i<4;i++){
+  const lx=x+35+i*(w-70)/3;
+  ctx.fillStyle="#f5dba4";
+  ctx.globalAlpha=.6;
+  ctx.beginPath();
+  ctx.ellipse(lx,331,16,5,0,0,Math.PI*2);
+  ctx.fill();
+  ctx.globalAlpha=1;
+ }
+
+ // Boden
+ rect(x,407,w,12,"#72695e");
+ for(let i=0;i<w;i+=35){
+  line(x+i,407,x+i+15,419,"#8d8272",1);
+ }
+
+ // Typische Einrichtung
+ if(s.type==="cafe"){
+  // Theke
+  rect(x+18,371,115,36,"#76513c");
+  rect(x+18,366,115,7,"#c8a77a");
+  // Kaffeemaschine
+  rect(x+43,346,34,20,"#9fa6a3");
+  rect(x+49,340,22,7,"#41494a");
+  // Tische und Stühle
+  for(let i=0;i<2;i++){
+   const tx=x+190+i*100;
+   rect(tx,376,55,6,"#a77b51");
+   rect(tx+24,382,5,25,"#5a4535");
+   rect(tx+2,382,5,25,"#5a4535");
+   rect(tx+9,384,12,20,"#78624d");
+  }
+  drawPlant(x+w-45,383,.7);
+ }
+
+ if(s.type==="market"){
+  for(let i=0;i<3;i++){
+   const sx=x+25+i*105;
+   rect(sx,350,82,54,"#7a6048");
+   rect(sx,350,82,5,"#b99b70");
+   for(let j=0;j<4;j++){
+    rect(sx+7+j*18,360,12,13,
+      ["#a6a65c","#c47a59","#7795a1","#c4aa6e"][(i+j)%4]);
+    rect(sx+7+j*18,380,12,14,
+      ["#c7a75d","#7b9b76","#b8796c","#d0c0a0"][(i+j)%4]);
+   }
+  }
+ }
+
+ if(s.type==="pizza"){
+  rect(x+20,370,150,38,"#784a32");
+  rect(x+20,364,150,7,"#c69a65");
+  rect(x+40,339,105,25,"#ddd0b8");
+  rect(x+52,345,80,13,"#9a4e36");
+  // Pizza im Fenster
+  drawPizza(x+225,383,17);
+  drawPizza(x+285,383,17);
+  // Pflanzen
+  drawPlant(x+w-48,385,.75);
+ }
+
+ if(s.type==="book"){
+  for(let i=0;i<3;i++){
+   const sx=x+24+i*110;
+   rect(sx,347,90,58,"#634d3c");
+   rect(sx,347,90,5,"#b99b73");
+   for(let j=0;j<7;j++){
+    const colors=["#a75b4e","#66818a","#c1a16d","#71856c","#8d7790"];
+    rect(sx+5+j*12,355,9,35,colors[(i+j)%5]);
+   }
+  }
+ }
+
+ if(s.type==="flower"){
+  for(let i=0;i<5;i++){
+   const px=x+28+i*70;
+   drawPlant(px,397,.85);
+   ctx.fillStyle=["#c47c91","#e5bd6b","#a98cb8","#d77b63"][(i)%4];
+   for(let j=0;j<5;j++){
+    ctx.beginPath();
+    ctx.arc(px-8+j*4,365+(j%2)*3,5,0,Math.PI*2);
+    ctx.fill();
+   }
+  }
+ }
+
+ if(s.type==="fashion"){
+  rect(x+30,348,100,56,"#806a55");
+  for(let i=0;i<4;i++){
+   const hx=x+43+i*22;
+   line(hx,355,hx,397,"#d2bda1",2);
+   ctx.fillStyle=["#8c6871","#617c86","#a68b5f","#6c8269"][i];
+   ctx.beginPath();
+   ctx.moveTo(hx-9,362);ctx.lineTo(hx+9,362);
+   ctx.lineTo(hx+13,390);ctx.lineTo(hx-13,390);
+   ctx.closePath();ctx.fill();
+  }
+  rect(x+190,365,95,40,"#b6a18a");
+  rect(x+205,344,65,21,"#d6c7b1");
+ }
+
+ if(s.type==="game"){
+  rect(x+20,355,145,50,"#494e54");
+  rect(x+32,338,120,17,"#7f8d91");
+  rect(x+45,342,95,10,"#b3c7c8");
+  rect(x+195,350,95,55,"#393f46");
+  rect(x+205,358,75,36,"#6e9c9a");
+  rect(x+230,371,25,10,"#d7c7a4");
+ }
+
+ if(s.type==="bakery"){
+  rect(x+20,375,140,30,"#98734e");
+  for(let i=0;i<4;i++){
+   drawBread(x+38+i*30,369);
+  }
+  rect(x+195,370,115,35,"#87694b");
+  drawBread(x+220,365);
+  drawBread(x+260,365);
+ }
+
+ if(s.type==="home"){
+  rect(x+20,365,130,40,"#7e6955");
+  rect(x+30,349,110,16,"#b5a084");
+  // kleines Sofa
+  roundRect(x+190,375,120,28,6,"#8a776a");
+  roundRect(x+200,364,100,24,5,"#a69787");
+  drawPlant(x+w-42,390,.7);
+ }
+}
+
+/* =====================================================
+   BAUSTELLENDETAILS IM LADEN
+===================================================== */
+
+function drawConstruction(s,x,w){
+ // Leiter
+ const lx=x+w*.67;
+ const ly=350;
+ ctx.strokeStyle="#c0b6a0";
+ ctx.lineWidth=5;
  ctx.beginPath();
- ctx.moveTo(x,y+6);
- ctx.lineTo(x+w,y+6);
+ ctx.moveTo(lx,405);ctx.lineTo(lx+18,ly);
+ ctx.moveTo(lx+28,405);ctx.lineTo(lx+46,ly);
  ctx.stroke();
 
- for(let i=1;i<7;i++){
-  const xx=x+i*w/7;
-  ctx.beginPath();
-  ctx.moveTo(xx,y+3);
-  ctx.lineTo(xx,y+20);
-  ctx.stroke();
+ for(let i=0;i<5;i++){
+  line(lx+5+i*4,395-i*10,lx+33+i*4,395-i*10,"#e0d4bb",3);
  }
+
+ // Farbeimer
+ roundRect(x+w*.28,384,26,25,4,"#d5d0c4");
+ rect(x+w*.28,383,26,4,"#777d7d");
+ rect(x+w*.28+4,392,18,7,"#c8b38c");
+
+ // Werkzeugkiste
+ rect(x+w*.44,390,42,18,"#a55f35");
+ rect(x+w*.44+5,385,32,5,"#c98a4d");
+ line(x+w*.44+20,385,x+w*.44+20,390,"#4b4038",2);
+
+ // Gerüstteile im Hintergrund
+ rect(x+12,355,6,50,"#8c9694");
+ rect(x+12,355,52,5,"#8c9694");
+ line(x+12,355,x+64,405,"#8c9694",2);
+ line(x+64,355,x+12,405,"#8c9694",2);
+
+ // Kartons
+ rect(x+w*.12,390,32,18,"#a98c65");
+ line(x+w*.12+16,390,x+w*.12+16,408,"#6f5940",1);
 }
 
-function drawShopWindow(x,y,w,h){
- ctx.fillStyle="#4e4942";
- ctx.fillRect(x-5,y-5,w+10,h+10);
+/* =====================================================
+   SCHILDER UND GESCHÄFTSFASSADEN
+===================================================== */
 
- ctx.fillStyle=gradient(x,y,w,h,"#b6d3d5","#526e73");
- ctx.fillRect(x,y,w,h);
+function drawShop(s){
+ const x=s.x-camera;
+ const w=s.w;
 
- ctx.fillStyle="#ffffff45";
+ if(x+w<-50||x>W+50)return;
+
+ drawUpperBuilding(s);
+
+ // Erdgeschoss
+ rect(x,315,w,105,"#554d46");
+ rect(x,315,w,7,"#d0c3ad");
+
+ // Schaufensterrahmen
+ rect(x+12,328,w-24,84,"#343c3d");
+ drawInterior(s,x+16,w-32);
+
+ // Glasreflexion
+ ctx.fillStyle="#ffffff";
+ ctx.globalAlpha=.12;
  ctx.beginPath();
- ctx.moveTo(x+5,y+5);
- ctx.lineTo(x+w*.35,y+5);
- ctx.lineTo(x+w*.62,y+h-5);
- ctx.lineTo(x+w*.4,y+h-5);
- ctx.closePath();
- ctx.fill();
+ ctx.moveTo(x+18,330);ctx.lineTo(x+85,330);
+ ctx.lineTo(x+48,410);ctx.lineTo(x+18,410);
+ ctx.closePath();ctx.fill();
+ ctx.globalAlpha=1;
 
- ctx.fillStyle="#665b4c";
- ctx.fillRect(x+w*.5,y,3,h);
- ctx.fillRect(x,y+h-5,w,5);
-}
+ // Rahmen
+ rect(x+8,324,w-16,5,"#c6b9a4");
+ rect(x+8,411,w-16,5,"#b4a48f");
+ rect(x+Math.floor(w*.48),328,5,84,"#9d9688");
 
-function drawPizzaDisplay(b){
- const x=b.x;
+ // Ladenschild
+ rect(x+18,277,w-36,37,"#30383a");
+ rect(x+23,282,w-46,27,
+  s.type==="pizza"?"#963f31":"#e1d2b8");
 
- /* Pizzakartons und Pizzen im Fenster */
-
- for(let i=0;i<3;i++){
-  const px=x+72+i*75;
-
-  ctx.fillStyle="#b88a51";
-  ctx.fillRect(px-18,FLOOR-103,37,5);
-
-  ellipse(px,FLOOR-112,15,9,"#d7a85c");
-  ellipse(px,FLOOR-112,11,6,"#d7b66f");
-
-  for(let j=0;j<4;j++){
-   ellipse(px-6+(j%2)*12,FLOOR-114+Math.floor(j/2)*5,2,2,
-    j%2?"#a74b3d":"#66814d");
-  }
- }
-
- ctx.fillStyle="#f4e4c5";
- ctx.font="bold 11px Arial";
+ ctx.fillStyle=s.type==="pizza"?"#fff0d5":"#343331";
  ctx.textAlign="center";
- ctx.fillText("PIZZA · PASTA · VINO",x+b.w/2,FLOOR-56);
+ ctx.font="bold 15px Arial";
+ ctx.fillText(s.name,x+w/2,300);
+ ctx.textAlign="left";
+
+ // Untertitel
+ ctx.fillStyle="#f0e5d1";
+ ctx.font="10px Arial";
+ ctx.textAlign="center";
+ ctx.fillText(s.subtitle,x+w/2,320);
+ ctx.textAlign="left";
+
+ // Tür
+ const doorX=x+w-57;
+ rect(doorX,328,39,83,"#303b3d");
+ rect(doorX+4,332,31,75,"#6e7774");
+ rect(doorX+7,337,25,36,"#9ba9a5");
+ rect(doorX+7,377,25,25,"#5b6b6c");
+ ctx.beginPath();
+ ctx.arc(doorX+29,372,2,0,Math.PI*2);
+ ctx.fillStyle="#e1c58e";ctx.fill();
+
+ if(s.open){
+  // OFFEN-Schild
+  rect(doorX-5,340,48,13,"#3d754e");
+  ctx.fillStyle="#fff";
+  ctx.font="bold 8px Arial";
+  ctx.textAlign="center";
+  ctx.fillText("GEÖFFNET",doorX+19,349);
+  ctx.textAlign="left";
+ }else{
+  drawComingSoon(s,x,w);
+ }
 }
 
-function drawBuilding(b){
- const x=b.x,y=FLOOR-b.h,w=b.w,h=b.h;
+/* =====================================================
+   COMING SOON – SCHAUFENSTER UND ABSPERRUNGEN
+===================================================== */
 
- ctx.fillStyle="#3b302a35";
- ctx.fillRect(x+12,y+10,w,h);
+function drawComingSoon(s,x,w){
+ // Schild innen im Schaufenster
+ const signX=x+28;
+ const signY=337;
+ const signW=Math.min(w-95,180);
 
- ctx.fillStyle=b.wall;
- ctx.fillRect(x,y,w,h);
+ roundRect(signX,signY,signW,24,3,"#e7d9bd");
+ ctx.strokeStyle="#8b6e4d";
+ ctx.lineWidth=1;
+ ctx.strokeRect(signX,signY,signW,24);
 
- ctx.fillStyle="#ffffff20";
- ctx.fillRect(x+4,y+3,5,h-5);
+ ctx.fillStyle="#34302b";
+ ctx.font="bold 13px Arial";
+ ctx.textAlign="center";
+ ctx.fillText("COMING SOON",signX+signW/2,354);
+ ctx.textAlign="left";
 
- ctx.fillStyle="#8a8174";
- ctx.fillRect(x,y+h-20,w,20);
+ // Baustellenmaterial hinter der Scheibe
+ drawConstruction(s,x+16,w-32);
 
- ctx.fillStyle="#c4b7a2";
- ctx.fillRect(x,y+h-23,w,4);
+ // Baustellenfolie
+ ctx.globalAlpha=.13;
+ rect(x+17,330,w-34,78,"#d3c9ad");
+ ctx.globalAlpha=1;
 
- /* Dach */
+ // Absperrbänder vor dem Eingang
+ const tapeY=426;
+ const tapeX=x+5;
+ const tapeW=w-10;
 
- ctx.fillStyle=b.roof;
- ctx.beginPath();
- ctx.moveTo(x-15,y+8);
- ctx.lineTo(x+w*.12,y-27);
- ctx.lineTo(x+w*.85,y-27);
- ctx.lineTo(x+w+15,y+8);
- ctx.closePath();
- ctx.fill();
+ // Pfosten
+ for(let i=0;i<4;i++){
+  const px=tapeX+i*(tapeW/3);
+  rect(px-3,tapeY-20,6,23,"#5d5650");
+  roundRect(px-7,tapeY-23,14,5,2,"#c7bba5");
+  ctx.beginPath();
+  ctx.ellipse(px,tapeY+3,9,3,0,0,Math.PI*2);
+  ctx.fillStyle="#48443f";ctx.fill();
+ }
 
- ctx.fillStyle="#ffffff20";
- ctx.beginPath();
- ctx.moveTo(x-10,y+5);
- ctx.lineTo(x+w*.12,y-27);
- ctx.lineTo(x+w*.48,y-27);
- ctx.lineTo(x+w*.35,y+5);
- ctx.closePath();
- ctx.fill();
-
- ctx.fillStyle="#514136";
- ctx.fillRect(x-9,y+5,w+18,7);
-
- /* Fenster */
-
- const rows=Math.max(1,Math.floor((h-100)/85));
-
- for(let r=0;r<rows;r++){
-  for(let c=0;c<3;c++){
-   const wx=x+35+c*(w-90)/3;
-   const wy=y+35+r*76;
-
-   if(wy+49>FLOOR-60)continue;
-
-   drawWindow(wx,wy,42,48);
-
-   if((c+r)%3===0){
-    drawBalcony(wx-5,wy+48,52);
-   }
+ // Rot-weißes Band
+ for(let i=0;i<3;i++){
+  const y=tapeY-18+i*6;
+  line(tapeX,y,tapeX+tapeW,y,"#d7d0c4",4);
+  for(let j=0;j<tapeW;j+=25){
+   line(tapeX+j,y-2,tapeX+j+8,y+2,"#b74437",3);
   }
  }
 
- /* Haustür */
+ // Kleines Warnschild
+ rect(x+w-90,385,54,24,"#e4c65d");
+ ctx.strokeStyle="#574d30";
+ ctx.strokeRect(x+w-90,385,54,24);
+ ctx.fillStyle="#332e24";
+ ctx.font="bold 8px Arial";
+ ctx.textAlign="center";
+ ctx.fillText("BAUSTELLE",x+w-63,400);
+ ctx.textAlign="left";
+}
 
- const doorX=x+w/2-19;
- const doorY=FLOOR-76;
+/* =====================================================
+   DETAILS: PFLANZEN, PIZZA, BROT
+===================================================== */
 
- ctx.fillStyle="#594438";
- ctx.fillRect(doorX-4,doorY-4,46,78);
+function drawPlant(x,y,scale=1){
+ ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);
+ rect(-10,-5,20,8,"#765744");
+ rect(-7,-15,14,10,"#6d815f");
+ line(0,-12,-7,-36,"#55785a",3);
+ line(0,-12,8,-39,"#55785a",3);
+ line(0,-12,0,-43,"#55785a",3);
+ ctx.fillStyle="#608765";
+ ctx.beginPath();
+ ctx.ellipse(-8,-33,9,5,-.5,0,Math.PI*2);
+ ctx.ellipse(8,-37,9,5,.5,0,Math.PI*2);
+ ctx.ellipse(0,-44,8,5,0,0,Math.PI*2);
+ ctx.fill();
+ ctx.restore();
+}
 
- ctx.fillStyle=gradient(doorX,doorY,38,70,"#9d7959","#513d30");
- ctx.fillRect(doorX,doorY,38,70);
-
- ctx.fillStyle="#ffffff25";
- ctx.fillRect(doorX+5,doorY+5,12,54);
-
- ellipse(doorX+30,doorY+38,2.5,2.5,"#e6c47e");
-
- /* Schaufenster */
-
- if(["pizza","cafe","market","shop","pharmacy"].includes(b.type)){
-  drawShopWindow(x+24,FLOOR-145,w-48,90);
-
-  ctx.fillStyle="#453a31";
-  ctx.fillRect(x+12,FLOOR-169,w-24,28);
-
-  const signColors={
-   pizza:"#a94437",
-   cafe:"#485b56",
-   market:"#4c755c",
-   shop:"#9b6657",
-   pharmacy:"#588b85"
-  };
-
-  ctx.fillStyle=signColors[b.type];
-  ctx.fillRect(x+16,FLOOR-166,w-32,22);
-
-  ctx.fillStyle="#fff6e6";
-  ctx.font="bold 13px Arial";
-  ctx.textAlign="center";
-  ctx.fillText(b.label,x+w/2,FLOOR-151);
-
-  if(b.type==="pizza"){
-   drawPizzaDisplay(b);
-  }
-
-  if(b.type==="cafe"){
-   for(let i=0;i<3;i++){
-    ctx.fillStyle="#70513d";
-    ctx.fillRect(x+70+i*75,FLOOR-100,4,24);
-    ellipse(x+72+i*75,FLOOR-102,15,7,"#d2c2a7");
-   }
-  }
-
-  if(b.type==="market"){
-   for(let i=0;i<5;i++){
-    ctx.fillStyle=["#c85c4e","#d5b04c","#6f9a67"][i%3];
-    ctx.fillRect(x+48+i*48,FLOOR-105,23,22);
-   }
-  }
-
-  if(b.type==="shop"){
-   for(let i=0;i<4;i++){
-    const px=x+65+i*65;
-    ctx.strokeStyle="#54794a";
-    ctx.lineWidth=2;
-    ctx.beginPath();
-    ctx.moveTo(px,FLOOR-70);
-    ctx.lineTo(px,FLOOR-112);
-    ctx.stroke();
-    ellipse(px,FLOOR-112,9,12,i%2?"#a45d6b":"#d38c72");
-   }
-  }
-
-  if(b.type==="pharmacy"){
-   ctx.fillStyle="#f0eee4";
-   ctx.fillRect(x+w/2-12,FLOOR-126,24,24);
-   ctx.fillStyle="#4a9d8d";
-   ctx.fillRect(x+w/2-4,FLOOR-122,8,16);
-   ctx.fillRect(x+w/2-8,FLOOR-118,16,8);
-  }
+function drawPizza(x,y,r){
+ ctx.fillStyle="#d5a65d";
+ ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle="#b84f39";
+ ctx.beginPath();ctx.arc(x,y,r-4,0,Math.PI*2);ctx.fill();
+ for(let i=0;i<5;i++){
+  ctx.fillStyle="#e7c66e";
+  ctx.beginPath();
+  ctx.arc(x+Math.cos(i*1.25)*9,y+Math.sin(i*1.25)*9,3,0,Math.PI*2);
+  ctx.fill();
  }
+}
 
- ctx.fillStyle="#665b50";
- ctx.fillRect(x+w-13,y+5,5,h-15);
- ctx.fillRect(x+w-18,FLOOR-25,15,5);
+function drawBread(x,y){
+ ctx.fillStyle="#c18a4c";
+ ctx.beginPath();
+ ctx.ellipse(x,y,13,7,-.2,0,Math.PI*2);
+ ctx.fill();
+ line(x-5,y-3,x-2,y+2,"#f2d19a",1);
+ line(x+1,y-4,x+4,y+1,"#f2d19a",1);
 }
 
 /* =====================================================
    STRASSE UND GEHWEG
 ===================================================== */
 
-function drawStreet(){
- ctx.fillStyle="#a9a39a";
- ctx.fillRect(0,390,WORLD,50);
+function drawGround(){
+ // Gebäudefundament
+ rect(0,420,W,20,"#aaa397");
 
- ctx.fillStyle="#d0c8bb";
- ctx.fillRect(0,390,WORLD,6);
-
- for(let x=0;x<WORLD;x+=65){
-  ctx.strokeStyle="#827c74";
-  ctx.lineWidth=1;
-  ctx.beginPath();
-  ctx.moveTo(x,399);
-  ctx.lineTo(x,440);
-  ctx.stroke();
+ // Gehwegplatten
+ for(let x=-(camera%80);x<W;x+=80){
+  rect(x,420,78,20,"#b7b0a4");
+  line(x,420,x,440,"#928d84",1);
+  line(x+2,438,x+77,438,"#d1c8b9",1);
  }
 
- ctx.fillStyle="#d8d0c4";
- ctx.fillRect(0,435,WORLD,5);
+ // Bordstein
+ rect(0,440,W,9,"#858782");
+ rect(0,440,W,2,"#d5d0c5");
 
- ctx.fillStyle="#7d7971";
- ctx.fillRect(0,440,WORLD,8);
+ // Straße
+ rect(0,449,W,91,"#454a4d");
 
- for(let x=0;x<WORLD;x+=55){
-  ctx.strokeStyle="#bcb6ab";
-  ctx.beginPath();
-  ctx.moveTo(x,441);
-  ctx.lineTo(x,447);
-  ctx.stroke();
+ // Asphalttextur
+ for(let i=0;i<90;i++){
+  const x=((i*113-camera*.7)%W+W)%W;
+  const y=456+(i*29%77);
+  rect(x,y,2,1,"#687071");
  }
 
- ctx.fillStyle=gradient(0,448,0,92,"#555957","#343a3b");
- ctx.fillRect(0,448,WORLD,92);
-
- ctx.fillStyle="#ffffff15";
- ctx.fillRect(0,449,WORLD,2);
-
- for(let i=0;i<1000;i++){
-  ctx.fillStyle=i%2?"#ffffff":"#111";
-  ctx.globalAlpha=.06;
-  ctx.fillRect(
-   hash(i+800)*WORLD,
-   450+hash(i+500)*88,
-   1.5,1
-  );
- }
- ctx.globalAlpha=1;
-
- ctx.fillStyle="#ded8c6";
- for(let x=40;x<WORLD;x+=150){
-  ctx.fillRect(x,490,65,3);
+ // Fahrbahnmarkierung
+ for(let x=-(camera%100);x<W;x+=100){
+  rect(x,495,48,3,"#c9c5b7");
  }
 
- for(const x of [330,1090,1800,2540,3420]){
-  ellipse(x,466,13,5,"#343b3a");
-  ctx.strokeStyle="#929894";
-  ctx.lineWidth=1;
-  ctx.beginPath();
-  ctx.ellipse(x,466,10,3,0,0,Math.PI*2);
-  ctx.stroke();
-
-  for(let i=-7;i<=7;i+=4){
-   ctx.beginPath();
-   ctx.moveTo(x+i,464);
-   ctx.lineTo(x+i,468);
-   ctx.stroke();
+ // Kanaldeckel
+ for(let i=0;i<3;i++){
+  const x=((i*390-camera*.9)%1100+1100)%1100;
+  ctx.strokeStyle="#747b7a";
+  ctx.lineWidth=2;
+  ctx.beginPath();ctx.ellipse(x,469,16,6,0,0,Math.PI*2);ctx.stroke();
+  for(let j=-10;j<=10;j+=5){
+   line(x+j,466,x+j,472,"#697171",1);
   }
  }
 }
 
 /* =====================================================
-   BÄUME UND STADTMÖBEL
+   STRASSENLAMPEN, BÄNKE UND BÄUME
 ===================================================== */
 
-function drawTree(x,y,scale=1){
- ctx.save();
- ctx.translate(x,y);
- ctx.scale(scale,scale);
+function drawStreetFurniture(){
+ for(let i=0;i<14;i++){
+  const wx=300+i*340;
+  const x=wx-camera;
+  if(x<-50||x>W+50)continue;
 
- shadow(0,2,24,.15);
+  // Straßenlaterne
+  rect(x,230,5,190,"#3d4546");
+  rect(x-12,230,28,5,"#3d4546");
+  rect(x+10,230,9,5,"#3d4546");
+  roundRect(x+8,229,14,7,3,"#f1d9a0");
+  ctx.fillStyle="#f4dca8";
+  ctx.globalAlpha=.16;
+  ctx.beginPath();ctx.arc(x+15,237,35,0,Math.PI*2);ctx.fill();
+  ctx.globalAlpha=1;
 
- ctx.fillStyle=gradient(-5,-75,12,80,"#8b6040","#4e3828");
- ctx.fillRect(-5,-76,10,78);
-
- ctx.strokeStyle="#67452e";
- ctx.lineWidth=5;
- ctx.beginPath();
- ctx.moveTo(0,-42);
- ctx.lineTo(-17,-70);
- ctx.moveTo(0,-48);
- ctx.lineTo(19,-78);
- ctx.stroke();
-
- const leaves=[
-  [-17,-90,25,"#647d58"],
-  [15,-103,28,"#718b60"],
-  [0,-125,29,"#82956a"],
-  [-30,-112,22,"#81946c"],
-  [29,-80,21,"#657e55"],
-  [0,-78,24,"#71885d"]
- ];
-
- for(const l of leaves){
-  ellipse(l[0],l[1],l[2],l[2]*.75,l[3]);
+  // Baum
+  const tx=wx+115-camera;
+  if(tx>-50&&tx<W+50){
+   rect(tx-4,370,9,70,"#6c503b");
+   ctx.fillStyle="#556d57";
+   ctx.beginPath();
+   ctx.arc(tx,345,25,0,Math.PI*2);
+   ctx.arc(tx-17,355,18,0,Math.PI*2);
+   ctx.arc(tx+16,355,18,0,Math.PI*2);
+   ctx.fill();
+   ctx.fillStyle="#71846a";
+   ctx.beginPath();ctx.arc(tx-5,337,13,0,Math.PI*2);ctx.fill();
+   rect(tx-16,425,32,13,"#82776a");
+  }
  }
-
- for(let i=0;i<15;i++){
-  ellipse(
-   (hash(i+x)*2-1)*35,
-   -80-hash(i+80)*55,
-   3,3,
-   i%2?"#a0ad78":"#506f4e"
-  );
- }
-
- ctx.restore();
-}
-
-function drawStreetLamp(x){
- shadow(x,FLOOR+1,12,.13);
-
- ctx.fillStyle=gradient(x-3,160,6,280,"#b5b6b1","#555b59");
- ctx.fillRect(x-3,165,6,275);
-
- ctx.fillStyle="#5c625f";
- ctx.fillRect(x-11,160,22,5);
-
- ctx.beginPath();
- ctx.moveTo(x-15,162);
- ctx.lineTo(x-10,143);
- ctx.lineTo(x+10,143);
- ctx.lineTo(x+15,162);
- ctx.closePath();
- ctx.fillStyle="#555b59";
- ctx.fill();
-
- rounded(x-11,144,22,12,4,"#f2e5bd","#65645d");
-}
-
-function drawBench(x){
- shadow(x+40,FLOOR+2,42,.15);
-
- ctx.fillStyle="#96613d";
- ctx.fillRect(x+5,FLOOR-34,70,8);
- ctx.fillStyle="#a16c45";
- ctx.fillRect(x+5,FLOOR-48,70,8);
-
- ctx.fillStyle="#554337";
- ctx.fillRect(x+12,FLOOR-28,5,28);
- ctx.fillRect(x+63,FLOOR-28,5,28);
- ctx.fillRect(x+10,FLOOR-52,4,25);
- ctx.fillRect(x+66,FLOOR-52,4,25);
-}
-
-function drawBin(x){
- shadow(x+13,FLOOR+1,15,.12);
-
- rounded(x,FLOOR-42,26,42,4,
-  gradient(x,FLOOR-42,26,42,"#7d8886","#3f4b4a"),
-  "#303b39"
- );
-
- rounded(x-2,FLOOR-45,30,6,2,"#414d4b","#28302f");
- ctx.fillStyle="#aeb9b3";
- ctx.fillRect(x+5,FLOOR-33,16,2);
 }
 
 /* =====================================================
-   AUTOS – BEWEGEN SICH DAUERHAFT
+   PARKENDE UND FAHRENDE AUTOS
 ===================================================== */
 
 const cars=[
- {x:100,y:487,speed:145,color:"#6c7776",type:"sedan",dir:1},
- {x:850,y:487,speed:190,color:"#9a594d",type:"van",dir:1},
- {x:1550,y:487,speed:165,color:"#d2c7a6",type:"sedan",dir:1},
- {x:2350,y:487,speed:215,color:"#526a83",type:"sedan",dir:1},
- {x:3200,y:487,speed:175,color:"#7a766d",type:"van",dir:1}
+ {x:220,w:92,color:"#a8b6b8",speed:0},
+ {x:850,w:112,color:"#536d7a",speed:0},
+ {x:1780,w:104,color:"#9c5748",speed:0},
+ {x:2720,w:115,color:"#c2bca9",speed:0},
+ {x:3650,w:100,color:"#687c67",speed:0}
 ];
 
-function updateCars(dt){
- for(const car of cars){
-  car.x+=car.speed*dt;
+const traffic=[
+ {x:100,y:474,speed:105,color:"#526e7b",w:85},
+ {x:700,y:512,speed:-85,color:"#a75b4e",w:100},
+ {x:1500,y:474,speed:120,color:"#b4aa91",w:92},
+ {x:2300,y:512,speed:-95,color:"#586c5a",w:110},
+ {x:3300,y:474,speed:90,color:"#8b7c9a",w:90}
+];
 
-  if(car.x>WORLD+180){
-   car.x=-180-hash(car.speed)*300;
-  }
- }
-}
+function drawCar(x,y,w,color){
+ const h=25;
+ // Schatten
+ ctx.fillStyle="#17191b66";
+ ctx.beginPath();ctx.ellipse(x+w/2,y+25,w*.56,5,0,0,Math.PI*2);ctx.fill();
 
-function drawCar(car){
- const x=car.x;
- const y=car.y;
-
- ctx.save();
-
- shadow(x+58,y+3,64,.24);
-
- if(car.type==="van"){
-  rounded(
-   x+3,y-49,111,49,9,
-   gradient(x,y-49,115,49,"#ffffff",car.color),
-   "#454642"
-  );
-
-  rounded(x+68,y-41,34,24,4,"#8caeb4","#49585a");
-
-  ctx.fillStyle="#ffffff30";
-  ctx.fillRect(x+12,y-45,48,4);
-
- }else{
-  ctx.beginPath();
-  ctx.moveTo(x+8,y-17);
-  ctx.lineTo(x+20,y-38);
-  ctx.quadraticCurveTo(x+29,y-51,x+48,y-51);
-  ctx.lineTo(x+80,y-51);
-  ctx.quadraticCurveTo(x+97,y-46,x+108,y-18);
-  ctx.closePath();
-
-  ctx.fillStyle=gradient(x,y-51,110,50,"#ffffff",car.color);
-  ctx.fill();
-  ctx.strokeStyle="#494640";
-  ctx.stroke();
-
-  ctx.fillStyle="#8caeb4";
-  ctx.beginPath();
-  ctx.moveTo(x+29,y-37);
-  ctx.lineTo(x+48,y-47);
-  ctx.lineTo(x+76,y-47);
-  ctx.lineTo(x+91,y-19);
-  ctx.lineTo(x+23,y-19);
-  ctx.closePath();
-  ctx.fill();
-  ctx.strokeStyle="#5a6461";
-  ctx.stroke();
- }
-
- rounded(
-  x,y-20,118,20,6,
-  gradient(x,y-20,118,20,"#e6e1d4",car.color),
-  "#4c4943"
- );
-
- ctx.fillStyle="#f5e8b7";
- ctx.fillRect(x+108,y-15,7,6);
-
- ctx.fillStyle="#a74d3e";
- ctx.fillRect(x+2,y-15,6,6);
-
- for(const wx of [25,91]){
-  ellipse(x+wx,y-1,13,13,"#242729");
-  ellipse(x+wx,y-1,6,6,"#aeb3b0");
-  ellipse(x+wx,y-1,2,2,"#555b5a");
- }
-
- ctx.fillStyle="#ffffff35";
- ctx.fillRect(x+18,y-18,75,2);
-
- ctx.restore();
-}
-
-/* =====================================================
-   WELT ZEICHNEN
-===================================================== */
-
-function drawWorld(){
- drawSky();
-
- for(const b of buildings){
-  drawBuilding(b);
- }
-
- drawStreet();
-
- for(const x of [330,710,1090,1550,1900,2320,2735,3160,3570]){
-  drawTree(x,FLOOR-3,.85);
- }
-
- for(const x of [570,1440,2140,3000]){
-  drawStreetLamp(x);
- }
-
- drawBench(850);
- drawBin(1040);
- drawBin(2460);
- drawBench(3290);
-}
-
-/* =====================================================
-   BALLONS
-===================================================== */
-
-const balloonColors={
- balloon_red:"#e95b59",
- balloon_blue:"#579bd5",
- balloon_yellow:"#edc64c",
- balloon_pink:"#e77ca5",
- balloon_green:"#65ae79",
- balloon_purple:"#9b7bd3",
- balloon_party:"#e95b59",
- balloon_heart:"#e96b83",
- balloon_star:"#e9bd46"
-};
-
-function drawBalloonShape(id,x,y){
- const color=balloonColors[id]||"#e95b59";
-
- ctx.save();
- ctx.translate(x,y);
-
- if(id==="balloon_heart"){
-  ctx.beginPath();
-  ctx.moveTo(0,10);
-  ctx.bezierCurveTo(-5,5,-13,-1,-10,-8);
-  ctx.bezierCurveTo(-7,-15,0,-11,0,-6);
-  ctx.bezierCurveTo(0,-11,7,-15,10,-8);
-  ctx.bezierCurveTo(13,-1,5,5,0,10);
-  ctx.closePath();
- }else if(id==="balloon_star"){
-  ctx.beginPath();
-  for(let i=0;i<10;i++){
-   const a=-Math.PI/2+i*Math.PI/5;
-   const r=i%2===0?12:5.5;
-   const px=Math.cos(a)*r;
-   const py=Math.sin(a)*r;
-   if(i===0)ctx.moveTo(px,py);
-   else ctx.lineTo(px,py);
-  }
-  ctx.closePath();
- }else{
-  ctx.beginPath();
-  ctx.ellipse(0,0,8.5,11.5,0,0,Math.PI*2);
- }
-
- ctx.fillStyle=gradient(-8,-12,16,24,"#ffffff",color);
- ctx.fill();
- ctx.strokeStyle="#00000030";
- ctx.lineWidth=.8;
- ctx.stroke();
-
- ellipse(-3,-5,2,4,"#ffffff");
-
+ // Karosserie
  ctx.fillStyle=color;
  ctx.beginPath();
- ctx.moveTo(-2,11);
- ctx.lineTo(2,11);
- ctx.lineTo(0,14);
- ctx.closePath();
- ctx.fill();
+ ctx.moveTo(x+4,y+13);
+ ctx.lineTo(x+13,y+5);
+ ctx.lineTo(x+27,y+2);
+ ctx.lineTo(x+w-24,y+2);
+ ctx.lineTo(x+w-9,y+13);
+ ctx.lineTo(x+w-3,y+19);
+ ctx.lineTo(x+w,y+24);
+ ctx.lineTo(x,y+24);
+ ctx.closePath();ctx.fill();
 
- ctx.restore();
+ // Dach und Fenster
+ ctx.fillStyle="#374a50";
+ ctx.beginPath();
+ ctx.moveTo(x+25,y+5);
+ ctx.lineTo(x+34,y-7);
+ ctx.lineTo(x+w-30,y-7);
+ ctx.lineTo(x+w-17,y+5);
+ ctx.closePath();ctx.fill();
+
+ // Fensterteilung
+ line(x+w/2,y-6,x+w/2,y+5,"#9daeb0",1);
+
+ // Lichtreflex
+ line(x+12,y+14,x+w-13,y+14,"#ffffff66",1);
+
+ // Räder
+ for(const wx of [x+20,x+w-20]){
+  ctx.fillStyle="#24282a";
+  ctx.beginPath();ctx.arc(wx,y+22,7,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle="#a4a7a3";
+  ctx.beginPath();ctx.arc(wx,y+22,3,0,Math.PI*2);ctx.fill();
+ }
+ // Scheinwerfer
+ rect(x+w-5,y+15,4,5,"#f5dfae");
+ rect(x+1,y+15,4,5,"#c75d50");
 }
 
-function drawBalloons(){
- const id=wardrobe.face;
- if(!id||!id.startsWith("balloon_"))return;
-
- const trail=clamp(-player.vx*player.facing*.045,-9,9);
- const jumpSway=clamp(-player.vy*.012,-4,4);
-
- let balloons=[];
-
- if(id==="balloon_party"){
-  balloons=[
-   {id:"balloon_red",x:5,y:-45,phase:0},
-   {id:"balloon_blue",x:35,y:-66,phase:2},
-   {id:"balloon_yellow",x:67,y:-48,phase:4}
-  ];
- }else{
-  balloons=[{id,x:36,y:-56,phase:0}];
+function drawCars(dt){
+ for(const c of cars){
+  drawCar(c.x-camera,477,c.w,c.color);
  }
 
- for(const b of balloons){
-  const float=Math.sin(time*2.1+b.phase)*3.5;
-  const sway=Math.sin(time*1.5+b.phase)*3;
-  const bx=b.x+trail+sway;
-  const by=b.y+float+jumpSway;
+ for(const t of traffic){
+  t.x+=t.speed*dt;
+  if(t.speed>0&&t.x>WORLD+150)t.x=-200;
+  if(t.speed<0&&t.x<-200)t.x=WORLD+150;
 
-  ctx.strokeStyle="#817b72";
-  ctx.lineWidth=1;
-  ctx.beginPath();
-  ctx.moveTo(29,13);
-  ctx.bezierCurveTo(22,0,bx-4,by+20,bx,by+11);
-  ctx.stroke();
-
-  drawBalloonShape(b.id,bx,by);
- }
-}
-
-/* =====================================================
-   KOSMETIK
-===================================================== */
-
-function drawCosmetics(){
- const c=wardrobe;
-
- if(c.back){
-  const colors={
-   backpack:"#98613c",
-   schoolbag:"#bd5547",
-   hikingbag:"#526e4d",
-   jetpack:"#778b91",
-   guitarbag:"#513a31",
-   parachute:"#d95b4b",
-   toolbox:"#b37a38"
-  };
-
-  ctx.fillStyle="#392d25";
-  ctx.beginPath();
-  ctx.roundRect(5,36,19,34,4);
-  ctx.fill();
-
-  ctx.fillStyle=colors[c.back]||"#98613c";
-  ctx.beginPath();
-  ctx.roundRect(7,34,17,34,4);
-  ctx.fill();
-  ctx.strokeStyle="#493729";
-  ctx.stroke();
-
-  if(c.back==="jetpack"){
-   ctx.fillStyle="#aebdc2";
-   ctx.fillRect(8,43,7,19);
-   ctx.fillRect(17,43,7,19);
-   ctx.fillStyle="#e8a64d";
-   ctx.fillRect(9,69,5,6);
-   ctx.fillRect(18,69,5,6);
-  }
- }
-
- drawBalloons();
-
- if(c.pants){
-  const colors={
-   jeans:"#426e9a",joggers:"#686b76",cargo:"#78805a",
-   shorts:"#bd704c",sleep_pants:"#7f76a8",baggy:"#42658b",
-   knight_pants:"#929ca4",rain_pants:"#4d7e87",
-   camo:"#65734c",gold_pants:"#c5a13c",
-   ski_pants:"#e4e9ef",overalls:"#487e9a"
-  };
-
-  ctx.fillStyle=colors[c.pants]||"#426e9a";
-  ctx.fillRect(26,85,6,27);
-  ctx.fillRect(85,87,6,25);
-  ctx.strokeStyle="#392f29";
-  ctx.strokeRect(26,85,6,27);
-  ctx.strokeRect(85,87,6,25);
- }
-
- if(c.clothes){
-  const colors={
-   scarf:"#4d995f",shirt:"#c64c48",hoodie:"#3977bd",
-   leather:"#513a31",raincoat:"#e3b83c",football:"#eee7dc",
-   suit:"#293c55",pajamas:"#8c83b4",vest:"#e9bd37",
-   astronaut:"#d9e0e4",armor:"#89969e",
-   hawaii:"#d96b5b",wintercoat:"#587f9d"
-  };
-
-  const color=colors[c.clothes]||"#b98552";
-
-  ctx.fillStyle=color;
-  ctx.strokeStyle="#45382d";
-  ctx.beginPath();
-  ctx.roundRect(25,9,9,53,2);
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.roundRect(21,68,76,7,2);
-  ctx.fill();
-  ctx.stroke();
- }
-
- if(c.head==="frog_hat"){
-  ctx.fillStyle="#4b9d56";
-  ctx.fillRect(19,0,27,6);
-  ctx.beginPath();
-  ctx.arc(23,-5,6,0,Math.PI*2);
-  ctx.arc(41,-5,6,0,Math.PI*2);
-  ctx.fill();
-  ctx.fillStyle="#111";
-  ctx.fillRect(22,-7,2,2);
-  ctx.fillRect(40,-7,2,2);
- }
-
- if(c.head==="cap"){
-  ctx.fillStyle="#3977bd";
-  ctx.beginPath();
-  ctx.roundRect(21,0,22,6,3);
-  ctx.fill();
-  ctx.fillRect(22,-4,18,6);
-  ctx.fillRect(39,2,12,3);
- }
-
- if(c.head==="crown"||c.head==="paper_crown"){
-  ctx.fillStyle=c.head==="crown"?"#f4c64e":"#c7a76e";
-  ctx.beginPath();
-  ctx.moveTo(21,5);
-  ctx.lineTo(21,-5);
-  ctx.lineTo(27,0);
-  ctx.lineTo(32,-10);
-  ctx.lineTo(37,0);
-  ctx.lineTo(43,-5);
-  ctx.lineTo(43,5);
-  ctx.closePath();
-  ctx.fill();
- }
-
- if(c.head==="wizard"){
-  ctx.fillStyle="#51468c";
-  ctx.beginPath();
-  ctx.moveTo(17,4);
-  ctx.lineTo(32,-20);
-  ctx.lineTo(47,4);
-  ctx.closePath();
-  ctx.fill();
-  ctx.fillStyle="#f6d56c";
-  ctx.fillRect(29,-9,6,5);
+  const sx=t.x-camera;
+  if(sx>-150&&sx<W+150)drawCar(sx,t.y,t.w,t.color);
  }
 }
 
 /* =====================================================
-   SPIELSTUHL
+   SPIELERZEICHNUNG – HOLZSTUHL
 ===================================================== */
 
-function drawChairLeg(x,y,angle){
+function drawChairAt(x,y,facing,walk,scale=1,accessories=true){
  ctx.save();
  ctx.translate(x,y);
- ctx.rotate(angle);
+ ctx.scale(scale,scale);
+ if(facing<0){
+  ctx.translate(48,0);
+  ctx.scale(-1,1);
+ }
 
- ctx.fillStyle=gradient(-3,0,7,42,"#d2a16c","#75482b");
- ctx.strokeStyle="#634127";
- ctx.lineWidth=1;
+ const moving=Math.sin(walk)*1.3;
 
+ // Bodenschatten
+ ctx.fillStyle="#17191b45";
  ctx.beginPath();
- ctx.moveTo(-3,0);
- ctx.lineTo(-2.5,39);
- ctx.quadraticCurveTo(0,42,2.5,39);
- ctx.lineTo(3,0);
- ctx.closePath();
+ ctx.ellipse(24,67,22,4,0,0,Math.PI*2);
  ctx.fill();
- ctx.stroke();
 
- ctx.strokeStyle="#f1c28b88";
- ctx.lineWidth=.8;
- ctx.beginPath();
- ctx.moveTo(-1.5,3);
- ctx.lineTo(-1,36);
- ctx.stroke();
+ // Zwei sichtbare Stuhlbeine
+ ctx.strokeStyle="#80532e";
+ ctx.lineWidth=5;
+ ctx.lineCap="round";
+ line(13,47,13,65,"#80532e",5);
+ line(36,47,36,65,"#80532e",5);
 
+ // Beine mit dezenter Laufbewegung
+ if(Math.abs(moving)>.1){
+  line(13,55,13+moving,65,"#a16b3d",4);
+  line(36,55,36-moving,65,"#a16b3d",4);
+ }
+
+ // Sitzfläche
+ const wood=ctx.createLinearGradient(0,38,0,51);
+ wood.addColorStop(0,"#c38a4e");
+ wood.addColorStop(1,"#86542f");
+ rect(5,39,39,9,wood);
+ line(7,40,42,40,"#e0ad6e",1);
+
+ // Rückenlehne
+ const back=ctx.createLinearGradient(0,0,45,0);
+ back.addColorStop(0,"#754628");
+ back.addColorStop(.5,"#bd8750");
+ back.addColorStop(1,"#87532f");
+ roundRect(8,2,8,40,3,back);
+ roundRect(8,2,34,8,3,"#b77e48");
+ rect(12,11,28,5,"#a56d3d");
+ rect(12,18,28,5,"#a56d3d");
+ rect(12,25,28,5,"#a56d3d");
+ rect(12,32,28,5,"#a56d3d");
+
+ // Holzdetails
+ line(11,5,11,38,"#e0ad70",1);
+ line(15,43,40,43,"#6b4529",1);
+
+ if(accessories){
+  drawAccessories();
+ }
  ctx.restore();
 }
 
-function drawChairAt(x,y,facing,walk,grounded,cosmetics=true){
- ctx.save();
- ctx.translate(x,y+68);
- ctx.scale(facing*.58,.58);
- ctx.translate(-42,-116);
+function drawAccessories(){
+ const face=wardrobe.face||"";
+ const head=wardrobe.head||"";
+ const back=wardrobe.back||"";
 
- const moving=Math.abs(walk)>0&&grounded;
- const rearAngle=moving?Math.sin(walk)*.13:0;
- const frontAngle=moving?Math.sin(walk+Math.PI)*.13:0;
+ // Rucksack
+ if(back==="backpack"||back.includes("backpack")){
+  roundRect(36,23,14,24,4,"#566c63");
+  rect(39,27,8,12,"#82927b");
+  line(38,25,35,43,"#d1c2a2",2);
+ }
 
- drawChairLeg(29,75,rearAngle);
+ // Froschhut
+ if(head==="frog_hat"||head.includes("frog")){
+  roundRect(4,-5,40,10,5,"#5b9a62");
+  ctx.fillStyle="#6fae6d";
+  ctx.beginPath();ctx.arc(12,-6,7,0,Math.PI*2);ctx.arc(36,-6,7,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle="#202a20";
+  ctx.beginPath();ctx.arc(12,-6,2,0,Math.PI*2);ctx.arc(36,-6,2,0,Math.PI*2);ctx.fill();
+ }
 
- ctx.fillStyle=gradient(23,5,13,70,"#d4a16b","#80502f");
- ctx.strokeStyle="#604027";
- ctx.lineWidth=1.2;
- ctx.beginPath();
- ctx.roundRect(23,5,13,70,2);
- ctx.fill();
- ctx.stroke();
-
- ctx.strokeStyle="#f1c18b99";
- ctx.lineWidth=1;
- ctx.beginPath();
- ctx.moveTo(25,8);
- ctx.lineTo(25,70);
- ctx.stroke();
-
- ctx.fillStyle=gradient(20,67,78,12,"#e2b77f","#956039");
- ctx.strokeStyle="#604027";
- ctx.lineWidth=1.3;
- ctx.beginPath();
- ctx.roundRect(20,67,78,12,2);
- ctx.fill();
- ctx.stroke();
-
- ctx.strokeStyle="#f3d0a0aa";
- ctx.beginPath();
- ctx.moveTo(23,69);
- ctx.lineTo(94,69);
- ctx.stroke();
-
- drawChairLeg(88,77,frontAngle);
-
- if(cosmetics)drawCosmetics();
-
- ctx.restore();
-}
-
-function drawChair(){
- const moving=Math.abs(player.vx)>8&&player.grounded;
- const bodyBob=moving?Math.abs(Math.sin(player.walk))*.4:0;
-
- drawChairAt(
-  player.x,
-  player.y+bodyBob,
-  player.facing,
-  moving?player.walk:0,
-  player.grounded,
-  true
- );
-}
-
-function drawPlayerShadowAt(x,y){
- const h=Math.max(0,FLOOR-(y+68));
- ctx.save();
- ctx.globalAlpha=clamp(.24-h*.0018,.06,.24);
- ellipse(x,FLOOR+2,clamp(27-h*.09,11,27),4,"#17130f");
- ctx.restore();
-}
-
-function drawRemotePlayers(){
- for(const p of remotePlayers.values()){
-  drawPlayerShadowAt(p.x,p.y);
-
-  drawChairAt(
-   p.x,p.y,1,0,true,false
-  );
-
-  ctx.save();
-  ctx.font="bold 11px Arial";
-  ctx.textAlign="center";
-
-  const label=p.name||"Spieler";
-  const width=ctx.measureText(label).width+16;
-
-  rounded(
-   p.x-width/2,p.y-24,width,19,6,
-   "#202b2be8","#ffffff33"
-  );
-
-  ctx.fillStyle="#ffffff";
-  ctx.fillText(label,p.x,p.y-11);
-  ctx.restore();
+ // Ballons
+ if(face.startsWith("balloon_")){
+  const colors={
+   balloon_red:"#d65b55",
+   balloon_blue:"#5d8dc1",
+   balloon_yellow:"#e6c45d",
+   balloon_pink:"#d98eaa",
+   balloon_green:"#73a777",
+   balloon_purple:"#a58bc5",
+   balloon_party:"#d98a58",
+   balloon_heart:"#d65b6c",
+   balloon_star:"#e5bd55"
+  };
+  const color=colors[face]||"#d65b55";
+  const sway=Math.sin(performance.now()/600)*3;
+  line(39,7,49+sway,-35,"#d8d0c0",1);
+  ctx.fillStyle=color;
+  ctx.beginPath();
+  if(face==="balloon_heart"){
+   ctx.moveTo(49+sway,-40);
+   ctx.bezierCurveTo(34+sway,-53,34+sway,-34,49+sway,-28);
+   ctx.bezierCurveTo(64+sway,-34,64+sway,-53,49+sway,-40);
+  }else{
+   ctx.ellipse(49+sway,-40,9,12,0,0,Math.PI*2);
+  }
+  ctx.fill();
+  line(49+sway,-28,49+sway,-25,color,2);
  }
 }
 
 /* =====================================================
-   GEGENSTÄNDE
+   SPIELER UND ANDERE ONLINE-SPIELER
 ===================================================== */
 
-function drawObject(o){
- if(o.type==="book"){
-  rounded(
-   o.x,o.y,o.w,o.h,2,
-   gradient(o.x,o.y,o.w,o.h,o.color||"#49677c","#302e2b"),
-   "#3e342d"
-  );
-  ctx.fillStyle="#e8ddc6";
-  ctx.fillRect(o.x+4,o.y+2,o.w-7,o.h-4);
- }
+function drawPlayer(){
+ const sx=player.x-camera;
+ const sy=player.y;
+ if(sx<-100||sx>W+100)return;
 
- if(o.type==="box"){
-  ctx.fillStyle=gradient(o.x,o.y,o.w,o.h,"#d0a777","#936c43");
-  ctx.fillRect(o.x,o.y,o.w,o.h);
-  ctx.strokeStyle="#785638";
-  ctx.strokeRect(o.x+.5,o.y+.5,o.w-1,o.h-1);
-  ctx.fillStyle="#e8d2a1";
-  ctx.fillRect(o.x+o.w*.43,o.y,o.w*.14,o.h);
- }
+ // Schatten bleibt auf dem Boden
+ ctx.fillStyle="#17191b50";
+ ctx.beginPath();
+ ctx.ellipse(sx+24,FLOOR+1,22,4,0,0,Math.PI*2);
+ ctx.fill();
 
- if(o.type==="bag"){
-  ctx.fillStyle="#b5a17b";
-  ctx.beginPath();
-  ctx.roundRect(o.x,o.y,o.w,o.h,4);
-  ctx.fill();
-  ctx.strokeStyle="#63533f";
-  ctx.stroke();
+ drawChairAt(sx,sy,player.facing,player.walk,.92,true);
+}
+
+let otherPlayers=[];
+let ownPlayerId=null;
+let roomId=null;
+let onlineReady=false;
+let lastPositionSend=0;
+let lastOnlineRefresh=0;
+
+function drawOtherPlayers(){
+ for(const p of otherPlayers){
+  if(!p||p.player_id===ownPlayerId||p.area!=="stadt")continue;
+  if(!Number.isFinite(Number(p.x))||!Number.isFinite(Number(p.y)))continue;
+
+  const sx=Number(p.x)-camera;
+  if(sx<-100||sx>W+100)continue;
+
+  drawChairAt(sx,Number(p.y),1,0,.92,false);
+
+  const name=p.player_name||p.name||"Spieler";
+  ctx.font="11px Arial";
+  ctx.textAlign="center";
+  const width=ctx.measureText(name).width+14;
+  roundRect(sx+24-width/2,Number(p.y)-20,width,17,5,"#20292ddd");
+  ctx.fillStyle="#fff";
+  ctx.fillText(name,sx+24,Number(p.y)-8);
+  ctx.textAlign="left";
  }
 }
 
-function drawHeldObject(o){
- drawObject({
-  ...o,
-  x:-o.w/2,
-  y:-o.h/2
- });
+function extractRoomId(room){
+ if(!room)return null;
+ return room.room_id||room.id||room.room?.id||room.room?.room_id||null;
+}
+
+async function startOnline(){
+ const badge=document.getElementById("online");
+
+ try{
+  if(!window.GameOnline){
+   badge.textContent="● Offline";
+   return;
+  }
+
+  const active=JSON.parse(sessionStorage.getItem("mein-zimmer-active-room")||"null");
+  if(!active){
+   badge.textContent="● Kein Raum";
+   return;
+  }
+
+  if(typeof GameOnline.login==="function"){
+   await GameOnline.login("Spieler");
+  }
+
+  roomId=extractRoomId(active);
+  if(!roomId){
+   badge.textContent="● Raum nicht gefunden";
+   return;
+  }
+
+  const client=GameOnline.getClient();
+  if(client&&client.auth){
+   const result=await client.auth.getUser();
+   ownPlayerId=result?.data?.user?.id||null;
+  }
+
+  if(typeof GameOnline.watchPlayers==="function"){
+   await GameOnline.watchPlayers(roomId,async rows=>{
+    const list=Array.isArray(rows)?rows:[];
+    const ids=list.map(p=>p.player_id).filter(Boolean);
+
+    let names={};
+    if(client&&ids.length){
+     try{
+      const response=await client.from("profiles")
+       .select("id,player_name")
+       .in("id",ids);
+      for(const profile of response.data||[]){
+       names[profile.id]=profile.player_name;
+      }
+     }catch(e){}
+    }
+
+    otherPlayers=list.map(p=>({
+     ...p,
+     player_name:names[p.player_id]||"Spieler"
+    }));
+   });
+  }
+
+  onlineReady=true;
+  badge.textContent="● Online";
+ }catch(error){
+  console.warn("Multiplayer:",error);
+  badge.textContent="● Offline";
+ }
+}
+
+async function sendPosition(){
+ if(!onlineReady||!roomId||!window.GameOnline)return;
+
+ const now=performance.now();
+ if(now-lastPositionSend<150)return;
+ lastPositionSend=now;
+
+ try{
+  await GameOnline.updatePosition(roomId,"stadt",player.x,player.y);
+ }catch(e){
+  console.warn("Position konnte nicht gesendet werden:",e);
+ }
 }
 
 /* =====================================================
    INTERAKTIONEN
 ===================================================== */
 
-const places=[
- {
-  x:480,w:120,name:"Pizzeria",
-  description:"Willkommen in deiner Pizzeria! Hier kannst du deinen Pizzajob starten.",
-  url:"Pizzajob.html"
- },
- {
-  x:900,w:130,name:"Café",
-  description:"Ein gemütliches kleines Café. Hinter den Fenstern stehen Tische und Kaffeemaschinen."
- },
- {
-  x:1320,w:130,name:"Supermarkt",
-  description:"Hier gibt es Lebensmittel, Getränke und alles für den Alltag."
- },
- {
-  x:2070,w:130,name:"Blumenladen",
-  description:"Im Schaufenster stehen frische Blumen in vielen verschiedenen Farben."
- },
- {
-  x:2930,w:130,name:"Apotheke",
-  description:"Eine kleine Apotheke mitten in der Stadt."
- }
-];
+function showMessage(text){
+ const el=document.getElementById("message");
+ el.textContent=text;
+ el.classList.add("show");
+ clearTimeout(messageTimer);
+ messageTimer=setTimeout(()=>el.classList.remove("show"),2400);
+}
 
-function nearestPlace(){
- let best=null,dist=95;
+function nearestShop(){
+ let best=null;
+ let distance=Infinity;
 
- for(const p of places){
-  const d=Math.abs(player.x-(p.x+p.w/2));
-  if(d<dist){
-   dist=d;
-   best=p;
+ for(const s of shops){
+  const center=s.x+s.w/2;
+  const d=Math.abs(player.x-center);
+  if(d<distance){
+   distance=d;best=s;
   }
  }
-
- return best;
-}
-
-function nearestObject(){
- let best=null,dist=85;
-
- for(const o of objects){
-  const d=Math.hypot(
-   o.x+o.w/2-player.x,
-   o.y+o.h/2-(player.y+player.height/2)
-  );
-
-  if(d<dist){
-   dist=d;
-   best=o;
-  }
- }
-
- return best;
-}
-
-function jump(){
- if(player.grounded&&message.style.display!=="block"){
-  player.vy=-465;
-  player.grounded=false;
- }
-}
-
-function dropItem(){
- if(!player.held)return;
-
- const o=player.held;
- o.x=player.x-o.w/2+player.facing*38;
- o.y=player.y+player.height-o.h;
- o.vx=player.facing*65;
- o.vy=-65;
-
- objects.push(o);
- player.held=null;
-}
-
-function showMessage(title,description){
- message.innerHTML=
-  "<b>"+title+"</b><br>"+description+
-  '<br><button onclick="closeMessage()">Weiter</button>';
- message.style.display="block";
-}
-
-function closeMessage(){
- message.style.display="none";
+ return distance<145?best:null;
 }
 
 function interact(){
- if(player.x<105){
-  location.href="index.html";
-  return;
- }
+ const s=nearestShop();
 
- const place=nearestPlace();
-
- if(place&&Math.abs(player.x-(place.x+place.w/2))<100){
-  if(place.url){
-   location.href=place.url;
-  }else{
-   showMessage(place.name,place.description);
+ if(!s){
+  if(player.x<170){
+   showMessage("Zurück nach Hause");
+   setTimeout(()=>location.href="index.html",350);
+   return;
   }
+  showMessage("Hier gibt es gerade nichts zu tun.");
   return;
  }
 
- if(player.held){
-  dropItem();
+ if(s.type==="pizza"){
+  showMessage("Willkommen in der Pizzeria!");
+  document.getElementById("fade").style.opacity="1";
+  setTimeout(()=>location.href="pizzajob.html",350);
   return;
  }
 
- const o=nearestObject();
-
- if(o){
-  player.held=o;
-  objects.splice(objects.indexOf(o),1);
+ if(s.open){
+  showMessage("Dieser Laden ist geöffnet!");
+ }else{
+  showMessage(s.name+" – COMING SOON!");
  }
 }
 
 /* =====================================================
-   UPDATE
+   INTERAKTIONSHINWEISE
+===================================================== */
+
+function drawInteractionHint(){
+ const s=nearestShop();
+ let text="";
+
+ if(s){
+  text=s.type==="pizza"?"E · Pizzeria betreten":"E · "+s.name+" (COMING SOON)";
+ }else if(player.x<170){
+  text="E · Zurück nach Hause";
+ }
+
+ if(!text)return;
+
+ ctx.font="12px Arial";
+ const width=ctx.measureText(text).width+24;
+ const x=clamp(player.x-camera+24-width/2,8,W-width-8);
+
+ roundRect(x,FLOOR-105,width,25,6,"#20272de8");
+ ctx.fillStyle="#fff";
+ ctx.textAlign="center";
+ ctx.fillText(text,x+width/2,FLOOR-88);
+ ctx.textAlign="left";
+}
+
+/* =====================================================
+   MOTORGERÄUSCHE – WEB AUDIO
+===================================================== */
+
+let audioContext=null;
+let engineOsc=null;
+let engineGain=null;
+let audioStarted=false;
+
+function startAudio(){
+ if(audioStarted)return;
+ try{
+  const AC=window.AudioContext||window.webkitAudioContext;
+  if(!AC)return;
+
+  audioContext=new AC();
+  engineOsc=audioContext.createOscillator();
+  engineGain=audioContext.createGain();
+
+  engineOsc.type="sawtooth";
+  engineOsc.frequency.value=55;
+  engineGain.gain.value=0;
+
+  const filter=audioContext.createBiquadFilter();
+  filter.type="lowpass";
+  filter.frequency.value=115;
+
+  engineOsc.connect(filter);
+  filter.connect(engineGain);
+  engineGain.connect(audioContext.destination);
+  engineOsc.start();
+
+  audioStarted=true;
+ }catch(e){}
+}
+
+window.addEventListener("keydown",startAudio,{once:true});
+
+function updateEngineSound(){
+ if(!audioStarted||!audioContext)return;
+
+ let nearest=Infinity;
+ for(const t of traffic){
+  const d=Math.abs(t.x-player.x);
+  nearest=Math.min(nearest,d);
+ }
+
+ const amount=clamp(1-nearest/650,0,1);
+ engineGain.gain.setTargetAtTime(
+  amount*.018,audioContext.currentTime,.3
+ );
+ engineOsc.frequency.setTargetAtTime(
+  48+amount*30,audioContext.currentTime,.3
+ );
+}
+
+/* =====================================================
+   SPIELPHYSIK
 ===================================================== */
 
 function update(dt){
- time+=dt;
+ const left=keys["a"]||keys["arrowleft"];
+ const right=keys["d"]||keys["arrowright"];
+ const jump=keys[" "]||keys["w"]||keys["arrowup"];
 
- const left=keys.a||keys.arrowleft;
- const right=keys.d||keys.arrowright;
- const dir=(right?1:0)-(left?1:0);
+ const acceleration=1250;
+ const maxSpeed=205;
 
- if(dir){
-  player.facing=dir;
-  player.vx+=dir*1250*dt;
- }else{
-  player.vx*=Math.pow(.0007,dt);
+ if(left){
+  player.vx-=acceleration*dt;
+  player.facing=-1;
+ }
+ if(right){
+  player.vx+=acceleration*dt;
+  player.facing=1;
  }
 
- player.vx=clamp(player.vx,-205,205);
- player.x=clamp(player.x+player.vx*dt,35,WORLD-35);
+ if(!left&&!right){
+  player.vx*=Math.pow(.0008,dt);
+  if(Math.abs(player.vx)<3)player.vx=0;
+ }
 
- const was=player.grounded;
+ player.vx=clamp(player.vx,-maxSpeed,maxSpeed);
 
- player.vy+=1350*dt;
- player.y+=player.vy*dt;
-
- if(player.y+player.height>=FLOOR){
-  if(!was&&player.vy>100)player.landing=1;
-  player.y=FLOOR-player.height;
-  player.vy=0;
-  player.grounded=true;
- }else{
+ if(jump&&player.grounded){
+  player.vy=-465;
   player.grounded=false;
  }
 
- player.landing*=Math.pow(.025,dt);
- if(player.landing<.015)player.landing=0;
+ player.vy+=1350*dt;
+ player.x+=player.vx*dt;
+ player.y+=player.vy*dt;
 
- if(Math.abs(player.vx)>8&&player.grounded){
-  player.walk+=dt*10;
+ if(player.y+player.height>=FLOOR){
+  player.y=FLOOR-player.height;
+  if(!player.grounded&&player.vy>100)player.landing=8;
+  player.vy=0;
+  player.grounded=true;
  }
 
- for(const o of objects){
-  o.vx=(o.vx||0)*Math.pow(.08,dt);
-  o.vy=(o.vy||0)+1150*dt;
-  o.x+=o.vx*dt;
-  o.y+=o.vy*dt;
+ player.x=clamp(player.x,55,WORLD-70);
 
-  if(o.y+o.h>FLOOR){
-   o.y=FLOOR-o.h;
-   o.vy=0;
-  }
-
-  o.x=clamp(o.x,0,WORLD-o.w);
+ if(Math.abs(player.vx)>10){
+  player.walk+=dt*Math.abs(player.vx)*.035;
  }
 
- updateCars(dt);
- updateRemoteMovement(dt);
- updateAudio();
+ player.landing=Math.max(0,player.landing-dt*20);
 
- cameraX=lerp(
-  cameraX,
-  clamp(player.x-W*.42,0,WORLD-W),
-  1-Math.pow(.0005,dt)
- );
+ camera=clamp(player.x-W*.38,0,WORLD-W);
 
- const now=performance.now();
-
- if(now-lastPositionSend>150){
-  lastPositionSend=now;
-  sendMyPosition();
- }
-
- const place=nearestPlace();
- const item=nearestObject();
-
- if(player.x<105){
-  prompt.style.display="block";
-  prompt.textContent="E drücken · Zurück nach Hause";
- }else if(place&&Math.abs(player.x-(place.x+place.w/2))<100){
-  prompt.style.display="block";
-
-  prompt.textContent=place.url?
-   "E drücken · Pizzeria betreten / Pizzajob":
-   "E drücken · "+place.name+" ansehen";
-
- }else if(player.held){
-  prompt.style.display="block";
-  prompt.textContent="E oder Q drücken · Gegenstand ablegen";
- }else if(item){
-  prompt.style.display="block";
-  prompt.textContent="E drücken · "+item.id+" aufheben";
- }else{
-  prompt.style.display="none";
- }
-
- if(onlineReady){
-  setOnlineStatus("Online in der Stadt");
- }else if(onlineRoomId){
-  setOnlineStatus("Verbinde mit Mitspielern …");
- }else{
-  setOnlineStatus("Offline – kein Raum aktiv");
- }
-
- heldText.textContent=player.held?
-  "Trägt: "+player.held.id:"Hände frei";
+ sendPosition();
 }
 
 /* =====================================================
-   ZEICHNEN
+   GESAMTZEICHNUNG
 ===================================================== */
 
-function draw(){
- ctx.setTransform(sx,0,0,sy,0,0);
- ctx.clearRect(0,0,W,H);
+function render(dt){
+ drawSky();
 
- ctx.save();
- ctx.translate(-cameraX,0);
+ // Gebäude
+ for(const s of shops)drawShop(s);
 
- drawWorld();
+ // Boden und Straßenelemente
+ drawGround();
+ drawStreetFurniture();
 
- for(const o of objects){
-  drawObject(o);
- }
+ // Autos
+ drawCars(dt);
 
- /* Andere Spieler zuerst */
+ // Spieler
+ drawOtherPlayers();
+ drawPlayer();
+ drawInteractionHint();
 
- drawRemotePlayers();
-
- /* Eigener Spieler */
-
- drawPlayerShadowAt(player.x,player.y);
- drawChair();
-
- /*
-  * VORDERGRUND:
-  * Autos werden absichtlich NACH den Spielern
-  * gezeichnet. Sie fahren vor dem Spieler vorbei.
-  */
-
- for(const car of cars){
-  drawCar(car);
- }
-
- ctx.restore();
+ updateEngineSound();
 }
 
 /* =====================================================
-   SPIELSCHLEIFE
+   HAUPTSCHLEIFE
 ===================================================== */
 
-function loop(now){
- const dt=Math.min((now-last)/1000||0,.033);
- last=now;
+function loop(timestamp){
+ const dt=Math.min((timestamp-lastTime)/1000||0,.033);
+ lastTime=timestamp;
 
- if(message.style.display!=="block"){
-  update(dt);
- }
+ update(dt);
+ render(dt);
 
- draw();
  requestAnimationFrame(loop);
 }
 
+startOnline();
 requestAnimationFrame(loop);
 
-/* Multiplayer beim Verlassen aufräumen */
+/* =====================================================
+   TOUCH-STEUERUNG
+===================================================== */
 
-addEventListener("pagehide",()=>{
- if(typeof stopWatching==="function"){
-  stopWatching();
+if("ontouchstart" in window){
+ const controls=document.createElement("div");
+ controls.style.cssText=
+  "position:fixed;bottom:65px;left:12px;z-index:8;display:flex;gap:8px";
+
+ function makeTouchButton(label,key){
+  const b=document.createElement("button");
+  b.textContent=label;
+  b.style.cssText=
+   "width:55px;height:48px;border:1px solid #ffffff55;border-radius:9px;background:#202a2ddd;color:white;font-size:19px;touch-action:none";
+  b.addEventListener("pointerdown",e=>{
+   e.preventDefault();keys[key]=true;startAudio();
+  });
+  ["pointerup","pointercancel","pointerleave"].forEach(ev=>{
+   b.addEventListener(ev,()=>keys[key]=false);
+  });
+  controls.appendChild(b);
  }
-});
+
+ makeTouchButton("◀","a");
+ makeTouchButton("▶","d");
+ makeTouchButton("↑"," ");
+
+ document.body.appendChild(controls);
+}
 </script>
 </body>
 </html>
