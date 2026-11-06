@@ -15,9 +15,9 @@ header strong{font-size:17px;letter-spacing:2px}
 .back{background:#292e35;color:white;border:2px solid #111;padding:9px 14px;font-weight:bold}
 main{height:calc(100vh - 62px);display:grid;grid-template-columns:minmax(0,1fr) 360px}
 .preview{position:relative;display:flex;align-items:center;justify-content:center;background-color:#d9cbb6;background-image:linear-gradient(45deg,#d1c1aa 25%,transparent 25%),linear-gradient(-45deg,#d1c1aa 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#d1c1aa 75%),linear-gradient(-45deg,transparent 75%,#d1c1aa 75%);background-size:36px 36px;background-position:0 0,0 18px,18px -18px,-18px 0}
-.preview:after{content:"";position:absolute;bottom:10%;left:50%;transform:translateX(-50%);width:220px;height:14px;background:#6b5742;border-radius:50%;opacity:.25;filter:blur(5px)}
+.preview:after{content:"";position:absolute;bottom:10%;left:50%;transform:translateX(-50%);width:260px;height:16px;background:#6b5742;border-radius:50%;opacity:.25;filter:blur(6px)}
 .preview-label{position:absolute;top:25px;left:30px;color:#766b5d;font-size:11px;letter-spacing:3px}
-#skin{width:min(72%,480px);height:min(83%,420px);image-rendering:pixelated;position:relative;z-index:1}
+#skin{width:min(72%,480px);height:min(83%,420px);position:relative;z-index:1}
 .right{background:var(--paper);border-left:4px solid #a88c6b;display:flex;flex-direction:column;min-height:0}
 .panel-head{padding:20px 19px 13px;border-bottom:2px solid var(--border)}
 .panel-head small{font-size:10px;color:#88765f;letter-spacing:2px}
@@ -60,7 +60,7 @@ main{height:calc(100vh - 62px);display:grid;grid-template-columns:minmax(0,1fr) 
 
 <main>
  <section class="preview">
-  <div class="preview-label">DEIN CHARAKTER · VORSCHAU</div>
+  <div class="preview-label">DEIN STUHL · OUTFIT-VORSCHAU</div>
   <canvas id="skin" width="480" height="420"></canvas>
  </section>
  <aside class="right">
@@ -84,7 +84,9 @@ main{height:calc(100vh - 62px);display:grid;grid-template-columns:minmax(0,1fr) 
 
 <script>
 "use strict";
+
 const STORAGE_KEY="mein-zimmer-save-v1";
+
 const defaults={
  money:120,unlocked:[],
  equipped:{head:null,face:null,clothes:null,back:null,pants:null},
@@ -101,12 +103,10 @@ function loadSave(){
   };
  }catch{return structuredClone(defaults)}
 }
+
 let save=loadSave();
-if(!save.equipped.back)save.equipped.back=null;
-if(!save.equipped.pants)save.equipped.pants=null;
 
 const cosmetics=[
-/* KOPF – 12 neue */
 {id:"cap",name:"Blaue Cap",type:"Kopf",price:25,symbol:"🧢"},
 {id:"crown",name:"Goldene Krone",type:"Kopf",price:80,symbol:"👑"},
 {id:"tp_hat",name:"Toilettenpapier",type:"Kopf",price:20,symbol:"🧻"},
@@ -120,7 +120,7 @@ const cosmetics=[
 {id:"wizard",name:"Zauberhut",type:"Kopf",price:70,symbol:"🧙"},
 {id:"bucket_hat",name:"Eimer-Kopf",type:"Kopf",price:45,symbol:"🪣"},
 {id:"party_hat",name:"Partyhut",type:"Kopf",price:20,symbol:"🎉"},
-/* GESICHT – 8 neue */
+
 {id:"glasses",name:"Pixelbrille",type:"Gesicht",price:35,symbol:"👓"},
 {id:"sunglasses",name:"Sonnenbrille",type:"Gesicht",price:40,symbol:"🕶️"},
 {id:"heart_glasses",name:"Herzbrille",type:"Gesicht",price:45,symbol:"💖"},
@@ -130,7 +130,7 @@ const cosmetics=[
 {id:"eyepatch",name:"Augenklappe",type:"Gesicht",price:30,symbol:"🏴"},
 {id:"diving",name:"Taucherbrille",type:"Gesicht",price:65,symbol:"🥽"},
 {id:"star_glasses",name:"Sternenbrille",type:"Gesicht",price:55,symbol:"⭐"},
-/* RÜCKEN – 8 neue */
+
 {id:"backpack",name:"Rucksack",type:"Rücken",price:45,symbol:"🎒"},
 {id:"schoolbag",name:"Schulranzen",type:"Rücken",price:35,symbol:"🎒"},
 {id:"hikingbag",name:"Wanderrucksack",type:"Rücken",price:65,symbol:"🎒"},
@@ -139,7 +139,7 @@ const cosmetics=[
 {id:"guitarbag",name:"Gitarrentasche",type:"Rücken",price:75,symbol:"🎸"},
 {id:"parachute",name:"Fallschirm",type:"Rücken",price:90,symbol:"🪂"},
 {id:"toolbox",name:"Werkzeugkiste",type:"Rücken",price:60,symbol:"🧰"},
-/* OBERTEILE – 10 neue */
+
 {id:"scarf",name:"Grüner Schal",type:"Oberteil",price:30,symbol:"🧣"},
 {id:"shirt",name:"Rotes Shirt",type:"Oberteil",price:45,symbol:"👕"},
 {id:"hoodie",name:"Blauer Hoodie",type:"Oberteil",price:65,symbol:"🧥"},
@@ -153,7 +153,7 @@ const cosmetics=[
 {id:"armor",name:"Ritterrüstung",type:"Oberteil",price:130,symbol:"🛡️"},
 {id:"hawaii",name:"Hawaiihemd",type:"Oberteil",price:60,symbol:"🌺"},
 {id:"wintercoat",name:"Wintermantel",type:"Oberteil",price:90,symbol:"🧥"},
-/* HOSEN – 12 neue */
+
 {id:"jeans",name:"Jeans",type:"Hose",price:45,symbol:"👖"},
 {id:"joggers",name:"Jogginghose",type:"Hose",price:35,symbol:"👖"},
 {id:"cargo",name:"Cargo-Hose",type:"Hose",price:60,symbol:"👖"},
@@ -169,266 +169,657 @@ const cosmetics=[
 ];
 
 let currentCategory="Kopf",audio=null;
-const canvas=document.getElementById("skin"),ctx=canvas.getContext("2d");
-ctx.imageSmoothingEnabled=false;
-const player={x:43,y:18,w:34,h:78,vx:0,vy:0,grounded:true,facing:1,walk:0};
-const FLOOR=100;
+const canvas=document.getElementById("skin");
+const ctx=canvas.getContext("2d");
+
 const categorySlot={
- "Kopf":"head","Gesicht":"face","Rücken":"back","Oberteil":"clothes","Hose":"pants"
+ "Kopf":"head",
+ "Gesicht":"face",
+ "Rücken":"back",
+ "Oberteil":"clothes",
+ "Hose":"pants"
 };
 
-function rect(x,y,w,h,color){
- ctx.fillStyle=color;ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h));
-}
-function line(x1,y1,x2,y2,color,width=2){
- ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineCap="square";
- ctx.beginPath();ctx.moveTo(Math.round(x1),Math.round(y1));ctx.lineTo(Math.round(x2),Math.round(y2));ctx.stroke();
-}
-function playSound(kind="click"){
- try{
-  audio=audio||new(window.AudioContext||window.webkitAudioContext)();
-  if(audio.state==="suspended")audio.resume();
-  const osc=audio.createOscillator(),gain=audio.createGain();
-  osc.connect(gain);gain.connect(audio.destination);
-  const now=audio.currentTime;
-  const settings={click:[520,.055,"square"],select:[680,.09,"sine"],buy:[880,.13,"triangle"],error:[180,.15,"sawtooth"]}[kind];
-  osc.type=settings[2];osc.frequency.setValueAtTime(settings[0],now);
-  if(kind==="buy")osc.frequency.exponentialRampToValueAtTime(1250,now+.12);
-  if(kind==="error")osc.frequency.exponentialRampToValueAtTime(100,now+.14);
-  gain.gain.setValueAtTime(.055,now);gain.gain.exponentialRampToValueAtTime(.001,now+settings[1]);
-  osc.start(now);osc.stop(now+settings[1]);
- }catch{}
+function hash(n){
+ const v=Math.sin(n*127.1+311.7)*43758.5453;
+ return v-Math.floor(v);
 }
 
-function drawBack(cx,y){
+function rect(x,y,w,h,color){
+ ctx.fillStyle=color;
+ ctx.fillRect(x,y,w,h);
+}
+
+function line(x1,y1,x2,y2,color,width=1){
+ ctx.strokeStyle=color;
+ ctx.lineWidth=width;
+ ctx.lineCap="round";
+ ctx.beginPath();
+ ctx.moveTo(x1,y1);
+ ctx.lineTo(x2,y2);
+ ctx.stroke();
+}
+
+function woodGradient(x,y,w,h){
+ const g=ctx.createLinearGradient(x,y,x+w,y+h);
+ g.addColorStop(0,"#d4a16b");
+ g.addColorStop(.45,"#b98552");
+ g.addColorStop(1,"#75482b");
+ return g;
+}
+
+/* Holzmaserung wie im Spiel */
+function woodPart(x,y,w,h,r=1){
+ ctx.save();
+
+ ctx.fillStyle="#35271d33";
+ ctx.fillRect(x+2,y+2,w,h);
+
+ ctx.beginPath();
+ ctx.roundRect(x,y,w,h,r);
+ ctx.fillStyle=woodGradient(x,y,w,h);
+ ctx.fill();
+ ctx.strokeStyle="#604027";
+ ctx.lineWidth=1.1;
+ ctx.stroke();
+
+ ctx.save();
+ ctx.beginPath();
+ ctx.roundRect(x+1,y+1,w-2,h-2,r);
+ ctx.clip();
+
+ for(let i=0;i<Math.max(3,Math.floor(h/3));i++){
+  const yy=y+hash(i+x*.7)*h;
+  ctx.beginPath();
+  ctx.moveTo(x+2,yy);
+  ctx.bezierCurveTo(x+w*.3,yy-1,x+w*.7,yy+1,x+w-2,yy);
+  ctx.strokeStyle=i%2?"#513820":"#f5d7ae";
+  ctx.globalAlpha=i%2?.12:.18;
+  ctx.lineWidth=.7;
+  ctx.stroke();
+ }
+ ctx.restore();
+
+ ctx.globalAlpha=1;
+ ctx.strokeStyle="#f1c18b99";
+ ctx.lineWidth=.8;
+ ctx.beginPath();
+ ctx.moveTo(x+2,y+1);
+ ctx.lineTo(x+w-2,y+1);
+ ctx.stroke();
+
+ ctx.restore();
+}
+
+function drawLeg(x,y,angle,color){
+ ctx.save();
+ ctx.translate(x,y);
+ ctx.rotate(angle);
+
+ ctx.beginPath();
+ ctx.moveTo(-3,0);
+ ctx.lineTo(-2.5,39);
+ ctx.quadraticCurveTo(0,42,2.5,39);
+ ctx.lineTo(3,0);
+ ctx.closePath();
+
+ ctx.fillStyle=woodGradient(-3,0,7,42);
+ ctx.fill();
+ ctx.strokeStyle="#634127";
+ ctx.lineWidth=1;
+ ctx.stroke();
+
+ ctx.strokeStyle="#f1c28b88";
+ ctx.lineWidth=.8;
+ ctx.beginPath();
+ ctx.moveTo(-1.5,3);
+ ctx.lineTo(-1,36);
+ ctx.stroke();
+
+ /* Hosenstoff um die Stuhlbeine */
+ if(color){
+  ctx.fillStyle=color;
+  ctx.fillRect(-3,13,6,19);
+  ctx.strokeStyle="#ffffff55";
+  ctx.lineWidth=.7;
+  ctx.strokeRect(-3,13,6,19);
+ }
+ ctx.restore();
+}
+
+function fabric(x,y,w,h,color){
+ ctx.save();
+ ctx.beginPath();
+ ctx.roundRect(x,y,w,h,2);
+ ctx.fillStyle=color;
+ ctx.fill();
+ ctx.strokeStyle="#45382d";
+ ctx.lineWidth=.8;
+ ctx.stroke();
+
+ ctx.save();
+ ctx.beginPath();
+ ctx.roundRect(x+1,y+1,w-2,h-2,2);
+ ctx.clip();
+
+ for(let i=0;i<Math.floor(w*h/15);i++){
+  const px=x+hash(i+17)*w;
+  const py=y+hash(i+900)*h;
+  ctx.fillStyle=i%2?"#ffffff":"#26302c";
+  ctx.globalAlpha=.12;
+  ctx.fillRect(px,py,2,1);
+ }
+ ctx.restore();
+ ctx.globalAlpha=1;
+ ctx.restore();
+}
+
+/* Rucksack und Zubehör hinter der Lehne */
+function drawBackItem(){
  const id=save.equipped.back;
  if(!id)return;
+
+ if(id==="wings"){
+  ctx.fillStyle="#eee9dc";
+  ctx.strokeStyle="#a99c88";
+  ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.moveTo(29,30);ctx.quadraticCurveTo(-8,5,5,57);
+  ctx.quadraticCurveTo(17,63,30,49);ctx.closePath();
+  ctx.fill();ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(35,30);ctx.quadraticCurveTo(72,5,59,57);
+  ctx.quadraticCurveTo(47,63,34,49);ctx.closePath();
+  ctx.fill();ctx.stroke();
+  return;
+ }
+
+ if(id==="jetpack"){
+  woodPart(7,35,15,36,3);
+  woodPart(45,35,15,36,3);
+  rect(10,40,9,19,"#aebdc2");
+  rect(48,40,9,19,"#aebdc2");
+  rect(10,72,8,7,"#e8a64d");
+  rect(49,72,8,7,"#e8a64d");
+  return;
+ }
+
  const colors={
- backpack:"#a66b3c",schoolbag:"#d45c45",hikingbag:"#547d57",
- jetpack:"#8c969b",wings:"#e9e5d9",guitarbag:"#553b31",
- parachute:"#d95b4b",toolbox:"#b37a38"
+  backpack:"#a66b3c",schoolbag:"#d45c45",hikingbag:"#547d57",
+  guitarbag:"#553b31",parachute:"#d95b4b",toolbox:"#b37a38"
  };
  const c=colors[id]||"#986b49";
- if(id==="wings"){
-  rect(cx-24,y+28,12,24,"#eee9dc");rect(cx+12,y+28,12,24,"#eee9dc");
-  rect(cx-28,y+22,8,12,"#d4c8b2");rect(cx+20,y+22,8,12,"#d4c8b2");
-  rect(cx-20,y+34,8,13,"#fff");
- }else if(id==="jetpack"){
-  rect(cx-20,y+34,8,25,c);rect(cx+12,y+34,8,25,c);
-  rect(cx-18,y+37,5,13,"#b4c2c9");rect(cx+13,y+37,5,13,"#b4c2c9");
-  rect(cx-17,y+60,5,8,"#e8a64d");rect(cx+12,y+60,5,8,"#e8a64d");
- }else{
-  rect(cx-22,y+34,12,28,c);rect(cx+10,y+34,12,28,c);
-  rect(cx-20,y+37,40,24,c);
-  rect(cx-13,y+40,26,3,"#ffffff55");
-  rect(cx-4,y+46,8,8,"#4c4c4c");
-  if(id==="toolbox")rect(cx-17,y+32,34,6,"#d7a34e");
-  if(id==="guitarbag")rect(cx-7,y+35,14,29,"#d3b27c");
-  if(id==="parachute"){rect(cx-23,y+17,46,8,"#e4d8be");line(cx-20,y+25,cx-9,y+36,"#766");line(cx+20,y+25,cx+9,y+36,"#766")}
+
+ if(id==="parachute"){
+  ctx.fillStyle="#e4d8be";
+  ctx.beginPath();
+  ctx.arc(33,21,25,Math.PI,0);
+  ctx.fill();
+  ctx.strokeStyle="#8b6d52";
+  ctx.stroke();
+  line(12,21,28,44,"#766",1);
+  line(54,21,38,44,"#766",1);
+  return;
+ }
+
+ woodPart(8,34,16,35,4);
+ woodPart(44,34,16,35,4);
+ fabric(8,35,51,28,c);
+
+ if(id==="toolbox"){
+  rect(16,31,36,6,"#d7a34e");
+  rect(27,36,13,4,"#60472f");
+ }
+ if(id==="guitarbag"){
+  ctx.fillStyle="#d3b27c";
+  ctx.beginPath();
+  ctx.ellipse(34,52,8,20,0,0,Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle="#503b2b";
+  ctx.stroke();
  }
 }
 
-function drawHeadItem(cx,head){
+/* Kopf-Items sitzen oben auf der Rückenlehne */
+function drawHeadItem(){
  const id=save.equipped.head;
  if(!id)return;
+
  if(id==="cap"){
-  rect(cx-13,head+1,26,5,"#3977bd");rect(cx-10,head-5,20,7,"#3977bd");rect(cx+4,head+4,10,3,"#285a91");rect(cx-7,head-3,9,2,"#79a9e3");
- }else if(id==="crown"||id==="gold_helmet"||id==="paper_crown"){
+  fabric(19,-3,24,7,"#3977bd");
+  fabric(22,-9,19,8,"#3977bd");
+  rect(39,3,14,3,"#285a91");
+  line(25,-5,38,-5,"#79a9e3",1.5);
+ }
+ else if(["crown","gold_helmet","paper_crown"].includes(id)){
   const c=id==="paper_crown"?"#c7a76e":"#f4c64e";
-  rect(cx-12,head-4,24,5,c);rect(cx-12,head-11,5,8,c);rect(cx-4,head-14,6,11,c);rect(cx+5,head-10,6,7,c);
- }else if(id==="tp_hat"){
-  rect(cx-9,head-12,18,14,"#fffaf1");rect(cx-11,head-7,22,7,"#e8e2d7");
-  rect(cx-5,head-10,10,10,"#d6d0c4");rect(cx+8,head-5,5,4,"#fff");
- }else if(id==="traffic_hat"){
-  rect(cx-12,head-3,24,4,"#f3a52e");rect(cx-8,head-13,16,11,"#ef8e23");
-  rect(cx-6,head-10,12,3,"#fff0c9");
- }else if(id==="cowboy"){
-  rect(cx-16,head-4,32,5,"#8a542d");rect(cx-9,head-12,18,10,"#9d6336");rect(cx-8,head-11,16,2,"#e2bd70");
- }else if(id==="viking"){
-  rect(cx-13,head-4,26,5,"#999b9c");rect(cx-10,head-11,20,8,"#b7babc");
-  rect(cx-16,head-13,5,11,"#e8e1d0");rect(cx+11,head-13,5,11,"#e8e1d0");
- }else if(id==="chef"){
-  rect(cx-11,head-5,22,7,"#fff");rect(cx-9,head-14,18,10,"#fff");rect(cx-5,head-17,10,4,"#fff");
- }else if(id==="frog_hat"){
-  rect(cx-13,head-5,26,9,"#4b9d56");rect(cx-10,head-12,8,8,"#5cbf65");rect(cx+2,head-12,8,8,"#5cbf65");
-  rect(cx-8,head-10,3,3,"#111");rect(cx+4,head-10,3,3,"#111");
- }else if(id==="wizard"){
-  rect(cx-15,head-3,30,5,"#483e75");rect(cx-10,head-11,20,8,"#51468c");rect(cx-5,head-19,10,9,"#51468c");rect(cx-3,head-17,3,3,"#f6d56c");
- }else if(id==="bucket_hat"){
-  rect(cx-13,head-8,26,13,"#8b969a");rect(cx-16,head+2,32,3,"#657277");rect(cx-8,head-12,16,5,"#b9c2c4");
- }else if(id==="party_hat"){
-  rect(cx-3,head-16,6,14,"#e95e70");rect(cx-5,head-8,10,3,"#f3ce63");rect(cx-9,head-3,18,3,"#f1e0c0");
+  ctx.fillStyle=c;
+  ctx.strokeStyle="#805d29";
+  ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.moveTo(18,3);ctx.lineTo(18,-9);ctx.lineTo(26,-3);
+  ctx.lineTo(32,-15);ctx.lineTo(38,-3);ctx.lineTo(47,-10);
+  ctx.lineTo(47,3);ctx.closePath();
+  ctx.fill();ctx.stroke();
+  rect(19,1,27,4,c);
+  if(id!=="paper_crown")rect(30,-2,5,4,"#d94e55");
+ }
+ else if(id==="tp_hat"){
+  ctx.fillStyle="#fffaf1";
+  ctx.fillRect(22,-13,20,16);
+  ctx.strokeStyle="#c9c1b4";
+  ctx.strokeRect(22,-13,20,16);
+  ctx.beginPath();ctx.ellipse(32,-13,10,3,0,0,Math.PI*2);
+  ctx.fillStyle="#fff";ctx.fill();
+  rect(27,-9,10,8,"#e8e2d7");
+ }
+ else if(id==="traffic_hat"){
+  ctx.fillStyle="#ef8e23";
+  ctx.beginPath();ctx.moveTo(32,-17);ctx.lineTo(20,3);ctx.lineTo(44,3);ctx.closePath();
+  ctx.fill();ctx.strokeStyle="#9a5c20";ctx.stroke();
+  rect(25,-5,14,3,"#fff0c9");
+  rect(17,2,30,4,"#f3a52e");
+ }
+ else if(id==="cowboy"){
+  fabric(14,0,36,5,"#8a542d");
+  fabric(22,-10,21,12,"#9d6336");
+  rect(24,-3,17,3,"#e2bd70");
+ }
+ else if(id==="viking"){
+  fabric(18,-1,28,6,"#999b9c");
+  fabric(22,-9,20,10,"#b7babc");
+  line(21,-6,13,-16,"#e8e1d0",4);
+  line(43,-6,51,-16,"#e8e1d0",4);
+ }
+ else if(id==="chef"){
+  fabric(20,-1,25,5,"#fff");
+  ctx.fillStyle="#fff";
+  ctx.beginPath();ctx.arc(32,-9,11,Math.PI,0);ctx.fill();
+  ctx.strokeStyle="#d3c8b8";ctx.stroke();
+ }
+ else if(id==="frog_hat"){
+  fabric(18,-1,28,7,"#4b9d56");
+  ellipse(23,-9,7,8,"#5cbf65");
+  ellipse(41,-9,7,8,"#5cbf65");
+  ellipse(23,-10,2,2,"#111");
+  ellipse(41,-10,2,2,"#111");
+ }
+ else if(id==="wizard"){
+  ctx.fillStyle="#51468c";
+  ctx.beginPath();ctx.moveTo(16,2);ctx.lineTo(32,-22);ctx.lineTo(48,2);ctx.closePath();
+  ctx.fill();ctx.strokeStyle="#30264e";ctx.stroke();
+  fabric(14,0,36,5,"#483e75");
+  rect(29,-14,5,5,"#f6d56c");
+ }
+ else if(id==="bucket_hat"){
+  fabric(18,-10,29,14,"#8b969a");
+  fabric(14,2,37,5,"#657277");
+  rect(24,-14,16,5,"#b9c2c4");
+ }
+ else if(id==="party_hat"){
+  ctx.fillStyle="#e95e70";
+  ctx.beginPath();ctx.moveTo(32,-20);ctx.lineTo(21,2);ctx.lineTo(43,2);ctx.closePath();
+  ctx.fill();
+  rect(26,-9,12,3,"#f3ce63");
+  rect(18,2,28,4,"#f1e0c0");
  }
 }
 
-function drawFaceItem(cx,head){
+/* Gesichtszubehör wird zu Dekoration an der Lehne */
+function drawFaceItem(){
  const id=save.equipped.face;
  if(!id)return;
+
  if(["glasses","sunglasses","heart_glasses","star_glasses","diving"].includes(id)){
   const color=id==="sunglasses"?"#17232c":id==="diving"?"#6ba9bd":"#29323c";
-  rect(cx-10,head+9,9,6,color);rect(cx+1,head+9,9,6,color);
-  rect(cx-1,head+11,2,2,color);
-  if(id==="diving"){rect(cx-12,head+7,25,10,"#4b8fa8");rect(cx-8,head+9,16,5,"#a9dbe0")}
-  if(id==="heart_glasses"){rect(cx-9,head+8,7,7,"#d94d6c");rect(cx+2,head+8,7,7,"#d94d6c")}
-  if(id==="star_glasses"){rect(cx-9,head+8,7,7,"#e9bd46");rect(cx+2,head+8,7,7,"#e9bd46")}
- }else if(id==="monocle"){
-  rect(cx+2,head+8,8,8,"#d6a94d");rect(cx+4,head+10,4,4,"#b8d2d9");line(cx+7,head+16,cx+9,head+23,"#9b793d");
- }else if(id==="mustache"){
-  rect(cx-8,head+15,7,4,"#493328");rect(cx+1,head+15,7,4,"#493328");rect(cx-2,head+16,4,3,"#493328");
- }else if(id==="big_nose"){
-  rect(cx-3,head+11,7,9,"#e6a77c");rect(cx-5,head+17,11,4,"#c88962");
- }else if(id==="eyepatch"){
-  rect(cx-10,head+8,9,8,"#25252a");line(cx-10,head+9,cx+10,head+2,"#25252a",2);
+
+  if(id==="diving"){
+   fabric(17,27,31,15,"#4b8fa8");
+   fabric(21,30,23,8,"#a9dbe0");
+   return;
+  }
+
+  if(id==="heart_glasses"){
+   ctx.fillStyle="#d94d6c";
+   ctx.beginPath();ctx.arc(24,33,6,0,Math.PI*2);ctx.arc(30,33,6,0,Math.PI*2);ctx.lineTo(27,44);ctx.closePath();ctx.fill();
+   ctx.beginPath();ctx.arc(37,33,6,0,Math.PI*2);ctx.arc(43,33,6,0,Math.PI*2);ctx.lineTo(40,44);ctx.closePath();ctx.fill();
+  }else if(id==="star_glasses"){
+   ctx.fillStyle="#e9bd46";
+   for(const x of [25,40]){
+    ctx.beginPath();
+    for(let i=0;i<10;i++){
+     const a=-Math.PI/2+i*Math.PI/5;
+     const r=i%2?3:7;
+     const px=x+Math.cos(a)*r,py=35+Math.sin(a)*r;
+     if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
+    }
+    ctx.closePath();ctx.fill();
+   }
+  }else{
+   fabric(19,29,12,9,color);
+   fabric(34,29,12,9,color);
+   line(30,33,34,33,color,2);
+  }
+ }
+ else if(id==="monocle"){
+  ctx.beginPath();ctx.arc(39,35,7,0,Math.PI*2);
+  ctx.strokeStyle="#d6a94d";ctx.lineWidth=2;ctx.stroke();
+  ctx.beginPath();ctx.arc(39,35,4,0,Math.PI*2);
+  ctx.fillStyle="#b8d2d9";ctx.fill();
+  line(44,41,48,51,"#9b793d",1.5);
+ }
+ else if(id==="mustache"){
+  fabric(22,39,11,5,"#493328");
+  fabric(34,39,11,5,"#493328");
+ }
+ else if(id==="big_nose"){
+  ctx.fillStyle="#e6a77c";
+  ctx.beginPath();ctx.moveTo(31,31);ctx.lineTo(25,43);ctx.lineTo(38,43);ctx.closePath();
+  ctx.fill();
+ }
+ else if(id==="eyepatch"){
+  fabric(20,28,14,12,"#25252a");
+  line(20,29,45,22,"#25252a",2);
  }
 }
 
-function drawClothes(cx,shoulder,hip){
+/* Oberteile werden zu Stoffbezügen für Lehne und Sitz */
+function drawClothes(){
  const id=save.equipped.clothes;
+ if(!id)return;
+
  const colors={
- scarf:"#4d995f",shirt:"#c64c48",hoodie:"#3977bd",
- leather:"#513a31",raincoat:"#e3b83c",football:"#eee7dc",
- suit:"#293c55",pajamas:"#8c83b4",vest:"#e9bd37",
- astronaut:"#d9e0e4",armor:"#89969e",hawaii:"#d96b5b",wintercoat:"#587f9d"
+  scarf:"#4d995f",shirt:"#c64c48",hoodie:"#3977bd",
+  leather:"#513a31",raincoat:"#e3b83c",football:"#eee7dc",
+  suit:"#293c55",pajamas:"#8c83b4",vest:"#e9bd37",
+  astronaut:"#d9e0e4",armor:"#89969e",hawaii:"#d96b5b",
+  wintercoat:"#587f9d"
  };
  const c=colors[id]||"#b98552";
- rect(cx-10,shoulder-3,20,22,c);
- rect(cx-14,shoulder,5,15,c);rect(cx+9,shoulder,5,15,c);
- if(id==="scarf"){rect(cx-10,shoulder-2,20,6,"#4d995f");rect(cx+3,shoulder+2,5,14,"#4d995f")}
- if(id==="hoodie"){rect(cx-7,shoulder-7,14,7,"#28578b");rect(cx-3,shoulder+13,6,3,"#244f7e")}
- if(id==="leather"){rect(cx-9,shoulder,4,18,"#76513d");rect(cx+5,shoulder,4,18,"#76513d")}
- if(id==="raincoat"||id==="vest"){rect(cx-2,shoulder,4,20,"#fff1b8");rect(cx-12,shoulder+7,24,3,"#fff1b8")}
- if(id==="football"){rect(cx-7,shoulder+4,14,5,"#b83f3f");rect(cx-2,shoulder+5,4,3,"#fff")}
- if(id==="suit"){rect(cx-2,shoulder,4,18,"#eee");rect(cx-4,shoulder+1,8,5,"#a84747")}
- if(id==="astronaut"){rect(cx-7,shoulder+4,14,8,"#7f9ba8");rect(cx-5,shoulder+5,10,5,"#b6d8e1")}
- if(id==="armor"){rect(cx-10,shoulder-2,20,21,"#8c9ba3");rect(cx-8,shoulder,16,3,"#d6dadd");rect(cx-2,shoulder+5,4,10,"#d6b85e")}
- if(id==="hawaii"){rect(cx-8,shoulder+4,4,4,"#f6d36d");rect(cx+3,shoulder+10,4,4,"#6d9a64")}
- if(id==="wintercoat"){rect(cx-10,shoulder-3,20,4,"#d5e4ed");rect(cx-3,shoulder+4,6,16,"#e3e8e9")}
-}
 
-function drawPants(cx,hip,y){
- const id=save.equipped.pants;
- if(!id)return;
- const colors={
- jeans:"#426e9a",joggers:"#686b76",cargo:"#78805a",shorts:"#bd704c",
- sleep_pants:"#7f76a8",baggy:"#42658b",knight_pants:"#929ca4",
- rain_pants:"#4d7e87",camo:"#65734c",gold_pants:"#c5a13c",
- ski_pants:"#e4e9ef",overalls:"#487e9a"
- };
- const c=colors[id]||"#343c52";
- if(id==="shorts"){
-  rect(cx-10,hip-2,20,13,c);rect(cx-9,hip+9,8,9,c);rect(cx+1,hip+9,8,9,c);
- }else{
-  rect(cx-10,hip-2,9,29,c);rect(cx+1,hip-2,9,29,c);
-  if(id==="cargo"){rect(cx-12,hip+10,5,7,"#566343");rect(cx+7,hip+10,5,7,"#566343")}
-  if(id==="overalls"){rect(cx-8,hip-7,16,7,"#487e9a");rect(cx-6,hip-10,3,9,"#487e9a");rect(cx+3,hip-10,3,9,"#487e9a")}
-  if(id==="gold_pants"){rect(cx-8,hip+3,4,3,"#f4db80");rect(cx+3,hip+3,4,3,"#f4db80")}
-  if(id==="camo"){rect(cx-8,hip+4,5,5,"#414d38");rect(cx+3,hip+14,5,5,"#414d38")}
-  if(id==="knight_pants"){rect(cx-9,hip,18,4,"#c3cbd0");rect(cx-5,hip+9,10,3,"#c3cbd0")}
+ /* Bezug auf der Rückenlehne */
+ fabric(25,9,9,53,c);
+
+ /* Stoff auf der Sitzfläche */
+ fabric(21,68,76,8,c);
+
+ /* Details */
+ if(id==="scarf"){
+  fabric(20,10,18,8,"#4d995f");
+  fabric(35,14,6,25,"#4d995f");
+ }
+ if(id==="hoodie"){
+  fabric(24,5,12,8,"#28578b");
+  rect(28,20,3,25,"#244f7e");
+ }
+ if(id==="leather"){
+  line(26,12,33,60,"#a17b61",1.5);
+  rect(27,28,5,3,"#d5b58c");
+ }
+ if(id==="raincoat"||id==="vest"){
+  rect(28,11,3,49,"#fff1b8");
+  rect(25,35,9,3,"#fff1b8");
+ }
+ if(id==="football"){
+  rect(26,20,6,5,"#b83f3f");
+  rect(26,39,6,5,"#b83f3f");
+ }
+ if(id==="suit"){
+  rect(28,12,3,45,"#eee");
+  rect(27,12,6,8,"#a84747");
+ }
+ if(id==="astronaut"){
+  fabric(25,26,9,15,"#7f9ba8");
+  rect(27,29,5,8,"#b6d8e1");
+ }
+ if(id==="armor"){
+  rect(25,10,9,51,"#8c9ba3");
+  rect(26,13,7,3,"#d6dadd");
+  rect(28,30,3,12,"#d6b85e");
+ }
+ if(id==="hawaii"){
+  rect(26,17,3,5,"#f6d36d");
+  rect(31,35,3,5,"#6d9a64");
+ }
+ if(id==="wintercoat"){
+  rect(24,8,11,5,"#d5e4ed");
+  rect(27,17,5,37,"#e3e8e9");
  }
 }
 
-function drawPlayer(){
- const x=player.x,y=player.y,cx=x+player.w/2;
- const lift=player.grounded?0:Math.sin(Date.now()/90)*1.5;
- const shoulder=y+31+lift,hip=y+52+lift,head=y+7+lift;
- const skin="#d5b18a",edge="#805b3c",wood="#b98552",light="#dfb47b";
- rect(cx-20,FLOOR-3,40,4,"#99754f");
+/* Hosen werden zu Bezügen an den Stuhlbeinen */
+function drawPants(){
+ const id=save.equipped.pants;
+ if(!id)return;
 
- drawBack(cx,y);
+ const colors={
+  jeans:"#426e9a",joggers:"#686b76",cargo:"#78805a",
+  shorts:"#bd704c",sleep_pants:"#7f76a8",baggy:"#42658b",
+  knight_pants:"#929ca4",rain_pants:"#4d7e87",camo:"#65734c",
+  gold_pants:"#c5a13c",ski_pants:"#e4e9ef",overalls:"#487e9a"
+ };
+ const c=colors[id]||"#343c52";
 
- const pants=save.equipped.pants;
- const legColor=pants?({
-  jeans:"#426e9a",joggers:"#686b76",cargo:"#78805a",shorts:"#bd704c",
-  sleep_pants:"#7f76a8",baggy:"#42658b",knight_pants:"#929ca4",
-  rain_pants:"#4d7e87",camo:"#65734c",gold_pants:"#c5a13c",
-  ski_pants:"#e4e9ef",overalls:"#487e9a"
- }[pants]||"#343c52"):"#343c52";
+ /* Stoffstreifen auf den beiden sichtbaren Beinen */
+ fabric(26,88,7,20,c);
+ fabric(85,89,7,20,c);
 
- line(cx-6,hip+12,cx-7,y+70+lift,edge,8);
- line(cx+6,hip+12,cx+7,y+70+lift,edge,8);
- line(cx-6,hip+12,cx-7,y+70+lift,legColor,5);
- line(cx+6,hip+12,cx+7,y+70+lift,legColor,5);
- rect(cx-12,y+69+lift,10,6,edge);rect(cx+2,y+69+lift,10,6,edge);
- rect(cx-11,y+70+lift,8,3,wood);rect(cx+3,y+70+lift,8,3,wood);
+ if(id==="shorts"){
+  fabric(24,82,12,12,c);
+  fabric(82,82,12,12,c);
+ }
+ if(id==="cargo"){
+  rect(25,98,9,5,"#566343");
+  rect(84,98,9,5,"#566343");
+ }
+ if(id==="overalls"){
+  fabric(25,79,67,8,"#487e9a");
+  rect(27,78,4,11,"#487e9a");
+  rect(87,78,4,11,"#487e9a");
+ }
+ if(id==="gold_pants"){
+  rect(27,94,4,3,"#f4db80");
+  rect(86,94,4,3,"#f4db80");
+ }
+ if(id==="camo"){
+  rect(27,94,4,5,"#414d38");
+  rect(87,100,4,5,"#414d38");
+ }
+ if(id==="knight_pants"){
+  rect(26,89,7,4,"#c3cbd0");
+  rect(85,89,7,4,"#c3cbd0");
+ }
+}
 
- drawPants(cx,hip,y);
+/* Der echte Holzstuhl – gleiche Seitenansicht wie in index.html */
+function drawChair(){
+ const head=save.equipped.head;
+ const face=save.equipped.face;
+ const back=save.equipped.back;
 
- line(cx-10,shoulder,cx-15,y+54+lift,wood,6);
- line(cx+10,shoulder,cx+15,y+54+lift,wood,6);
- rect(cx-11,shoulder-3,22,24,edge);
- rect(cx-8,shoulder,16,18,wood);
- rect(cx-6,shoulder+2,4,13,light);
- rect(cx-5,hip-1,10,5,edge);rect(cx-4,hip,8,3,wood);
+ /* Schatten */
+ ctx.save();
+ ctx.globalAlpha=.2;
+ ctx.fillStyle="#17130f";
+ ctx.beginPath();
+ ctx.ellipse(60,119,45,4,0,0,Math.PI*2);
+ ctx.fill();
+ ctx.restore();
 
- drawClothes(cx,shoulder,hip);
+ /* Zubehör hinter dem Stuhl */
+ if(back)drawBackItem();
 
- rect(cx-4,shoulder-7,8,7,edge);rect(cx-3,shoulder-6,6,6,wood);
- rect(cx-11,head,22,23,edge);rect(cx-9,head+2,18,19,skin);
- rect(cx-7,head+4,14,15,wood);rect(cx-6,head+5,4,11,light);
- rect(cx-1,head+5,8,11,"#c99a64");
- rect(cx-6,head+10,3,3,"#43362c");rect(cx+4,head+10,3,3,"#43362c");
- rect(cx-2,head+16,5,2,"#8c5944");
+ /* Hinteres Stuhlbein */
+ drawLeg(29,75,0,null);
 
- drawFaceItem(cx,head);
- drawHeadItem(cx,head);
+ /* Rückenlehne: ein einziges schlichtes Brett */
+ woodPart(23,5,13,70,2);
+
+ /* Sitzfläche */
+ woodPart(20,67,78,12,2);
+
+ /* Vorderes Stuhlbein */
+ drawLeg(88,77,0,null);
+
+ /* Hosenbezüge */
+ drawPants();
+
+ /* Oberteil / Stoffbezüge */
+ drawClothes();
+
+ /* Kleine Holzdetails */
+ line(25,8,25,70,"#f1c18b99",1);
+ line(23,69,95,69,"#f3d0a0aa",1);
+
+ /* Gesichtszubehör auf der oberen Lehne */
+ if(face)drawFaceItem();
+
+ /* Kopfzubehör oben auf der Lehne */
+ if(head)drawHeadItem();
+
+ /* Bodenkontakt */
+ ctx.fillStyle="#513a29";
+ ctx.globalAlpha=.25;
+ ctx.fillRect(25,116,69,1);
+ ctx.globalAlpha=1;
 }
 
 function drawSkin(){
  ctx.clearRect(0,0,canvas.width,canvas.height);
- ctx.save();ctx.scale(4,4);drawPlayer();ctx.restore();
+ ctx.save();
+
+ /* Stuhl groß und mittig anzeigen */
+ ctx.translate(82,22);
+ ctx.scale(3.1,3.1);
+
+ drawChair();
+
+ ctx.restore();
 }
 
-function slotFor(type){return categorySlot[type]}
+/* Soundeffekte */
+function playSound(kind="click"){
+ try{
+  audio=audio||new(window.AudioContext||window.webkitAudioContext)();
+  if(audio.state==="suspended")audio.resume();
+
+  const osc=audio.createOscillator();
+  const gain=audio.createGain();
+  osc.connect(gain);gain.connect(audio.destination);
+
+  const now=audio.currentTime;
+  const settings={
+   click:[520,.055,"square"],
+   select:[680,.09,"sine"],
+   buy:[880,.13,"triangle"],
+   error:[180,.15,"sawtooth"]
+  }[kind];
+
+  osc.type=settings[2];
+  osc.frequency.setValueAtTime(settings[0],now);
+
+  if(kind==="buy")osc.frequency.exponentialRampToValueAtTime(1250,now+.12);
+  if(kind==="error")osc.frequency.exponentialRampToValueAtTime(100,now+.14);
+
+  gain.gain.setValueAtTime(.055,now);
+  gain.gain.exponentialRampToValueAtTime(.001,now+settings[1]);
+
+  osc.start(now);
+  osc.stop(now+settings[1]);
+ }catch{}
+}
+
+function slotFor(type){
+ return categorySlot[type];
+}
+
 function persist(){
- localStorage.setItem(STORAGE_KEY,JSON.stringify(save));
- document.getElementById("money").textContent=save.money;
- document.getElementById("status").textContent="✓ Gespeichert";
+ try{
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(save));
+  document.getElementById("money").textContent=save.money;
+  document.getElementById("status").textContent="✓ Gespeichert";
+ }catch{
+  document.getElementById("status").textContent="Speichern nicht möglich";
+ }
 }
 
 function renderItems(){
- const list=document.getElementById("items");list.innerHTML="";
+ const list=document.getElementById("items");
+ list.innerHTML="";
+
  document.getElementById("categoryName").textContent=currentCategory.toUpperCase()+"-ITEMS";
+
  const filtered=cosmetics.filter(i=>i.type===currentCategory);
  document.getElementById("itemCount").textContent=filtered.length+" ITEMS";
+
  filtered.forEach(item=>{
   const unlocked=save.unlocked.includes(item.id);
   const selected=save.equipped[slotFor(item.type)]===item.id;
+
   const button=document.createElement("button");
   button.className="item"+(selected?" selected":"")+(unlocked?"":" locked");
   button.title=item.name;
-  button.innerHTML=`<span class="symbol">${item.symbol}</span>${selected?'<span class="check">✓</span>':""}${!unlocked?'<span class="price">¢ ${item.price}</span>':""}<span class="tooltip">${item.name}</span>`;
+
+  button.innerHTML=
+   `<span class="symbol">${item.symbol}</span>`+
+   (selected?'<span class="check">✓</span>':"")+
+   (!unlocked?`<span class="price">¢ ${item.price}</span>`:"")+
+   `<span class="tooltip">${item.name}</span>`;
+
   button.addEventListener("click",()=>chooseItem(item));
   list.appendChild(button);
  });
 }
 
 function chooseItem(item){
- const slot=slotFor(item.type),unlocked=save.unlocked.includes(item.id);
+ const slot=slotFor(item.type);
+ const unlocked=save.unlocked.includes(item.id);
+
  if(!unlocked){
   if(save.money<item.price){
-   playSound("error");document.getElementById("status").textContent="Nicht genug Münzen!";return;
+   playSound("error");
+   document.getElementById("status").textContent="Nicht genug Münzen!";
+   return;
   }
-  save.money-=item.price;save.unlocked.push(item.id);playSound("buy");
- }else playSound("select");
+
+  save.money-=item.price;
+  save.unlocked.push(item.id);
+  playSound("buy");
+ }else{
+  playSound("select");
+ }
+
+ /* Pro Kategorie nur ein Item gleichzeitig */
  save.equipped[slot]=item.id;
- persist();renderItems();drawSkin();
+
+ persist();
+ renderItems();
+ drawSkin();
 }
 
 document.querySelectorAll(".category").forEach(button=>{
  button.addEventListener("click",()=>{
   document.querySelectorAll(".category").forEach(b=>b.classList.remove("active"));
-  button.classList.add("active");currentCategory=button.dataset.type;
-  playSound("click");renderItems();
+  button.classList.add("active");
+  currentCategory=button.dataset.type;
+  playSound("click");
+  renderItems();
  });
 });
 
 document.getElementById("remove").addEventListener("click",()=>{
  save.equipped[slotFor(currentCategory)]=null;
- playSound("click");persist();renderItems();drawSkin();
+ playSound("click");
+ persist();
+ renderItems();
+ drawSkin();
 });
 
 document.getElementById("money").textContent=save.money;
-renderItems();drawSkin();
+
+renderItems();
+drawSkin();
 </script>
 </body>
 </html>
