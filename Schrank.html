@@ -100,12 +100,6 @@ main{
  position:absolute;right:4px;top:3px;font-size:12px;
  color:#416d5b;font-weight:bold
 }
-.item .tooltip{
- position:absolute;bottom:100%;left:50%;transform:translateX(-50%);
- background:#292e35;color:white;padding:5px 7px;
- font-size:9px;white-space:nowrap;opacity:0;pointer-events:none;z-index:5
-}
-.item:hover .tooltip{opacity:1}
 .footer{
  margin-top:auto;padding:13px 16px;border-top:2px solid var(--border);
  display:flex;align-items:center;justify-content:space-between;gap:8px
@@ -292,11 +286,6 @@ function hash(n){
  return v-Math.floor(v);
 }
 
-function rect(x,y,w,h,color){
- ctx.fillStyle=color;
- ctx.fillRect(x,y,w,h);
-}
-
 function line(x1,y1,x2,y2,color,width=1){
  ctx.strokeStyle=color;
  ctx.lineWidth=width;
@@ -362,7 +351,7 @@ function woodPart(x,y,w,h,r=1){
  ctx.restore();
 }
 
-function drawLeg(x,y,angle,color){
+function drawLeg(x,y,angle){
  ctx.save();
  ctx.translate(x,y);
  ctx.rotate(angle);
@@ -386,14 +375,6 @@ function drawLeg(x,y,angle,color){
  ctx.moveTo(-1.5,3);
  ctx.lineTo(-1,36);
  ctx.stroke();
-
- if(color){
-  ctx.fillStyle=color;
-  ctx.fillRect(-3,13,6,19);
-  ctx.strokeStyle="#ffffff55";
-  ctx.lineWidth=.7;
-  ctx.strokeRect(-3,13,6,19);
- }
  ctx.restore();
 }
 
@@ -424,7 +405,6 @@ function fabric(x,y,w,h,color){
  ctx.restore();
 }
 
-/* Rücken-Accessoires */
 function drawBackItem(){
  const id=save.equipped.back;
  if(!id)return;
@@ -480,6 +460,7 @@ function drawBackItem(){
   return;
  }
 
+ /* Rucksack bleibt wie zuvor */
  woodPart(8,34,16,35,4);
  woodPart(44,34,16,35,4);
  fabric(8,35,51,28,c);
@@ -498,7 +479,6 @@ function drawBackItem(){
  }
 }
 
-/* Hüte */
 function drawHeadItem(){
  const id=save.equipped.head;
  if(!id)return;
@@ -573,7 +553,7 @@ function drawHeadItem(){
   ctx.stroke();
  }
  else if(id==="frog_hat"){
-  /* Unveränderter Froschhut */
+  /* Froschhut bleibt unverändert */
   fabric(18,-1,28,7,"#4b9d56");
   ellipse(23,-9,7,8,"#5cbf65");
   ellipse(41,-9,7,8,"#5cbf65");
@@ -611,7 +591,6 @@ function drawHeadItem(){
  }
 }
 
-/* Ballons */
 const balloonColors={
  balloon_red:"#e34d4d",
  balloon_blue:"#438bd1",
@@ -741,7 +720,6 @@ function drawBalloons(time){
  balloonShape(id,bx,by,1.08);
 }
 
-/* Kleidung */
 function drawClothes(){
  const id=save.equipped.clothes;
  if(!id)return;
@@ -802,7 +780,6 @@ function drawClothes(){
  }
 }
 
-/* Hosen */
 function drawPants(){
  const id=save.equipped.pants;
  if(!id)return;
@@ -845,7 +822,11 @@ function drawPants(){
  }
 }
 
-/* Stuhl */
+function rect(x,y,w,h,color){
+ ctx.fillStyle=color;
+ ctx.fillRect(x,y,w,h);
+}
+
 function drawChair(time){
  const back=save.equipped.back;
 
@@ -859,10 +840,10 @@ function drawChair(time){
 
  if(back)drawBackItem();
 
- drawLeg(29,75,0,null);
+ drawLeg(29,75,0);
  woodPart(23,5,13,70,2);
  woodPart(20,67,78,12,2);
- drawLeg(88,77,0,null);
+ drawLeg(88,77,0);
 
  drawPants();
  drawClothes();
@@ -882,17 +863,12 @@ function drawChair(time){
 function drawSkin(time=0){
  ctx.clearRect(0,0,canvas.width,canvas.height);
  ctx.save();
-
- /* Mehr Platz oberhalb für die Ballons */
  ctx.translate(115,145);
  ctx.scale(2.1,2.1);
-
  drawChair(time);
-
  ctx.restore();
 }
 
-/* Animation */
 const animationStart=performance.now();
 
 function animate(now){
@@ -900,7 +876,6 @@ function animate(now){
  requestAnimationFrame(animate);
 }
 
-/* Sound */
 function playSound(kind="click"){
  try{
   audio=audio||new(window.AudioContext||window.webkitAudioContext)();
@@ -949,7 +924,6 @@ function persist(){
  }
 }
 
-/* Cosmetics kostenlos */
 function renderItems(){
  const list=document.getElementById("items");
  list.innerHTML="";
@@ -965,12 +939,10 @@ function renderItems(){
 
   const button=document.createElement("button");
   button.className="item"+(selected?" selected":"");
-  button.title=item.name;
 
   button.innerHTML=
    `<span class="symbol">${item.symbol}</span>`+
-   (selected?'<span class="check">✓</span>':"")+
-   `<span class="tooltip">${item.name} · KOSTENLOS</span>`;
+   (selected?'<span class="check">✓</span>':"");
 
   button.addEventListener("click",()=>chooseItem(item));
   list.appendChild(button);
