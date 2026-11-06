@@ -7,53 +7,49 @@
 <title>Mein Zimmer</title>
 <style>
 *{box-sizing:border-box}
-html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:Arial,sans-serif;background:#20252a;color:#292e35}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:Arial,sans-serif;background:#d9d0c5;color:#343b3d}
 #game{position:relative;width:100%;height:100%;overflow:hidden}
-#world{position:absolute;inset:0;width:100%;height:100%;display:block}
-.hud{position:absolute;z-index:2;top:16px;left:18px;right:18px;display:flex;justify-content:space-between;pointer-events:none}
-.brand,.money{background:#fffaf1ef;border:1px solid #d4c6b3;border-radius:12px;padding:12px 17px;box-shadow:0 4px 18px #0002}
-.brand strong{display:block;font-size:16px;letter-spacing:1px}
-.brand small{color:#887a68;font-size:12px}
-.money{font-size:17px}
-.money span{color:#b18a42}
-.bottom{position:absolute;bottom:16px;left:18px;right:18px;display:flex;justify-content:space-between;align-items:end;pointer-events:none}
-.controls{background:#252b31dd;color:white;border-radius:10px;padding:11px 15px;font-size:12px}
+#world{position:absolute;width:100%;height:100%;inset:0;display:block}
+.hud{position:absolute;z-index:2;top:15px;left:17px;right:17px;display:flex;justify-content:space-between;pointer-events:none}
+.brand,.money{background:#fffaf1ed;border:1px solid #e4d8c8;border-radius:14px;padding:10px 15px;box-shadow:0 5px 18px #51433317}
+.brand strong{display:block;font-size:14px;letter-spacing:1px}
+.brand small{color:#9a8977;font-size:11px}
+.money{font-size:15px}
+.money span{color:#bd9855}
+.bottom{position:absolute;bottom:14px;left:17px;right:17px;display:flex;justify-content:space-between;align-items:end;pointer-events:none}
+.controls{background:#343b3de8;color:white;border-radius:11px;padding:10px 13px;font-size:11px}
 button{cursor:pointer;font:inherit}
-.sound{pointer-events:auto;border:0;border-radius:10px;background:#fffaf1;padding:12px 15px;font-size:19px}
-.panel{position:absolute;z-index:5;top:50%;left:50%;transform:translate(-50%,-50%);width:min(680px,calc(100% - 28px));max-height:82%;display:flex;flex-direction:column;background:#faf5eb;border:1px solid #d7c8b4;border-radius:16px;box-shadow:0 20px 70px #0006;overflow:hidden}
+.sound{pointer-events:auto;border:0;border-radius:12px;background:#fffaf1;padding:10px 14px;font-size:18px;box-shadow:0 3px 12px #0002}
+.panel{position:absolute;z-index:5;top:50%;left:50%;transform:translate(-50%,-50%);width:min(650px,calc(100% - 26px));max-height:82%;display:flex;flex-direction:column;background:#fffaf1;border:1px solid #e5d9c9;border-radius:18px;box-shadow:0 20px 70px #0004;overflow:hidden}
 .hidden{display:none!important}
-.panel-head{display:flex;justify-content:space-between;align-items:center;padding:17px 20px;background:#eee5d7;border-bottom:1px solid #d7c8b4}
-.panel-head small{font-size:10px;letter-spacing:1.5px;color:#87745d}
-.panel-head h1{font-size:23px;margin:5px 0 0}
-.close{border:0;border-radius:8px;background:#343a40;color:white;width:36px;height:36px;font-size:23px}
-.content{padding:18px;overflow:auto}
-.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.card{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px;background:white;border:1px solid #e0d5c6;border-radius:10px}
-.card strong{font-size:13px}
-.card small{display:block;color:#887a68;font-size:11px;margin-top:5px}
-.action{border:0;border-radius:7px;background:#587e96;color:white;padding:9px 12px;font-size:12px}
+.panel-head{display:flex;justify-content:space-between;align-items:center;padding:16px 19px;background:#f1e9dd;border-bottom:1px solid #e5d9c9}
+.panel-head small{font-size:10px;letter-spacing:1.5px;color:#9b8873}
+.panel-head h1{font-size:21px;margin:5px 0 0}
+.close{border:0;border-radius:9px;background:#394448;color:white;width:34px;height:34px;font-size:22px}
+.content{padding:17px;overflow:auto}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.card{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;background:white;border:1px solid #eee3d5;border-radius:12px}
+.card strong{font-size:12px}
+.card small{display:block;color:#978674;font-size:10px;margin-top:4px}
+.action{border:0;border-radius:8px;background:#78958b;color:white;padding:9px 11px;font-size:11px}
 .action:disabled{opacity:.4}
-.secondary{background:#e9dfd0;color:#50483e}
-.balance,.notice{padding:12px;background:#e5eee8;border-radius:8px;margin-bottom:13px;font-size:13px}
-.order{display:flex;justify-content:space-between;padding:12px 3px;border-bottom:1px solid #ddd2c2;font-size:13px}
-.section-title{font-size:14px;margin:20px 0 10px}
-@media(max-width:600px){.grid{grid-template-columns:1fr}.brand{padding:9px 12px}.controls{font-size:10px;padding:9px}}
+.balance,.notice{padding:11px;background:#edf2e9;border-radius:10px;margin-bottom:12px;font-size:12px}
+.order{display:flex;justify-content:space-between;padding:11px 3px;border-bottom:1px solid #eee3d5;font-size:12px}
+.section-title{font-size:13px;margin:18px 0 9px}
+@media(max-width:600px){.grid{grid-template-columns:1fr}.brand{padding:8px 11px}.controls{font-size:9px;padding:8px}}
 </style>
 </head>
 <body>
 <main id="game">
 <canvas id="world"></canvas>
-
 <header class="hud">
- <div class="brand"><strong>MEIN ZIMMER</strong><small>Dein kleines Zuhause</small></div>
+ <div class="brand"><strong>MEIN ZIMMER</strong><small>Dein kleines Zuhause ♡</small></div>
  <div class="money"><span>¢</span> <b id="money">120</b></div>
 </header>
-
 <div class="bottom">
- <div class="controls">A / D – Bewegen &nbsp; · &nbsp; W – Hüpfen &nbsp; · &nbsp; E – Interagieren</div>
+ <div class="controls">A / D – Bewegen · W – Hüpfen · E – Interagieren</div>
  <button class="sound" id="soundButton">♫</button>
 </div>
-
 <section id="panel" class="panel hidden" role="dialog" aria-modal="true">
  <div class="panel-head">
   <div><small id="panelEyebrow">DEIN ZUHAUSE</small><h1 id="panelTitle">Zimmer</h1></div>
@@ -62,422 +58,361 @@ button{cursor:pointer;font:inherit}
  <div id="panelContent" class="content"></div>
 </section>
 </main>
-
 <script>
 const $=id=>document.getElementById(id);
-const canvas=$("world");
-const ctx=canvas.getContext("2d");
-
+const canvas=$("world"),ctx=canvas.getContext("2d");
 const W=960,H=540;
 let dpr=1;
-
 function resize(){
- dpr=Math.min(window.devicePixelRatio||1,2);
- canvas.width=W*dpr;
- canvas.height=H*dpr;
- canvas.style.width="100%";
- canvas.style.height="100%";
+ dpr=Math.min(devicePixelRatio||1,2);
+ canvas.width=W*dpr;canvas.height=H*dpr;
  ctx.setTransform(dpr,0,0,dpr,0,0);
 }
-window.addEventListener("resize",resize);
-resize();
+window.addEventListener("resize",resize);resize();
 
-/* SPIELSTAND */
 const defaults={
- money:120,
- unlocked:[],
+ money:120,unlocked:[],
  equipped:{head:null,face:null,clothes:null,back:null,pants:null,seat:null,legs:null,extra:null},
- inventory:[],
- placed:[],
- orders:[],
- received:[],
- faucetOn:false,
- bucketWater:0
+ inventory:[],placed:[],orders:[],received:[],faucetOn:false,bucketWater:0
 };
-
 const STORAGE_KEY="mein-zimmer-save-v1";
-
 function loadSave(){
  try{
   const s=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
   if(!s)return structuredClone(defaults);
-  return {
-   ...structuredClone(defaults),
-   ...s,
-   equipped:{...defaults.equipped,...(s.equipped||{})}
-  };
+  return {...structuredClone(defaults),...s,equipped:{...defaults.equipped,...(s.equipped||{})}};
  }catch{return structuredClone(defaults)}
 }
-
 let save=loadSave();
-
 function persist(){
  localStorage.setItem(STORAGE_KEY,JSON.stringify(save));
  $("money").textContent=save.money;
 }
 persist();
 
-/* SPIELER */
-const player={
- x:455,
- y:0,
- vy:0,
- facing:1,
- moving:false,
- walk:0
-};
-
+const player={x:465,y:0,vy:0,facing:1,moving:false,walk:0};
 const keys=new Set();
-let carrying=null;
-let nearby=null;
-let gameTime=0;
-
-/* ZIMMERPOSITIONEN */
+let carrying=null,nearby=null,time=0;
 const targets=[
- {id:"wardrobe",x:125,y:330},
+ {id:"wardrobe",x:120,y:330},
  {id:"computer",x:680,y:325},
  {id:"bed",x:300,y:350},
  {id:"sink",x:830,y:340},
  {id:"door",x:900,y:350},
  {id:"bucket",x:790,y:405}
 ];
-
 const objects=[
  {id:"lamp",name:"Schreibtischlampe",x:650,y:278},
  {id:"poster",name:"Poster",x:350,y:165},
  {id:"teddy",name:"Teddybär",x:285,y:390}
 ];
-
 let placedObjects=[];
 
-/* FARBEN */
-const colors={
- blue:"#547b9a",
- red:"#a95149",
- green:"#658b68",
- black:"#30363b",
- white:"#e9e4d9",
- gold:"#b7954f",
- wood:"#9b714c"
-};
+const colors={blue:"#668da8",red:"#bb7771",green:"#7d9c80",black:"#45494b",white:"#eee8df",gold:"#c5a46c"};
 
-function roundedRect(x,y,w,h,r,color){
- ctx.fillStyle=color;
- ctx.beginPath();
- ctx.roundRect(x,y,w,h,r);
- ctx.fill();
+function rounded(x,y,w,h,r,color){
+ ctx.fillStyle=color;ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill();
 }
-
-function line(x1,y1,x2,y2,color,width=3){
- ctx.strokeStyle=color;
- ctx.lineWidth=width;
- ctx.lineCap="round";
- ctx.beginPath();
- ctx.moveTo(x1,y1);
- ctx.lineTo(x2,y2);
- ctx.stroke();
-}
-
 function ellipse(x,y,rx,ry,color){
- ctx.fillStyle=color;
- ctx.beginPath();
- ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);
- ctx.fill();
+ ctx.fillStyle=color;ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fill();
+}
+function line(x1,y1,x2,y2,color,width=2){
+ ctx.strokeStyle=color;ctx.lineWidth=width;ctx.lineCap="round";
+ ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+}
+function gradient(x,y,w,h,a,b){
+ const g=ctx.createLinearGradient(x,y,x,y+h);
+ g.addColorStop(0,a);g.addColorStop(1,b);
+ ctx.fillStyle=g;ctx.fillRect(x,y,w,h);
+}
+function shadow(x,y,rx,ry,alpha=.12){
+ ellipse(x,y,rx,ry,`rgba(55,43,33,${alpha})`);
 }
 
-/* ZIMMER ZEICHNEN */
+/* HINTERGRUND */
 function drawRoom(){
- // Hintergrundwand
- const wall=ctx.createLinearGradient(0,0,0,430);
- wall.addColorStop(0,"#e9dfd1");
- wall.addColorStop(1,"#d9cbbb");
- ctx.fillStyle=wall;
- ctx.fillRect(0,0,W,430);
+ gradient(0,0,W,430,"#f0e7d9","#e5d9c8");
 
- // Wandstruktur
- ctx.fillStyle="#ffffff18";
- for(let x=0;x<W;x+=80)ctx.fillRect(x,0,1,430);
+ // Wandpaneele
+ ctx.strokeStyle="#d5c8b7";ctx.lineWidth=1;
+ for(let x=30;x<W;x+=115){
+  ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,420);ctx.stroke();
+ }
+ // warmes Licht
+ const glow=ctx.createRadialGradient(480,170,15,480,170,440);
+ glow.addColorStop(0,"#fff9df55");glow.addColorStop(1,"#fff9df00");
+ ctx.fillStyle=glow;ctx.fillRect(0,0,W,430);
 
- // Fenster
- roundedRect(390,65,190,125,5,"#76543d");
- roundedRect(398,73,174,109,2,"#9fcbd0");
- ctx.fillStyle="#d9e9e6";
- ctx.fillRect(482,74,5,108);
- ctx.fillRect(398,126,174,5);
+ // Fensterrahmen
+ shadow(485,194,115,8,.09);
+ rounded(380,55,205,140,7,"#927052");
+ rounded(388,63,189,124,4,"#a9cbd0");
+ gradient(392,67,180,112,"#b9d9dc","#e8e0cc");
+ ellipse(530,100,28,24,"#fff1c6aa");
+ // Wolken
+ ellipse(430,100,22,9,"#ffffff99");
+ ellipse(447,96,17,11,"#ffffff99");
+ ellipse(460,102,21,8,"#ffffff99");
+ rounded(478,65,5,119,2,"#f6eee0");
+ rounded(390,121,185,5,2,"#f6eee0");
 
- // Fensterlicht
- ctx.fillStyle="#fff5d522";
- ctx.beginPath();
- ctx.moveTo(398,182);ctx.lineTo(570,182);
- ctx.lineTo(670,430);ctx.lineTo(300,430);
- ctx.closePath();ctx.fill();
+ // Vorhänge mit leichter Bewegung
+ const sway=Math.sin(time*1.1)*3;
+ ctx.fillStyle="#c5a995";
+ ctx.beginPath();ctx.moveTo(370,50);ctx.quadraticCurveTo(360+sway,125,376,195);ctx.lineTo(397,190);ctx.lineTo(394,50);ctx.closePath();ctx.fill();
+ ctx.beginPath();ctx.moveTo(592,50);ctx.quadraticCurveTo(606-sway,125,589,195);ctx.lineTo(570,190);ctx.lineTo(573,50);ctx.closePath();ctx.fill();
 
- // Poster
- roundedRect(45,95,100,76,3,"#76543d");
- roundedRect(51,101,88,64,2,"#b6c5b3");
- ctx.fillStyle="#819c87";
- ctx.beginPath();ctx.arc(95,130,20,0,Math.PI*2);ctx.fill();
+ // Wandbild
+ rounded(55,90,105,83,4,"#947252");
+ rounded(61,96,93,71,2,"#d4e0d0");
+ ellipse(108,127,23,23,"#e7c99c");
+ ellipse(87,143,19,15,"#8ea98e");
+ ellipse(130,144,18,16,"#a9b99b");
 
  // Boden
- const floor=ctx.createLinearGradient(0,430,0,540);
- floor.addColorStop(0,"#ae8968");
- floor.addColorStop(1,"#89664d");
- ctx.fillStyle=floor;
- ctx.fillRect(0,430,W,110);
-
- // Dielen
- for(let y=445;y<540;y+=27){
-  line(0,y,W,y,"#6f503c55",1);
+ gradient(0,420,W,120,"#c49a72","#a77c5c");
+ for(let y=435;y<540;y+=25){
+  line(0,y,W,y,"#916c5050",1);
  }
- for(let x=20;x<W;x+=120){
-  line(x,430,x-20,540,"#6f503c35",1);
+ for(let x=-30;x<W;x+=120){
+  line(x,421,x+25,540,"#916c5030",1);
  }
-
- // Fußleiste
- ctx.fillStyle="#805d43";
- ctx.fillRect(0,421,W,9);
- ctx.fillStyle="#c39b75";
- ctx.fillRect(0,421,W,3);
+ rounded(0,418,W,9,2,"#997354");
+ rounded(0,418,W,3,1,"#d6b18b");
 
  // Teppich
- ellipse(490,465,210,35,"#657f8b");
- ellipse(490,461,195,28,"#8299a0");
+ shadow(490,468,215,35,.13);
+ ellipse(490,463,205,33,"#829b9b");
+ ellipse(490,460,187,25,"#9aafb0");
+ ctx.strokeStyle="#c5d2c9";ctx.lineWidth=2;
+ ctx.beginPath();ctx.ellipse(490,460,165,19,0,0,Math.PI*2);ctx.stroke();
+
+ // kleine Sterne im Licht
+ for(let i=0;i<7;i++){
+  const px=(i*137+Math.sin(time*.7+i)*10)%W;
+  const py=70+(i*53)%270;
+  ctx.globalAlpha=.15+Math.sin(time*1.4+i)*.1;
+  ellipse(px,py,1.5,1.5,"#fffdf0");
+ }
+ ctx.globalAlpha=1;
 }
 
 /* MÖBEL */
 function drawBed(){
- // Bett
- roundedRect(205,325,210,90,8,"#79563c");
- roundedRect(210,315,205,85,8,"#e4d8c6");
- roundedRect(220,325,190,58,8,"#7d98a8");
- roundedRect(230,320,65,37,8,"#f0eae0");
- roundedRect(305,320,65,37,8,"#f0eae0");
- ctx.fillStyle="#6b4932";
- ctx.fillRect(205,400,12,30);
- ctx.fillRect(398,400,12,30);
+ shadow(300,420,115,13);
+ rounded(195,320,218,100,9,"#896348");
+ rounded(202,311,207,88,8,"#f2e9dc");
+ rounded(212,324,187,57,7,"#829aaa");
+ rounded(221,316,62,35,8,"#fff8ee");
+ rounded(293,316,62,35,8,"#fff8ee");
+ rounded(205,395,10,25,3,"#74533d");
+ rounded(395,395,10,25,3,"#74533d");
+ // Decke
+ ctx.strokeStyle="#a8bdc0";ctx.lineWidth=1;
+ for(let i=0;i<5;i++)line(225,348+i*7,380,348+i*7,"#ffffff30",1);
 }
-
 function drawWardrobe(){
- roundedRect(45,235,135,190,5,"#8d6343");
- roundedRect(53,243,119,175,3,"#a8784d");
- ctx.fillStyle="#704b32";
- ctx.fillRect(110,245,3,170);
- ellipse(101,330,4,4,"#d6b46f");
- ellipse(123,330,4,4,"#d6b46f");
+ shadow(115,425,65,9);
+ rounded(48,220,135,202,7,"#79583e");
+ rounded(54,226,123,190,5,"#ad8058");
+ rounded(114,229,3,184,2,"#79583e");
+ rounded(63,236,47,169,3,"#c09268");
+ rounded(120,236,48,169,3,"#c09268");
+ ellipse(104,324,3,3,"#ead0a0");ellipse(126,324,3,3,"#ead0a0");
+ line(62,245,62,396,"#e1b88b",1);
 }
-
 function drawDesk(){
- // Tischplatte
- roundedRect(570,305,220,15,3,"#875c3d");
- ctx.fillStyle="#65452f";
- ctx.fillRect(585,320,12,100);
- ctx.fillRect(765,320,12,100);
-
+ shadow(680,424,112,10);
+ rounded(565,302,230,15,4,"#956d4b");
+ rounded(580,316,12,105,3,"#805a3d");
+ rounded(768,316,12,105,3,"#805a3d");
  // Monitor
- roundedRect(640,220,95,75,5,"#30383d");
- roundedRect(647,227,81,59,2,"#557e89");
- ctx.fillStyle="#a5c5c5";
- ctx.fillRect(655,235,65,2);
- ctx.fillRect(655,242,43,2);
- ctx.fillStyle="#42494c";
- ctx.fillRect(682,295,12,10);
- roundedRect(660,300,55,5,2,"#4c5559");
-
+ shadow(685,302,47,5,.08);
+ rounded(640,220,94,76,7,"#41494b");
+ rounded(646,226,82,62,4,"#6c9295");
+ gradient(649,229,76,56,"#8eafb0","#547b82");
+ rounded(680,296,13,9,2,"#5d6261");
+ rounded(659,303,54,5,2,"#555b5b");
+ // Bildschirmdetails
+ rounded(656,237,40,3,2,"#d8e4d5");
+ rounded(656,245,56,2,1,"#d8e4d566");
+ rounded(656,252,33,2,1,"#d8e4d566");
  // Tastatur
- roundedRect(650,305,90,7,2,"#30383d");
-
+ rounded(653,307,67,7,3,"#555d5c");
  // Lampe
- if(!objects.some(o=>o.id==="lamp"&&o.hidden)){
-  line(610,304,610,270,"#52585a",5);
-  line(610,270,625,255,"#52585a",4);
-  roundedRect(615,246,28,13,5,"#d9bd83");
- }
+ line(610,302,610,272,"#77766c",4);
+ line(610,272,625,257,"#77766c",4);
+ rounded(614,246,28,14,5,"#e1c58c");
+ ellipse(628,262,9,3,"#fff1c6");
 }
-
 function drawSink(){
- roundedRect(800,310,125,18,4,"#805a3d");
- roundedRect(810,292,105,20,7,"#eee9df");
- ellipse(860,302,25,7,"#b6c4c2");
- line(860,292,860,273,"#737e80",5);
- line(860,273,876,273,"#737e80",5);
+ shadow(850,423,66,8);
+ rounded(795,311,132,17,4,"#906a4b");
+ rounded(807,291,108,22,7,"#f4eee5");
+ ellipse(860,301,28,8,"#c0cdca");
+ ellipse(860,300,16,4,"#92a9a7");
+ line(860,290,860,273,"#929b98",4);
+ line(860,273,876,273,"#929b98",4);
 }
-
 function drawDoor(){
- roundedRect(880,160,70,265,4,"#704a32");
- roundedRect(887,168,56,250,3,"#a8784d");
- ellipse(932,300,4,4,"#d9b66c");
+ shadow(915,423,36,7);
+ rounded(879,158,70,264,6,"#79563d");
+ rounded(886,165,56,249,4,"#b28258");
+ rounded(892,172,44,232,2,"#c29467");
+ ellipse(931,300,4,4,"#e4c27b");
 }
-
-function drawPlant(x,y){
- roundedRect(x-12,y-25,24,25,4,"#a9684e");
- line(x,y-25,x,y-65,"#547d53",4);
- line(x,y-43,x-18,y-58,"#547d53",5);
- line(x,y-49,x+18,y-65,"#547d53",5);
- ellipse(x-19,y-59,10,5,"#6b966c");
- ellipse(x+19,y-66,10,5,"#6b966c");
- ellipse(x,y-70,9,14,"#6b966c");
+function drawPlant(x,y,scale=1){
+ ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);
+ const sway=Math.sin(time*1.6+x)*3;
+ shadow(0,0,15,4);
+ rounded(-12,-23,24,23,4,"#b87960");
+ rounded(-10,-22,20,3,2,"#d69b7e");
+ line(0,-23,0,-65,"#658c67",3);
+ line(0,-43,-17+sway,-57,"#658c67",3);
+ line(0,-48,18+sway,-65,"#658c67",3);
+ ellipse(-19+sway,-58,10,5,"#83a780");
+ ellipse(20+sway,-67,10,5,"#83a780");
+ ellipse(0,-70,8,13,"#759b72");
+ ellipse(-2,-72,3,7,"#a5c19a");
+ ctx.restore();
 }
-
 function drawBucket(x,y){
- roundedRect(x-15,y-25,30,27,5,"#81999b");
- ctx.strokeStyle="#586e70";
- ctx.lineWidth=3;
- ctx.beginPath();
- ctx.arc(x,y-22,15,Math.PI,Math.PI*2);
- ctx.stroke();
+ shadow(x,y,17,4);
+ rounded(x-13,y-25,26,25,5,"#8da6a5");
+ rounded(x-10,y-23,20,3,2,"#b8c8c3");
+ ctx.strokeStyle="#6e8583";ctx.lineWidth=2;
+ ctx.beginPath();ctx.arc(x,y-23,14,Math.PI,Math.PI*2);ctx.stroke();
  if(save.bucketWater>0){
-  ctx.fillStyle="#79bdcf";
-  ctx.fillRect(x-11,y-12,22,10);
+  rounded(x-10,y-12,20,9,3,"#7bc3d2");
+  line(x-8,y-10,x+8,y-10,"#c7eff0",1);
  }
+}
+function drawTeddy(x,y){
+ shadow(x,y+18,19,5);
+ ellipse(x,y,15,16,"#b98962");
+ ellipse(x-10,y-13,7,7,"#b98962");
+ ellipse(x+10,y-13,7,7,"#b98962");
+ ellipse(x,y-7,12,12,"#c99a70");
+ ellipse(x-4,y-9,1.5,2,"#453a31");
+ ellipse(x+4,y-9,1.5,2,"#453a31");
+ ellipse(x,y-3,3,2,"#e7c7a7");
 }
 
 /* GEGENSTÄNDE */
 function drawObjects(){
- drawPlant(510,420);
- drawPlant(845,420);
-
+ drawPlant(510,420,.85);
+ drawPlant(845,420,.9);
  drawBucket(790,425);
-
  for(const o of objects){
-  if(o.id==="lamp"&&o.hidden)continue;
-
-  if(o.id==="teddy"){
-   ellipse(o.x,o.y,19,20,"#ae8056");
-   ellipse(o.x-12,o.y-17,9,9,"#ae8056");
-   ellipse(o.x+12,o.y-17,9,9,"#ae8056");
-   ellipse(o.x,o.y-8,15,14,"#c29468");
-   ellipse(o.x-5,o.y-10,2,2,"#302b29");
-   ellipse(o.x+5,o.y-10,2,2,"#302b29");
-  }
-
+  if(o.id==="teddy")drawTeddy(o.x,o.y);
   if(o.id==="poster"){
-   roundedRect(o.x-28,o.y-20,56,40,3,"#79563d");
-   roundedRect(o.x-24,o.y-16,48,32,2,"#91a99d");
-   ellipse(o.x,o.y,10,10,"#e5d2a6");
+   rounded(o.x-29,o.y-21,58,42,3,"#927052");
+   rounded(o.x-24,o.y-16,48,32,2,"#c4d4c2");
+   ellipse(o.x,o.y,11,11,"#e7c99c");
   }
  }
 }
 
-/* STUHL-SPIELFIGUR */
+/* STUHL */
 function drawChair(){
- const x=player.x;
- const floorY=430-player.y;
- const bob=player.moving?Math.sin(player.walk)*2:0;
- const seatColor=colors[save.equipped.clothes]||"#b9a58c";
- const backColor=save.equipped.seat&&colors[save.equipped.seat]||seatColor;
- const legColor=save.equipped.legs==="gold"?"#b7954f":"#514b45";
+ const x=player.x,y=430-player.y;
+ const bob=player.moving?Math.sin(player.walk)*1.5:Math.sin(time*2)*.6;
+ const seat=colors[save.equipped.clothes]||"#b9a58c";
+ const back=colors[save.equipped.seat]||seat;
 
  ctx.save();
- ctx.translate(x,floorY+bob);
+ ctx.translate(x,y+bob);
  ctx.scale(player.facing,1);
 
- // Schatten
- ellipse(0,0,45,8,"#352b2530");
+ shadow(0,0,27,5,.15);
 
- // Stuhlbeine
- ctx.fillStyle=legColor;
- ctx.fillRect(-30,-42,8,42);
- ctx.fillRect(26,-42,8,42);
- ctx.fillRect(-28,-42,62,6);
-
- // Sitzfläche
- roundedRect(-39,-65,83,25,7,seatColor);
- roundedRect(-42,-69,88,10,4,"#805e43");
+ // Beine und Rollen
+ const leg=save.equipped.legs==="gold"?"#c5a46c":"#65635e";
+ ctx.strokeStyle=leg;ctx.lineWidth=4;ctx.lineCap="round";
+ for(const xx of [-19,19]){
+  line(xx,-30,xx+(xx<0?-2:2),-4,leg,3);
+  ellipse(xx,-3,3,3,"#62605a");
+ }
+ line(-19,-12,19,-12,leg,3);
 
  // Rückenlehne
- roundedRect(-44,-137,18,76,7,"#8e6948");
- roundedRect(-41,-133,13,65,5,backColor);
+ rounded(-26,-89,13,54,6,"#89694e");
+ rounded(-23,-86,8,48,4,back);
+ rounded(-27,-92,15,7,4,"#795b43");
 
- // Rückenlehnenkante
- roundedRect(-45,-140,20,9,4,"#76543b");
+ // Sitz
+ rounded(-27,-43,55,16,6,"#805f45");
+ rounded(-25,-45,51,13,6,seat);
+ line(-17,-40,16,-40,"#ffffff55",1);
 
- // Sitzdetails
- line(-28,-58,30,-58,"#ffffff44",2);
+ // kleine Armlehnen
+ rounded(-30,-58,7,22,3,"#8a694b");
+ rounded(23,-58,7,22,3,"#8a694b");
 
- // Tragearme: klappen beim Tragen aus
+ // Tragearme
  if(carrying){
-  // seitliche Halterung
-  line(-5,-68,8,-88,"#76543b",7);
-  line(8,-88,42,-88,"#76543b",7);
-  line(42,-88,55,-75,"#76543b",6);
-  line(8,-88,42,-88,"#c29a69",3);
-  ellipse(55,-75,5,5,"#76543b");
-
-  // zweiter Arm als dezente Silhouette
-  line(-15,-66,-22,-82,"#76543b",5);
-  line(-22,-82,-35,-82,"#76543b",5);
+  const armWave=Math.sin(time*5)*1.5;
+  line(23,-55,34,-69,"#795a42",4);
+  line(34,-69,47,-68+armWave,"#795a42",4);
+  line(-23,-55,-34,-69,"#795a42",4);
+  line(-34,-69,-45,-68-armWave,"#795a42",4);
+  ellipse(47,-68+armWave,3,3,"#e1c18d");
+  ellipse(-45,-68-armWave,3,3,"#e1c18d");
  }
-
- // Cosmetics
- drawChairCosmetics();
-
- // Getragener Gegenstand
- if(carrying){
-  drawCarriedItem(62,-105);
- }
-
- ctx.restore();
-}
-
-function drawChairCosmetics(){
- const eq=save.equipped||{};
 
  // Klorollen-Hut
- if(eq.head==="toiletroll"){
-  ctx.fillStyle="#f4f1e8";
-  ctx.fillRect(-40,-158,23,20);
-  ctx.fillStyle="#d5d0c5";
-  ctx.fillRect(-40,-158,23,4);
-  ellipse(-28.5,-148,4,4,"#b9b4aa");
-  ellipse(-28.5,-148,2,2,"#eeeae1");
+ if(save.equipped.head==="toiletroll"){
+  rounded(-22,-108,18,17,5,"#f5f1e8");
+  ellipse(-13,-100,4,4,"#bdb8ae");
+  ellipse(-13,-100,2,2,"#fdfbf5");
+  line(-21,-105,-21,-91,"#ded9d0",1);
  }
 
- // Doppel-Klorolle
- if(eq.back==="doubleRoll"){
-  for(const y of [-120,-96]){
-   ellipse(-54,y,10,10,"#f5f1e9");
-   ellipse(-54,y,4,4,"#bcb7ad");
+ // Partyhut
+ if(save.equipped.head==="partyhat"){
+  ctx.fillStyle="#e7a64c";
+  ctx.beginPath();ctx.moveTo(-25,-90);ctx.lineTo(-3,-90);ctx.lineTo(-14,-121);ctx.closePath();ctx.fill();
+  ellipse(-14,-121,3,3,"#d77d78");
+  ellipse(-15,-105,2,2,"#fff0bd");
+ }
+
+ // Doppelrolle
+ if(save.equipped.back==="doubleRoll"){
+  for(const yy of [-78,-60]){
+   ellipse(-35,yy,7,7,"#f5f1e9");
+   ellipse(-35,yy,3,3,"#bdb8ae");
   }
  }
 
  // Schleife
- if(eq.extra==="bow"){
-  ellipse(-27,-145,9,6,"#cf7779");
-  ellipse(-10,-145,9,6,"#cf7779");
-  ellipse(-19,-145,4,4,"#a84f59");
+ if(save.equipped.extra==="bow"){
+  ellipse(-14,-91,7,4,"#d98b91");
+  ellipse(-2,-91,7,4,"#d98b91");
+  ellipse(-8,-91,3,3,"#ad606b");
  }
 
- // Partyhut
- if(eq.head==="partyhat"){
-  ctx.fillStyle="#e7a64c";
-  ctx.beginPath();
-  ctx.moveTo(-43,-137);ctx.lineTo(-20,-137);ctx.lineTo(-31,-175);
-  ctx.closePath();ctx.fill();
-  ellipse(-31,-175,4,4,"#d66c65");
+ // getragenes Objekt
+ if(carrying){
+  if(carrying==="bucket"){
+   rounded(42,-91,17,18,4,"#8da6a5");
+   if(save.bucketWater>0)rounded(45,-81,11,6,2,"#7bc3d2");
+  }else if(carrying==="teddy"){
+   drawTeddy(50,-81);
+  }else{
+   rounded(43,-88,17,17,4,"#a5b8aa");
+  }
  }
-
- // Sitzdeko
- if(eq.seat==="gold"){
-  line(-30,-67,30,-67,"#d4ae60",3);
- }
+ ctx.restore();
 }
 
-/* GETRAGENE GEGENSTÄNDE */
-function drawCarriedItem(x,y){
- if(carrying==="bucket"){
-  roundedRect(x-13,y-4,27,26,4,"#829a9c");
-  if(save.bucketWater>0){
-   ctx.fillStyle="#77bed0";ctx.fillRect(x-10,y+9,21,10);
+/* PLATZIERTE DEKO */
+function drawPlaced(){
+ for(const p of placedObjects){
+  if(p.id==="plant")drawPlant(p.x,p.y,.8);
+  if(p.id==="rug")ellipse(p.x,p.y,55,12,"#829b9b");
+  if(p.id==="star"){
+   ctx.fillStyle="#d6b66f";ctx.font="22px Arial";ctx.fillText("★",p.x,p.y);
   }
- }else if(carrying==="lamp"){
-  line(x,y+10,x,y-18,"#777",4);
-  roundedRect(x-12,y-24,25,12,4,"#dfc27e");
- }else if(carrying==="teddy"){
-  ellipse(x,y,13,14,"#ae8056");
-  ellipse(x-8,y-10,6,6,"#ae8056");
-  ellipse(x+8,y-10,6,6,"#ae8056");
- }else{
-  roundedRect(x-12,y-12,24,24,4,"#91a99d");
  }
 }
 
@@ -488,60 +423,38 @@ const cosmetics=[
  {id:"green",name:"Grüner Stuhl",price:30,desc:"Grüner Stoffbezug.",slot:"clothes"},
  {id:"black",name:"Schwarzer Stuhl",price:40,desc:"Dunkler Stoffbezug.",slot:"clothes"},
  {id:"white",name:"Weißer Stuhl",price:40,desc:"Heller Stoffbezug.",slot:"clothes"},
- {id:"gold",name:"Goldene Details",price:80,desc:"Goldene Stuhl-Details.",slot:"seat"},
- {id:"toiletroll",name:"Klorollen-Hut",price:20,desc:"Eine Klorolle auf der Lehne.",slot:"head"},
+ {id:"gold",name:"Goldene Details",price:80,desc:"Goldene Akzente.",slot:"seat"},
+ {id:"toiletroll",name:"Klorollen-Hut",price:20,desc:"Eine kleine Klorolle auf der Lehne.",slot:"head"},
  {id:"doubleRoll",name:"Doppel-Klorolle",price:35,desc:"Zwei Rollen als Rücken-Deko.",slot:"back"},
  {id:"bow",name:"Rosa Schleife",price:25,desc:"Eine kleine Schleife.",slot:"extra"},
- {id:"partyhat",name:"Partyhut",price:30,desc:"Der Stuhl ist bereit für die Party.",slot:"head"}
+ {id:"partyhat",name:"Partyhut",price:30,desc:"Für deinen Party-Stuhl.",slot:"head"}
 ];
-
 const shopItems=[
- {id:"plant",name:"Zimmerpflanze",price:35,desc:"Eine kleine Pflanze für dein Zimmer."},
- {id:"lamp",name:"Schreibtischlampe",price:45,desc:"Warmes Licht für den Abend."},
- {id:"poster",name:"Poster",price:25,desc:"Dekoration für die Wand."},
+ {id:"plant",name:"Zimmerpflanze",price:35,desc:"Eine kleine Pflanze."},
+ {id:"lamp",name:"Schreibtischlampe",price:45,desc:"Warmes Licht."},
+ {id:"poster",name:"Poster",price:25,desc:"Wanddekoration."},
  {id:"teddy",name:"Teddybär",price:40,desc:"Ein gemütlicher Mitbewohner."},
- {id:"rug",name:"Teppich",price:50,desc:"Macht den Boden gemütlicher."},
+ {id:"rug",name:"Teppich",price:50,desc:"Ein gemütlicher Teppich."},
  {id:"star",name:"Sternen-Deko",price:60,desc:"Kleine Sterne für die Wand."}
 ];
 
-/* PANEL */
-const panel=$("panel");
-const content=$("panelContent");
+/* MENÜ */
+const panel=$("panel"),content=$("panelContent");
 let activePanel=null;
-
-function openPanel(kind){
- activePanel=kind;
- panel.classList.remove("hidden");
- renderPanel();
-}
-function closePanel(){
- panel.classList.add("hidden");
- activePanel=null;
-}
+function openPanel(kind){activePanel=kind;panel.classList.remove("hidden");renderPanel()}
+function closePanel(){panel.classList.add("hidden");activePanel=null}
 $("closePanel").onclick=closePanel;
 
 function button(text,fn,disabled=false){
- const b=document.createElement("button");
- b.className="action";
- b.textContent=text;
- b.disabled=disabled;
- b.onclick=fn;
- return b;
+ const b=document.createElement("button");b.className="action";b.textContent=text;b.disabled=disabled;b.onclick=fn;return b;
 }
-
 function card(name,detail,action){
- const el=document.createElement("div");
- el.className="card";
+ const el=document.createElement("div");el.className="card";
  const info=document.createElement("div");
- const strong=document.createElement("strong");
- strong.textContent=name;
- const small=document.createElement("small");
- small.textContent=detail;
- info.append(strong,small);
- el.append(info,action);
- return el;
+ const strong=document.createElement("strong");strong.textContent=name;
+ const small=document.createElement("small");small.textContent=detail;
+ info.append(strong,small);el.append(info,action);return el;
 }
-
 function renderPanel(){
  content.innerHTML="";
  const titles={
@@ -552,168 +465,87 @@ function renderPanel(){
  bucket:["EIMER","Wasser auffüllen"]
  };
  const t=titles[activePanel]||["DEIN ZUHAUSE","Zimmer"];
- $("panelEyebrow").textContent=t[0];
- $("panelTitle").textContent=t[1];
-
+ $("panelEyebrow").textContent=t[0];$("panelTitle").textContent=t[1];
  if(activePanel==="computer")renderShop();
  if(activePanel==="wardrobe")renderWardrobe();
  if(activePanel==="door")renderDoor();
  if(activePanel==="sink"||activePanel==="bucket")renderWater();
 }
-
 function renderShop(){
- const bal=document.createElement("div");
- bal.className="balance";
- bal.textContent=`Guthaben: ${save.money} Münzen`;
- content.append(bal);
-
- const grid=document.createElement("div");
- grid.className="grid";
-
+ const bal=document.createElement("div");bal.className="balance";bal.textContent=`Guthaben: ${save.money} Münzen`;content.append(bal);
+ const grid=document.createElement("div");grid.className="grid";
  for(const item of shopItems){
-  const owned=save.inventory.includes(item.id)||
-   save.placed.some(p=>p.id===item.id)||
-   save.orders.some(o=>o.id===item.id);
-
-  grid.append(card(item.name,`${item.desc} · ${item.price} Münzen`,
-   button("Bestellen",()=>{
-    if(save.money<item.price)return;
-    save.money-=item.price;
-    save.orders.push({id:item.id,status:"ordered",remaining:20});
-    persist();renderPanel();
-   },owned||save.money<item.price)));
+  const owned=save.inventory.includes(item.id)||save.placed.some(p=>p.id===item.id)||save.orders.some(o=>o.id===item.id);
+  grid.append(card(item.name,`${item.desc} · ${item.price} Münzen`,button("Bestellen",()=>{
+   if(save.money<item.price)return;
+   save.money-=item.price;save.orders.push({id:item.id,status:"ordered",remaining:20});persist();renderPanel();
+  },owned||save.money<item.price)));
  }
  content.append(grid);
-
- const h=document.createElement("h3");
- h.className="section-title";
- h.textContent="Bestellungen";
- content.append(h);
-
+ const h=document.createElement("h3");h.className="section-title";h.textContent="Bestellungen";content.append(h);
  for(const o of save.orders){
-  const row=document.createElement("div");
-  row.className="order";
-  const item=shopItems.find(i=>i.id===o.id);
-  row.textContent=`${item?.name||o.id} – ${o.status==="arrived"?"An der Tür":Math.ceil(o.remaining||0)+" Sekunden"}`;
+  const row=document.createElement("div");row.className="order";
+  row.textContent=`${shopItems.find(i=>i.id===o.id)?.name||o.id} – ${o.status==="arrived"?"An der Tür":Math.ceil(o.remaining||0)+" Sekunden"}`;
   content.append(row);
  }
 }
-
 function renderWardrobe(){
- const intro=document.createElement("div");
- intro.className="notice";
- intro.textContent="Wähle deine Cosmetics. Alle ausgewählten Gegenstände werden direkt an deinem Stuhl angezeigt.";
- content.append(intro);
-
- const slots=[
-  ["head","Kopf"],
-  ["back","Rücken"],
-  ["clothes","Stuhlbezug"],
-  ["seat","Sitzfläche"],
-  ["extra","Extras"]
- ];
-
- for(const [slot,label] of slots){
-  const heading=document.createElement("h3");
-  heading.className="section-title";
-  heading.textContent=label;
-  content.append(heading);
-
-  const grid=document.createElement("div");
-  grid.className="grid";
-
-  const items=cosmetics.filter(i=>i.slot===slot);
-
-  if(slot==="head"||slot==="back"||slot==="extra"||slot==="seat"||slot==="clothes"){
-   grid.append(card("Ohne Cosmetic","Zurück zum normalen Aussehen.",
-    button(save.equipped[slot]?"Ablegen":"Ausgewählt",()=>{
-     save.equipped[slot]=null;
-     persist();renderPanel();
-    },!save.equipped[slot])));
-  }
-
-  for(const item of items){
-   const owned=save.unlocked.includes(item.id);
-   const active=save.equipped[slot]===item.id;
-
-   grid.append(card(item.name,
-    `${item.desc} · ${owned?"Freigeschaltet":item.price+" Münzen"}`,
-    button(!owned?"Kaufen":active?"Ablegen":"Anziehen",()=>{
-     if(!owned){
-      if(save.money<item.price)return;
-      save.money-=item.price;
-      save.unlocked.push(item.id);
-     }
-     save.equipped[slot]=active?null:item.id;
-     persist();renderPanel();
-    },!owned&&save.money<item.price)));
+ const intro=document.createElement("div");intro.className="notice";intro.textContent="Deine Cosmetics werden direkt am Stuhl angezeigt ♡";content.append(intro);
+ for(const [slot,label] of [["head","Kopf"],["back","Rücken"],["clothes","Stuhlbezug"],["seat","Sitzfläche"],["extra","Extras"]]){
+  const heading=document.createElement("h3");heading.className="section-title";heading.textContent=label;content.append(heading);
+  const grid=document.createElement("div");grid.className="grid";
+  grid.append(card("Ohne Cosmetic","Normales Aussehen.",button(save.equipped[slot]?"Ablegen":"Ausgewählt",()=>{
+   save.equipped[slot]=null;persist();renderPanel();
+  },!save.equipped[slot])));
+  for(const item of cosmetics.filter(i=>i.slot===slot)){
+   const owned=save.unlocked.includes(item.id),active=save.equipped[slot]===item.id;
+   grid.append(card(item.name,`${item.desc} · ${owned?"Freigeschaltet":item.price+" Münzen"}`,button(!owned?"Kaufen":active?"Ablegen":"Anziehen",()=>{
+    if(!owned){if(save.money<item.price)return;save.money-=item.price;save.unlocked.push(item.id)}
+    save.equipped[slot]=active?null:item.id;persist();renderPanel();
+   },!owned&&save.money<item.price)));
   }
   content.append(grid);
  }
 }
-
 function renderDoor(){
  const arrived=save.orders.filter(o=>o.status==="arrived");
- if(!arrived.length){
-  content.textContent="Momentan ist keine Lieferung angekommen.";
-  return;
- }
+ if(!arrived.length){content.textContent="Momentan ist keine Lieferung angekommen.";return}
  for(const o of arrived){
   const item=shopItems.find(i=>i.id===o.id);
-  content.append(card(item?.name||o.id,"Dein Paket ist angekommen.",
-   button("Abholen",()=>{
-    o.status="received";
-    save.received.push(o.id);
-    save.inventory.push(o.id);
-    persist();renderPanel();
-   })));
+  content.append(card(item?.name||o.id,"Dein Paket ist angekommen.",button("Abholen",()=>{
+   o.status="received";save.received.push(o.id);save.inventory.push(o.id);persist();renderPanel();
+  })));
  }
 }
-
 function renderWater(){
- const status=document.createElement("div");
- status.className="balance";
- status.textContent=save.bucketWater>0?"Der Eimer enthält Wasser.":"Der Eimer ist leer.";
- content.append(status);
-
+ const status=document.createElement("div");status.className="balance";
+ status.textContent=save.bucketWater>0?"Der Eimer enthält Wasser.":"Der Eimer ist leer.";content.append(status);
  content.append(button(save.faucetOn?"Wasserhahn ausschalten":"Wasserhahn einschalten",()=>{
-  save.faucetOn=!save.faucetOn;
-  persist();renderPanel();
+  save.faucetOn=!save.faucetOn;persist();renderPanel();
  }));
-
- content.append(button("Eimer auffüllen",()=>{
-  save.bucketWater=1;
-  persist();renderPanel();
- }));
+ content.append(button("Eimer auffüllen",()=>{save.bucketWater=1;persist();renderPanel()}));
 }
 
 /* INTERAKTION */
 function findNearby(){
- let best=null;
- let distance=Infinity;
+ let best=null,dist=Infinity;
  for(const t of targets){
   const d=Math.hypot(player.x-t.x,430-t.y);
-  if(d<95&&d<distance){best=t;distance=d}
+  if(d<75&&d<dist){best=t;dist=d}
  }
  return best;
 }
-
 function interact(){
  if(!panel.classList.contains("hidden"))return;
-
  if(carrying){
   if(carrying==="bucket"){
-   targets.find(t=>t.id==="bucket").x=player.x+55;
+   const t=targets.find(t=>t.id==="bucket");t.x=player.x+40;t.y=405;
   }else{
-   const o=objects.find(o=>o.id===carrying);
-   if(o){o.x=player.x+55;o.y=385;}
+   const o=objects.find(o=>o.id===carrying);if(o){o.x=player.x+40;o.y=390}
   }
-  carrying=null;
-  return;
+  carrying=null;return;
  }
-
  const near=findNearby();
-
  if(near){
   if(near.id==="wardrobe")openPanel("wardrobe");
   if(near.id==="computer")openPanel("computer");
@@ -726,31 +558,18 @@ function interact(){
   if(near.id==="bed")player.x=300;
   return;
  }
-
- // Gegenstände aufnehmen
- let nearest=null;
- let dist=65;
+ let nearest=null,dist=55;
  for(const o of objects){
   const d=Math.hypot(player.x-o.x,430-o.y);
   if(d<dist){dist=d;nearest=o}
  }
- if(nearest){
-  carrying=nearest.id;
-  return;
- }
-
- // Inventar verwenden
+ if(nearest){carrying=nearest.id;return}
  if(save.inventory.length){
   const id=save.inventory.shift();
-  if(id==="plant"){
-   placedObjects.push({id,x:player.x,y:420});
-  }else if(id==="rug"){
-   placedObjects.push({id,x:player.x,y:420});
-  }else if(id==="star"){
-   placedObjects.push({id,x:player.x,y:200});
-  }else{
+  if(id==="plant"||id==="rug"||id==="star")placedObjects.push({id,x:player.x,y:id==="star"?200:420});
+  else{
    const o=objects.find(o=>o.id===id);
-   if(o){o.x=player.x+55;o.y=385;carrying=id;}
+   if(o){o.x=player.x+40;o.y=390;carrying=id}
   }
   persist();
  }
@@ -758,50 +577,34 @@ function interact(){
 
 window.addEventListener("keydown",e=>{
  const k=e.key.toLowerCase();
- if(["arrowup","arrowdown","arrowleft","arrowright"," "].includes(k))e.preventDefault();
-
- if(k==="escape"){
-  if(!panel.classList.contains("hidden"))closePanel();
-  else if(carrying)interact();
-  return;
- }
+ if(["arrowleft","arrowright","arrowup","arrowdown"," "].includes(k))e.preventDefault();
+ if(k==="escape"){if(!panel.classList.contains("hidden"))closePanel();else if(carrying)interact();return}
  if(k==="e"){interact();return}
  if(!panel.classList.contains("hidden"))return;
-
  keys.add(k);
-
- if(k==="w"&&!player.y&&!player.vy)player.vy=7;
+ if(k==="w"&&!player.y&&!player.vy)player.vy=5.8;
 });
 window.addEventListener("keyup",e=>keys.delete(e.key.toLowerCase()));
 window.addEventListener("blur",()=>keys.clear());
 
-/* BEWEGUNG */
-function movePlayer(dt){
- let direction=0;
- if(keys.has("a")||keys.has("arrowleft"))direction--;
- if(keys.has("d")||keys.has("arrowright"))direction++;
-
- player.moving=direction!==0;
-
- if(direction){
-  player.x+=direction*210*dt;
-  player.facing=direction;
-  player.walk+=dt*10;
+function move(dt){
+ let dir=0;
+ if(keys.has("a")||keys.has("arrowleft"))dir--;
+ if(keys.has("d")||keys.has("arrowright"))dir++;
+ player.moving=dir!==0;
+ if(dir){
+  player.x+=dir*175*dt;player.facing=dir;player.walk+=dt*9;
  }
-
- player.x=Math.max(35,Math.min(925,player.x));
-
+ player.x=Math.max(30,Math.min(930,player.x));
  if(player.vy||player.y){
-  player.y+=player.vy;
-  player.vy-=18*dt;
-  if(player.y<=0){player.y=0;player.vy=0;}
+  player.y+=player.vy;player.vy-=17*dt;
+  if(player.y<=0){player.y=0;player.vy=0}
  }
 }
 
-/* ZEICHNEN */
+/* ANIMATION */
 function draw(){
  ctx.clearRect(0,0,W,H);
-
  drawRoom();
  drawWardrobe();
  drawBed();
@@ -809,77 +612,34 @@ function draw(){
  drawSink();
  drawDoor();
  drawObjects();
-
- // Abgestellte Deko
- for(const p of placedObjects){
-  if(p.id==="plant")drawPlant(p.x,p.y);
-  if(p.id==="rug")ellipse(p.x,p.y,65,15,"#718c9a");
-  if(p.id==="star"){
-   ctx.fillStyle="#d5b76e";
-   ctx.font="28px Arial";
-   ctx.fillText("★",p.x,p.y);
-  }
- }
-
+ drawPlaced();
  drawChair();
 
- // Interaktionshinweis
  nearby=findNearby();
  if(nearby&&!carrying&&panel.classList.contains("hidden")){
-  roundedRect(player.x-48,350-player.y,96,28,8,"#283139dd");
-  ctx.fillStyle="white";
-  ctx.font="bold 12px Arial";
-  ctx.textAlign="center";
-  const names={
-   wardrobe:"E · Kleiderschrank",
-   computer:"E · Computer",
-   bed:"E · Bett",
-   sink:"E · Waschbecken",
-   door:"E · Tür",
-   bucket:"E · Eimer"
-  };
-  ctx.fillText(names[nearby.id],player.x,369-player.y);
+  rounded(player.x-45,350-player.y,90,24,8,"#394448e8");
+  ctx.fillStyle="#fff";ctx.font="bold 10px Arial";ctx.textAlign="center";
+  const names={wardrobe:"E · Schrank",computer:"E · Computer",bed:"E · Bett",sink:"E · Waschbecken",door:"E · Tür",bucket:"E · Eimer"};
+  ctx.fillText(names[nearby.id],player.x,366-player.y);
   ctx.textAlign="left";
  }
 }
-
-/* SOUND */
-let soundOn=true;
-$("soundButton").onclick=()=>{
- soundOn=!soundOn;
- $("soundButton").textContent=soundOn?"♫":"♪";
-};
-
-/* GAME LOOP */
 let last=performance.now();
-
 function animate(now){
- const dt=Math.min((now-last)/1000,.04);
- last=now;
- gameTime+=dt;
-
- if(panel.classList.contains("hidden")){
-  movePlayer(dt);
- }
-
- // Lieferungen
+ const dt=Math.min((now-last)/1000,.04);last=now;time+=dt;
+ if(panel.classList.contains("hidden"))move(dt);
  let changed=false;
  for(const o of save.orders){
   if(o.status==="ordered"){
    o.remaining-=dt;
-   if(o.remaining<=0){
-    o.remaining=0;
-    o.status="arrived";
-    changed=true;
-   }
+   if(o.remaining<=0){o.remaining=0;o.status="arrived";changed=true}
   }
  }
  if(changed)persist();
-
  draw();
  requestAnimationFrame(animate);
 }
-
+$("soundButton").onclick=()=>{$("soundButton").textContent=$("soundButton").textContent==="♫"?"♪":"♫"};
 $("money").textContent=save.money;
 requestAnimationFrame(animate);
 </script>
