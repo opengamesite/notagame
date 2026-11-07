@@ -445,6 +445,7 @@ function drawAnimatedLeg(x,y,phase){
  ctx.restore();
 }
 
+/* Der ursprüngliche Stuhl bleibt in Form und Proportionen unverändert. */
 function drawChair(time){
  const back=save.equipped.back;
  ctx.save();
@@ -455,10 +456,16 @@ function drawChair(time){
  ctx.fill();
  ctx.restore();
  if(back)drawBackItem();
- drawLeg(29,75,0);
+
+ /* KORREKTUR: drawOriginalLeg statt der nicht vorhandenen drawLeg-Funktion */
+ drawOriginalLeg(29,75,0);
+
  woodPart(23,5,13,70,2);
  woodPart(20,67,78,12,2);
- drawLeg(88,77,0);
+
+ /* KORREKTUR: drawOriginalLeg statt der nicht vorhandenen drawLeg-Funktion */
+ drawOriginalLeg(88,77,0);
+
  drawPants();
  drawClothes();
  line(25,8,25,70,"#f1c18b99",1);
@@ -971,6 +978,7 @@ function drawWorld(){
  drawSideTable(1770);
  rounded(1780,FLOOR-70,40,8,3,"#d5c5a8","#8d7960");
  ellipse(1800,FLOOR-72,7,3,"#7e9d89");
+
  /* Tastatur und Maus auf dem Schreibtisch */
  rounded(1215,FLOOR-100,48,5,2,"#333b3b","#1d2526");
  for(let i=0;i<8;i++)rect(1219+i*5,FLOOR-98,3,1,"#d4d4c7");
@@ -980,8 +988,10 @@ function drawWorld(){
  const lampGlow=ctx.createRadialGradient(1321,FLOOR-136,2,1321,FLOOR-136,100);
  lampGlow.addColorStop(0,"#ffe9a044");lampGlow.addColorStop(1,"#ffe9a000");
  rect(1220,FLOOR-220,200,150,lampGlow);
+
  for(const item of save.worldItems){if(item.id!==player.held)drawWorldItem(item);}
  drawWaterStream();
+
  /* Tür zur Stadt */
  ctx.save();ctx.shadowColor="#0006";ctx.shadowBlur=12;ctx.shadowOffsetY=4;
  rect(2870,FLOOR-218,105,218,"#493326");ctx.restore();
@@ -989,7 +999,10 @@ function drawWorld(){
  rect(2893,FLOOR-193,59,185,"#886346");rect(2901,FLOOR-183,43,78,"#9e7956");
  rect(2901,FLOOR-96,43,79,"#79583e");ellipse(2940,FLOOR-96,4,4,"#d4b47e");
  rect(2863,FLOOR-5,120,5,"#443326");line(2878,FLOOR-210,2967,FLOOR-210,"#c9a77f",2);
- drawPlayerShadow();drawChair();drawHeldItem();
+
+ drawPlayerShadow();
+ drawChair();
+ drawHeldItem();
  ctx.restore();
 }
 
@@ -1082,6 +1095,7 @@ const interactables=[
  {id:"city",x:2870,w:110,label:"Tür zur Stadt öffnen"}
 ];
 let nearby=null;
+
 function getNearby(){
  const px=player.x+player.width/2;let best=null,distance=Infinity;
  for(const item of save.worldItems){
