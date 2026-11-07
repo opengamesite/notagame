@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -7,75 +6,98 @@
 <title>MEIN ZIMMER</title>
 <style>
 *{box-sizing:border-box}
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#17191b;font-family:Arial,sans-serif}
+html,body{
+ margin:0;width:100%;height:100%;overflow:hidden;
+ background:#17191b;font-family:Arial,sans-serif
+}
 canvas{display:block;width:100%;height:100%}
-#hud{position:fixed;top:15px;left:16px;z-index:5;color:#f5eee2;background:#17191bd9;border:1px solid #ffffff25;border-radius:9px;padding:10px 14px;font-size:13px;letter-spacing:1.5px}
-#status{position:fixed;top:15px;right:16px;z-index:5;color:#eee;background:#17191bd9;border:1px solid #ffffff25;border-radius:9px;padding:9px 12px;font-size:12px}
-#hint{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:5;color:#eee;background:#17191be8;border:1px solid #ffffff30;border-radius:8px;padding:11px 17px;font-size:13px;text-align:center;white-space:nowrap;max-width:92vw}
-#money{position:fixed;top:58px;left:16px;z-index:5;color:#f4d58d;background:#17191bd9;border:1px solid #ffffff25;border-radius:8px;padding:8px 12px;font-size:13px}
-#fade{position:fixed;inset:0;background:#111;opacity:0;pointer-events:none;transition:opacity .3s;z-index:20}
+#hud{
+ position:fixed;top:16px;left:16px;z-index:5;
+ color:#fff;background:#202326dd;padding:12px 16px;
+ border:1px solid #ffffff24;border-radius:9px;
+ font-size:14px;line-height:1.6
+}
+#status{
+ position:fixed;top:16px;right:16px;z-index:5;
+ color:#fff;background:#202326dd;padding:10px 14px;
+ border:1px solid #ffffff24;border-radius:9px;
+ font-size:13px
+}
+#hint{
+ position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+ color:#fff;background:#202326e8;padding:11px 18px;
+ border-radius:8px;font-size:14px;z-index:5;
+ text-align:center;white-space:nowrap
+}
+#fade{
+ position:fixed;inset:0;background:#111;opacity:0;
+ pointer-events:none;z-index:10;transition:opacity .35s
+}
 </style>
 </head>
 <body>
-<div id="hud">MEIN ZIMMER <span style="opacity:.5">/</span> ZUHAUSE</div>
-<div id="status">Wird gestartet …</div>
-<div id="money">0 €</div>
-<div id="hint">A / D – Bewegen · LEERTASTE – Springen · E – Interagieren</div>
+
+<div id="hud">
+ <strong>MEIN ZIMMER</strong><br>
+ <span id="money">120 Münzen</span><br>
+ <span id="position">Zimmer</span>
+</div>
+
+<div id="status">Bereit</div>
+<div id="hint">A / D oder ← / → bewegen · Leertaste springen · E interagieren</div>
 <div id="fade"></div>
+
 <canvas id="game"></canvas>
 
 <script src="supabase.js"></script>
 <script>
 "use strict";
 
-/* =====================================================
-   GRUNDLAGEN
-===================================================== */
+/* =========================================================
+   GRUNDEINSTELLUNGEN
+========================================================= */
+
 const canvas=document.getElementById("game");
 const ctx=canvas.getContext("2d");
-const W=960,H=540,WORLD=3100,FLOOR=440;
+
+const W=960;
+const H=540;
+const WORLD=3100;
+const FLOOR=440;
 const SAVE_KEY="mein-zimmer-save-v1";
 
-let sx=1,sy=1,cameraX=0,last=0,time=0;
-let keys={};
-let message="",messageUntil=0;
-let onlineRoom=null,onlineReady=false;
-let otherPlayers={};
-let wardrobeOpen=0,computerOn=true,tapAnimation=0;
-let sofaOccupied=false,bedOccupied=false;
-let furnitureAction=null;
+let dpr=1;
 
 function resize(){
- const dpr=Math.min(devicePixelRatio||1,2);
- canvas.width=Math.floor(innerWidth*dpr);
- canvas.height=Math.floor(innerHeight*dpr);
- sx=canvas.width/W;
- sy=canvas.height/H;
+ dpr=Math.min(window.devicePixelRatio||1,2);
+ canvas.width=W*dpr;
+ canvas.height=H*dpr;
+ ctx.setTransform(dpr,0,0,dpr,0,0);
 }
 window.addEventListener("resize",resize);
 resize();
 
-function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
-function lerp(a,b,t){return a+(b-a)*t}
-function smooth(a,b,t){t=clamp(t,0,1);return a+(b-a)*(t*t*(3-2*t))}
-function roundRect(c,x,y,w,h,r){
- c.beginPath();
- c.roundRect(x,y,w,h,r);
-}
-function say(text,duration=2400){
- message=text;
- messageUntil=performance.now()+duration;
-}
-function clone(v){return JSON.parse(JSON.stringify(v))}
+const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+const lerp=(a,b,t)=>a+(b-a)*t;
 
-/* =====================================================
-   SPIELSTAND UND COSMETICS
-===================================================== */
+function hash(n){
+ const x=Math.sin(n*127.1+311.7)*43758.5453;
+ return x-Math.floor(x);
+}
+
+/* =========================================================
+   SPEICHER
+========================================================= */
+
 const defaults={
  money:120,
  inventory:[],
  equipped:{
-  head:null,face:null,clothes:null,back:null,pants:null
+  head:null,
+  face:null,
+  clothes:null,
+  back:null,
+  pants:null
  },
  unlocked:[],
  faucetOn:false,
@@ -87,36 +109,40 @@ const defaults={
 
 function readSave(){
  try{
-  const s=JSON.parse(localStorage.getItem(SAVE_KEY)||"null");
-  if(!s)return clone(defaults);
-  return {
-   ...clone(defaults),
-   ...s,
-   equipped:{...defaults.equipped,...(s.equipped||{})},
-   unlocked:Array.isArray(s.unlocked)?s.unlocked:[]
+  const old=JSON.parse(localStorage.getItem(SAVE_KEY)||"{}");
+  return{
+   ...defaults,
+   ...old,
+   equipped:{...defaults.equipped,...(old.equipped||{})}
   };
  }catch(e){
-  console.warn(e);
-  return clone(defaults);
+  return structuredClone(defaults);
  }
 }
+
 let save=readSave();
 
 function writeSave(){
- try{localStorage.setItem(SAVE_KEY,JSON.stringify(save))}
- catch(e){console.warn("Speichern fehlgeschlagen",e)}
- document.getElementById("money").textContent=(save.money||0)+" €";
+ try{
+  localStorage.setItem(SAVE_KEY,JSON.stringify(save));
+ }catch(e){}
+ document.getElementById("money").textContent=
+  `${save.money} Münzen`;
 }
+
 writeSave();
 
-/* =====================================================
-   SPIELFIGUR
-===================================================== */
+/* =========================================================
+   SPIELER
+========================================================= */
+
 const player={
  x:clamp(Number(save.playerX)||180,40,WORLD-80),
  y:FLOOR-68,
- vx:0,vy:0,
- width:48,height:68,
+ vx:0,
+ vy:0,
+ width:48,
+ height:68,
  grounded:true,
  facing:1,
  walk:0,
@@ -127,817 +153,786 @@ const player={
  actionStartY:0
 };
 
-const chairAnim={
- legNear:0,
- legFar:0,
- kneeNear:0,
- kneeFar:0,
- bob:0
-};
+let cameraX=0;
+let computerOn=false;
+let wardrobeOpen=0;
+let sofaOccupied=false;
+let bedOccupied=false;
+let message="Bereit";
+let messageTimer=0;
+let gameTime=0;
+let lastTime=0;
+let saveTimer=0;
+let onlineTimer=0;
+
+/* =========================================================
+   TASTEN
+========================================================= */
+
+const keys={};
+
+window.addEventListener("keydown",e=>{
+ const k=e.key.toLowerCase();
+ keys[k]=true;
+
+ if([" ","arrowup","arrowdown","arrowleft","arrowright"].includes(k)){
+  e.preventDefault();
+ }
+
+ if((k===" "||k==="w"||k==="arrowup")&&!e.repeat){
+  jump();
+ }
+
+ if(k==="e"&&!e.repeat)interact();
+ if(k==="q"&&!e.repeat)dropItem();
+});
+
+window.addEventListener("keyup",e=>{
+ keys[e.key.toLowerCase()]=false;
+});
+
+function jump(){
+ if(!player.grounded||player.action!=="normal")return;
+ player.vy=-440;
+ player.grounded=false;
+ player.landing=0;
+}
+
+/* =========================================================
+   HILFSFUNKTIONEN ZEICHNEN
+========================================================= */
+
+function line(x1,y1,x2,y2,color,width=1){
+ ctx.beginPath();
+ ctx.moveTo(x1,y1);
+ ctx.lineTo(x2,y2);
+ ctx.strokeStyle=color;
+ ctx.lineWidth=width;
+ ctx.stroke();
+}
+
+function rounded(x,y,w,h,r,color,stroke){
+ ctx.beginPath();
+ ctx.roundRect(x,y,w,h,r);
+ ctx.fillStyle=color;
+ ctx.fill();
+ if(stroke){
+  ctx.strokeStyle=stroke;
+  ctx.stroke();
+ }
+}
 
 function woodGradient(x,y,w,h){
  const g=ctx.createLinearGradient(x,y,x+w,y+h);
- g.addColorStop(0,"#d3a16c");
- g.addColorStop(.35,"#b98552");
- g.addColorStop(.7,"#94603a");
- g.addColorStop(1,"#674127");
+ g.addColorStop(0,"#d4a16b");
+ g.addColorStop(.45,"#b98552");
+ g.addColorStop(1,"#75482b");
  return g;
 }
 
-function woodShape(points){
- ctx.beginPath();
- points.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));
- ctx.closePath();
- ctx.fillStyle=woodGradient(-10,-10,75,120);
- ctx.fill();
- ctx.strokeStyle="#563820";
- ctx.lineWidth=1.5;
- ctx.stroke();
-}
-
-function drawWoodGrain(x1,y1,x2,y2,alpha=.22){
+function woodPart(x,y,w,h,r=1){
  ctx.save();
- ctx.strokeStyle="#f3d0a0";
- ctx.globalAlpha=alpha;
+
+ ctx.fillStyle="#35271d33";
+ ctx.fillRect(x+2,y+2,w,h);
+
+ ctx.beginPath();
+ ctx.roundRect(x,y,w,h,r);
+ ctx.fillStyle=woodGradient(x,y,w,h);
+ ctx.fill();
+ ctx.strokeStyle="#604027";
+ ctx.lineWidth=1.1;
+ ctx.stroke();
+
+ ctx.save();
+ ctx.beginPath();
+ ctx.roundRect(x+1,y+1,w-2,h-2,r);
+ ctx.clip();
+
+ for(let i=0;i<Math.max(3,Math.floor(h/3));i++){
+  const yy=y+hash(i+x*.7)*h;
+  ctx.beginPath();
+  ctx.moveTo(x+2,yy);
+  ctx.bezierCurveTo(x+w*.3,yy-1,x+w*.7,yy+1,x+w-2,yy);
+  ctx.strokeStyle=i%2?"#513820":"#f5d7ae";
+  ctx.globalAlpha=i%2?.12:.18;
+  ctx.lineWidth=.7;
+  ctx.stroke();
+ }
+
+ ctx.restore();
+
+ ctx.globalAlpha=1;
+ ctx.strokeStyle="#f1c18b99";
  ctx.lineWidth=.8;
  ctx.beginPath();
- ctx.moveTo(x1,y1);
- ctx.quadraticCurveTo((x1+x2)/2+2,(y1+y2)/2,x2,y2);
+ ctx.moveTo(x+2,y+1);
+ ctx.lineTo(x+w-2,y+1);
  ctx.stroke();
+
  ctx.restore();
 }
 
-/* Gelenkbein: Ober- und Unterschenkel werden separat bewegt. */
-function drawArticulatedLeg(hipX,hipY,angle,kneeAngle,near=true){
- const upper=25,lower=25;
- const kneeX=hipX+Math.sin(angle)*upper;
- const kneeY=hipY+Math.cos(angle)*upper;
- const footAngle=angle+kneeAngle;
- const footX=kneeX+Math.sin(footAngle)*lower;
- const footY=kneeY+Math.cos(footAngle)*lower;
+/* =========================================================
+   ORIGINALER STUHL – ANIMIERTE BEINE
+========================================================= */
 
+function drawAnimatedLeg(x,y,angle,kneeAngle){
  ctx.save();
- ctx.lineCap="round";
- ctx.lineJoin="round";
+ ctx.translate(x,y);
+ ctx.rotate(angle);
 
- const dark=near?"#805331":"#553a27";
- const light=near?"#d0a071":"#8e6746";
+ const upper=21;
+ const lower=20;
 
- function segment(x1,y1,x2,y2,width){
-  ctx.strokeStyle="#39271b";
-  ctx.lineWidth=width+2;
-  ctx.beginPath();
-  ctx.moveTo(x1,y1);
-  ctx.lineTo(x2,y2);
-  ctx.stroke();
-
-  ctx.strokeStyle=dark;
-  ctx.lineWidth=width;
-  ctx.beginPath();
-  ctx.moveTo(x1,y1);
-  ctx.lineTo(x2,y2);
-  ctx.stroke();
-
-  ctx.strokeStyle=light;
-  ctx.lineWidth=Math.max(1,width*.18);
-  ctx.beginPath();
-  ctx.moveTo(x1-width*.15,y1);
-  ctx.lineTo(x2-width*.15,y2);
-  ctx.stroke();
- }
-
- segment(hipX,hipY,kneeX,kneeY,near?6:5);
- segment(kneeX,kneeY,footX,footY,near?5:4);
-
- ctx.fillStyle="#49301f";
+ // Oberes Holzbein
  ctx.beginPath();
- ctx.arc(kneeX,kneeY,3.2,0,Math.PI*2);
+ ctx.moveTo(-2.8,0);
+ ctx.lineTo(-2.2,upper);
+ ctx.lineTo(2.2,upper);
+ ctx.lineTo(2.8,0);
+ ctx.closePath();
+ ctx.fillStyle=woodGradient(-3,0,6,upper);
  ctx.fill();
- ctx.fillStyle="#d2a071";
- ctx.beginPath();
- ctx.arc(kneeX-1,kneeY-1,1,0,Math.PI*2);
- ctx.fill();
-
- // Kleiner Fußabschluss
- ctx.strokeStyle="#4a3020";
- ctx.lineWidth=3;
- ctx.beginPath();
- ctx.moveTo(footX-4,footY);
- ctx.lineTo(footX+4,footY);
+ ctx.strokeStyle="#634127";
+ ctx.lineWidth=1;
  ctx.stroke();
 
- ctx.restore();
+ // Gelenk
+ ctx.translate(0,upper);
+ ctx.rotate(kneeAngle);
 
- return {hipX,hipY,kneeX,kneeY,footX,footY,angle,footAngle};
+ ctx.beginPath();
+ ctx.arc(0,0,2.5,0,Math.PI*2);
+ ctx.fillStyle="#70482b";
+ ctx.fill();
+ ctx.strokeStyle="#3d2b1c";
+ ctx.stroke();
+
+ // Unteres Holzbein
+ ctx.beginPath();
+ ctx.moveTo(-2.1,0);
+ ctx.lineTo(-2.5,lower-2);
+ ctx.quadraticCurveTo(0,lower+1,2.5,lower-2);
+ ctx.lineTo(2.1,0);
+ ctx.closePath();
+ ctx.fillStyle=woodGradient(-2.5,0,5,lower);
+ ctx.fill();
+ ctx.strokeStyle="#634127";
+ ctx.stroke();
+
+ line(-1,3,-1,lower-3,"#f1c28b88",.8);
+
+ ctx.restore();
 }
 
-/* Hose folgt exakt den Gelenken der Stuhlbeine. */
-function drawPantsLeg(segment,id,near=true){
- if(!id)return;
+function drawStaticLeg(x,y){
+ ctx.save();
+ ctx.translate(x,y);
 
- const colors={
-  jeans:"#426e9a",joggers:"#686b76",cargo:"#78805a",
-  shorts:"#bd704c",sleep_pants:"#7f76a8",baggy:"#42658b",
-  knight_pants:"#929ca4",rain_pants:"#4d7e87",
-  camo:"#65734c",gold_pants:"#c5a13c",
-  ski_pants:"#e4e9ef",overalls:"#487e9a"
- };
- const color=colors[id]||"#42658b";
+ ctx.beginPath();
+ ctx.moveTo(-3,0);
+ ctx.lineTo(-2.5,39);
+ ctx.quadraticCurveTo(0,42,2.5,39);
+ ctx.lineTo(3,0);
+ ctx.closePath();
 
- function clothSegment(x1,y1,x2,y2,width){
-  ctx.save();
-  ctx.lineCap="round";
-  ctx.strokeStyle="#20242a";
-  ctx.lineWidth=width+2;
-  ctx.beginPath();
-  ctx.moveTo(x1,y1);
-  ctx.lineTo(x2,y2);
-  ctx.stroke();
+ ctx.fillStyle=woodGradient(-3,0,7,42);
+ ctx.fill();
+ ctx.strokeStyle="#634127";
+ ctx.lineWidth=1;
+ ctx.stroke();
 
-  ctx.strokeStyle=color;
-  ctx.lineWidth=width;
-  ctx.beginPath();
-  ctx.moveTo(x1,y1);
-  ctx.lineTo(x2,y2);
-  ctx.stroke();
+ line(-1.5,3,-1,36,"#f1c28b88",.8);
+ ctx.restore();
+}
 
-  ctx.strokeStyle="#ffffff";
-  ctx.globalAlpha=.18;
+/* =========================================================
+   KOSMETIK
+========================================================= */
+
+function drawBackCosmetic(){
+ const item=save.equipped.back;
+ if(!item)return;
+
+ if(item.toLowerCase().includes("ballon")){
+  ctx.strokeStyle="#555";
   ctx.lineWidth=1;
+  line(-4,-50,-13,-90,"#777",1);
   ctx.beginPath();
-  ctx.moveTo(x1-width*.15,y1);
-  ctx.lineTo(x2-width*.15,y2);
-  ctx.stroke();
-  ctx.restore();
- }
-
- const isShort=id==="shorts";
- const width=near?8:7;
-
- if(isShort){
-  clothSegment(
-   segment.hipX,segment.hipY,
-   segment.kneeX,segment.kneeY,
-   width+2
-  );
+  ctx.ellipse(-15,-98,8,11,0,0,Math.PI*2);
+  ctx.fillStyle="#e75a65";
+  ctx.fill();
   return;
  }
 
- clothSegment(
-  segment.hipX,segment.hipY,
-  segment.kneeX,segment.kneeY,
-  width
- );
- clothSegment(
-  segment.kneeX,segment.kneeY,
-  segment.footX,segment.footY,
-  width-1
- );
-
- // Details für die ausgewählten Hosen
- ctx.save();
- ctx.strokeStyle="#ffffff55";
- ctx.lineWidth=1;
-
- if(id==="cargo"){
-  ctx.beginPath();
-  ctx.moveTo(segment.kneeX-3,segment.kneeY+5);
-  ctx.lineTo(segment.kneeX+3,segment.kneeY+5);
-  ctx.stroke();
+ if(item.toLowerCase().includes("rucksack")){
+  rounded(-39,-60,17,31,5,"#567b9b","#283d50");
+  line(-36,-55,-25,-55,"#b5c6d2",1);
  }
- if(id==="gold_pants"){
-  ctx.fillStyle="#f4db80";
-  ctx.beginPath();
-  ctx.arc(segment.kneeX,segment.kneeY,1.5,0,Math.PI*2);
-  ctx.fill();
- }
- if(id==="camo"){
-  ctx.fillStyle="#3e5038";
-  ctx.fillRect(segment.kneeX-2,segment.kneeY+2,3,3);
- }
- if(id==="knight_pants"){
-  ctx.strokeStyle="#d5dce0";
-  ctx.strokeRect(segment.kneeX-3,segment.kneeY-3,6,6);
- }
- if(id==="overalls"){
-  ctx.strokeStyle="#d4e0e5";
-  ctx.beginPath();
-  ctx.moveTo(segment.hipX-3,segment.hipY+4);
-  ctx.lineTo(segment.hipX+3,segment.hipY+4);
-  ctx.stroke();
- }
- ctx.restore();
-}
-
-function drawBackCosmetic(){
- const id=save.equipped.back;
- if(!id)return;
-
- ctx.save();
- ctx.translate(-24,-60);
-
- const colors={
-  backpack:"#a66b3c",schoolbag:"#d45c45",
-  hikingbag:"#547d57",guitarbag:"#553b31",
-  toolbox:"#b37a38"
- };
- const color=colors[id]||"#986b49";
-
- if(id==="wings"){
-  ctx.fillStyle="#eee9dc";
-  ctx.strokeStyle="#a99c88";
-  ctx.beginPath();
-  ctx.ellipse(-7,-4,13,25,-.6,0,Math.PI*2);
-  ctx.fill();ctx.stroke();
-  ctx.beginPath();
-  ctx.ellipse(1,-4,12,25,.6,0,Math.PI*2);
-  ctx.fill();ctx.stroke();
- }else if(id==="jetpack"){
-  ctx.fillStyle="#aebdc2";
-  roundRect(ctx,-15,-12,13,33,3);ctx.fill();
-  roundRect(ctx,1,-12,13,33,3);ctx.fill();
-  ctx.fillStyle="#e8a64d";
-  ctx.fillRect(-13,22,8,7);
-  ctx.fillRect(3,22,8,7);
- }else if(id==="parachute"){
-  ctx.fillStyle="#e4d8be";
-  ctx.beginPath();
-  ctx.arc(-1,-43,25,Math.PI,0);
-  ctx.fill();
-  ctx.strokeStyle="#8b6d52";ctx.stroke();
-  ctx.strokeStyle="#766";
-  ctx.beginPath();
-  ctx.moveTo(-22,-43);ctx.lineTo(-2,-8);
-  ctx.moveTo(20,-43);ctx.lineTo(2,-8);
-  ctx.stroke();
- }else{
-  ctx.fillStyle=color;
-  roundRect(ctx,-14,-22,23,37,5);ctx.fill();
-  ctx.strokeStyle="#49301f";ctx.stroke();
-  ctx.fillStyle="#ffffff33";
-  ctx.fillRect(-10,-18,3,25);
-  if(id==="toolbox"){
-   ctx.fillStyle="#d7a34e";
-   ctx.fillRect(-11,-26,18,5);
-  }
- }
- ctx.restore();
 }
 
 function drawClothing(){
- const id=save.equipped.clothes;
- if(!id)return;
+ const item=save.equipped.clothes;
+ if(!item)return;
 
- const colors={
-  scarf:"#4d995f",shirt:"#c64c48",hoodie:"#3977bd",
-  leather:"#513a31",raincoat:"#e3b83c",football:"#eee7dc",
-  suit:"#293c55",pajamas:"#8c83b4",vest:"#e9bd37",
-  astronaut:"#d9e0e4",armor:"#89969e",hawaii:"#d96b5b",
-  wintercoat:"#587f9d"
- };
- const color=colors[id]||"#b98552";
+ let color="#4f7795";
+ const n=item.toLowerCase();
+
+ if(n.includes("rot"))color="#a94d46";
+ if(n.includes("grün")||n.includes("gruen"))color="#527b58";
+ if(n.includes("schwarz"))color="#343638";
+ if(n.includes("gelb"))color="#d1aa48";
+ if(n.includes("weiß")||n.includes("weiss"))color="#e4dfd2";
 
  ctx.save();
  ctx.fillStyle=color;
- roundRect(ctx,-13,-65,19,37,4);
- ctx.fill();
- ctx.strokeStyle="#49301f";
+ ctx.strokeStyle="#35271d";
  ctx.lineWidth=1;
+
+ ctx.beginPath();
+ ctx.moveTo(-20,-53);
+ ctx.lineTo(58,-53);
+ ctx.lineTo(55,-38);
+ ctx.lineTo(-18,-38);
+ ctx.closePath();
+ ctx.fill();
  ctx.stroke();
 
- ctx.fillStyle="#ffffff22";
- ctx.fillRect(-10,-62,3,28);
-
- if(id==="scarf"){
-  ctx.fillStyle=color;
-  roundRect(ctx,-13,-68,19,8,3);ctx.fill();
-  ctx.fillRect(-3,-61,6,20);
- }
- if(id==="hoodie"){
-  ctx.fillStyle="#28578b";
-  ctx.beginPath();
-  ctx.arc(-4,-66,9,Math.PI,0);
-  ctx.fill();
-  ctx.strokeStyle="#244f7e";
-  ctx.stroke();
- }
- if(id==="leather"){
-  ctx.strokeStyle="#d1ae8c";
-  ctx.beginPath();ctx.moveTo(-9,-62);ctx.lineTo(-3,-31);ctx.stroke();
- }
- if(id==="raincoat"||id==="vest"){
-  ctx.fillStyle="#fff1b8";
-  ctx.fillRect(-5,-61,3,27);
- }
- if(id==="suit"){
-  ctx.fillStyle="#eee";
-  ctx.beginPath();ctx.moveTo(-7,-63);ctx.lineTo(-2,-52);ctx.lineTo(2,-63);ctx.fill();
- }
- if(id==="astronaut"){
-  ctx.fillStyle="#7f9ba8";
-  roundRect(ctx,-9,-53,10,12,2);ctx.fill();
- }
- if(id==="armor"){
-  ctx.fillStyle="#d6b85e";
-  ctx.fillRect(-5,-54,4,8);
- }
- if(id==="hawaii"){
-  ctx.fillStyle="#f6d36d";
-  ctx.fillRect(-10,-55,3,4);
-  ctx.fillStyle="#6d9a64";
-  ctx.fillRect(-3,-44,3,4);
- }
- if(id==="wintercoat"){
-  ctx.fillStyle="#d5e4ed";
-  ctx.fillRect(-12,-65,17,5);
- }
  ctx.restore();
+}
+
+function drawPants(){
+ const item=save.equipped.pants;
+ if(!item)return;
+
+ let color="#3d526d";
+ if(item.toLowerCase().includes("schwarz"))color="#303034";
+ if(item.toLowerCase().includes("hell"))color="#b7a78d";
+
+ ctx.fillStyle=color;
+ ctx.fillRect(27,-3,7,19);
+ ctx.fillRect(84,-3,7,19);
 }
 
 function drawHeadCosmetic(){
- const id=save.equipped.head;
- if(!id)return;
+ const item=save.equipped.head;
+ if(!item)return;
 
- ctx.save();
- ctx.translate(-20,-112);
+ const n=item.toLowerCase();
 
- const gold=["crown","gold_helmet","paper_crown"].includes(id);
- if(id==="cap"){
-  ctx.fillStyle="#3977bd";
-  roundRect(ctx,-12,-5,27,9,4);ctx.fill();
-  ctx.fillRect(-9,-11,20,8);
-  ctx.fillRect(10,1,12,3);
- }else if(gold){
-  ctx.fillStyle=id==="paper_crown"?"#c7a76e":"#f4c64e";
+ if(n.includes("hut")){
+  ctx.fillStyle="#46362b";
   ctx.beginPath();
-  ctx.moveTo(-13,3);ctx.lineTo(-12,-9);ctx.lineTo(-5,-3);
-  ctx.lineTo(0,-15);ctx.lineTo(6,-3);ctx.lineTo(14,-10);
-  ctx.lineTo(14,3);ctx.closePath();ctx.fill();
-  ctx.strokeStyle="#805d29";ctx.stroke();
- }else if(id==="tp_hat"){
-  ctx.fillStyle="#fffaf1";ctx.fillRect(-10,-12,21,16);
-  ctx.strokeStyle="#c9c1b4";ctx.strokeRect(-10,-12,21,16);
- }else if(id==="traffic_hat"){
-  ctx.fillStyle="#ef8e23";
-  ctx.beginPath();ctx.moveTo(0,-17);ctx.lineTo(-12,4);ctx.lineTo(12,4);ctx.closePath();ctx.fill();
-  ctx.fillStyle="#fff0c9";ctx.fillRect(-7,-5,14,3);
- }else if(id==="cowboy"){
-  ctx.fillStyle="#8a542d";ctx.fillRect(-17,0,34,5);
-  ctx.fillRect(-10,-10,20,12);
- }else if(id==="viking"){
-  ctx.fillStyle="#999b9c";ctx.fillRect(-13,-2,27,7);
-  ctx.strokeStyle="#e8e1d0";ctx.lineWidth=4;
-  ctx.beginPath();ctx.moveTo(-10,-3);ctx.lineTo(-17,-15);
-  ctx.moveTo(10,-3);ctx.lineTo(17,-15);ctx.stroke();
- }else if(id==="chef"){
-  ctx.fillStyle="#fff";ctx.beginPath();ctx.arc(0,-6,12,Math.PI,0);ctx.fill();
-  ctx.fillRect(-12,-5,24,9);
- }else if(id==="frog_hat"){
-  ctx.fillStyle="#4b9d56";ctx.fillRect(-13,-2,26,8);
-  ctx.beginPath();ctx.arc(-8,-10,7,0,Math.PI*2);ctx.arc(8,-10,7,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle="#111";ctx.beginPath();ctx.arc(-8,-10,2,0,7);ctx.arc(8,-10,2,0,7);ctx.fill();
- }else if(id==="wizard"){
-  ctx.fillStyle="#51468c";ctx.beginPath();ctx.moveTo(-15,3);ctx.lineTo(0,-23);ctx.lineTo(15,3);ctx.fill();
-  ctx.fillStyle="#483e75";ctx.fillRect(-17,1,34,5);
-  ctx.fillStyle="#f6d56c";ctx.fillRect(-2,-13,5,5);
- }else if(id==="bucket_hat"){
-  ctx.fillStyle="#8b969a";ctx.fillRect(-14,-12,28,17);
-  ctx.fillStyle="#657277";ctx.fillRect(-17,2,34,5);
- }else if(id==="party_hat"){
-  ctx.fillStyle="#e95e70";ctx.beginPath();ctx.moveTo(0,-21);ctx.lineTo(-12,3);ctx.lineTo(12,3);ctx.fill();
-  ctx.fillStyle="#f3ce63";ctx.fillRect(-6,-9,12,3);
+  ctx.ellipse(28,-118,19,4,0,0,Math.PI*2);
+  ctx.fill();
+  ctx.fillRect(15,-133,26,16);
+  ctx.fillStyle="#b18b56";
+  ctx.fillRect(15,-123,26,3);
+ }else if(n.includes("krone")){
+  ctx.fillStyle="#e6bb4b";
+  ctx.beginPath();
+  ctx.moveTo(12,-119);
+  ctx.lineTo(13,-134);
+  ctx.lineTo(22,-126);
+  ctx.lineTo(29,-138);
+  ctx.lineTo(36,-126);
+  ctx.lineTo(45,-134);
+  ctx.lineTo(46,-119);
+  ctx.closePath();
+  ctx.fill();
+ }else{
+  rounded(13,-130,30,10,3,"#4a5869","#252b32");
  }
+}
+
+function drawFaceCosmetic(){
+ const item=save.equipped.face;
+ if(!item)return;
+
+ if(item.toLowerCase().includes("brille")){
+  ctx.strokeStyle="#292929";
+  ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.arc(21,-101,6,0,Math.PI*2);
+  ctx.arc(36,-101,6,0,Math.PI*2);
+  ctx.moveTo(27,-101);
+  ctx.lineTo(30,-101);
+  ctx.stroke();
+ }
+}
+
+function drawBalloon(time){
+ if(!save.equipped.back||
+    !save.equipped.back.toLowerCase().includes("ballon"))return;
+
+ const sway=Math.sin(time*2)*3;
+ ctx.save();
+ ctx.translate(-18,-90);
+ ctx.rotate(sway*.025);
+
+ line(0,0,0,-28,"#777",1);
+
+ ctx.beginPath();
+ ctx.ellipse(0,-39,8,11,0,0,Math.PI*2);
+ ctx.fillStyle="#e65a62";
+ ctx.fill();
+ ctx.strokeStyle="#a33b45";
+ ctx.stroke();
+
  ctx.restore();
 }
 
-const balloonColors={
- balloon_red:"#e34d4d",balloon_blue:"#438bd1",
- balloon_yellow:"#efc84b",balloon_pink:"#ed83ad",
- balloon_green:"#55a96c",balloon_purple:"#9871cf",
- balloon_party:"#e65c64",balloon_heart:"#e85b85",
- balloon_star:"#e8bd48"
-};
+/* =========================================================
+   STUHL ZEICHNEN
+========================================================= */
 
-function drawBalloon(timeNow){
- const id=save.equipped.face;
- if(!id||!id.startsWith("balloon_"))return;
-
- const t=timeNow/1000;
- const count=id==="balloon_party"?3:1;
-
- for(let i=0;i<count;i++){
-  const phase=i*2.1;
-  const bx=15+i*16+Math.sin(t*1.5+phase)*5;
-  const by=-135-i%2*14+Math.sin(t*2+phase)*4;
-  const color=id==="balloon_party"
-   ?["#ed83ad","#438bd1","#efc84b"][i]
-   :balloonColors[id];
-
-  ctx.save();
-  ctx.strokeStyle="#766b60";
-  ctx.lineWidth=1;
-  ctx.beginPath();
-  ctx.moveTo(-5,-65);
-  ctx.quadraticCurveTo(bx-8,-95,bx,by+14);
-  ctx.stroke();
-
-  ctx.fillStyle=color;
-  ctx.beginPath();
-  if(id==="balloon_heart"){
-   ctx.moveTo(bx,by+12);
-   ctx.bezierCurveTo(bx-25,by-4,bx-15,by-20,bx,by-10);
-   ctx.bezierCurveTo(bx+15,by-20,bx+25,by-4,bx,by+12);
-  }else if(id==="balloon_star"){
-   for(let j=0;j<10;j++){
-    const a=-Math.PI/2+j*Math.PI/5;
-    const r=j%2?8:17;
-    const px=bx+Math.cos(a)*r,py=by+Math.sin(a)*r;
-    if(j===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);
-   }
-  }else{
-   ctx.ellipse(bx,by,12,17,0,0,Math.PI*2);
-  }
-  ctx.closePath();
-  ctx.fill();
-  ctx.strokeStyle="#7a4b4b66";ctx.stroke();
-  ctx.restore();
- }
-}
-
-/* =====================================================
-   STUHL – SEITENANSICHT MIT ANIMIERTEN BEINEN
-===================================================== */
-function drawChair(){
+function drawChair(time){
  const moving=Math.abs(player.vx)>5&&player.grounded&&player.action==="normal";
  const airborne=!player.grounded;
  const speed=clamp(Math.abs(player.vx)/230,0,1);
  const phase=player.walk;
 
- let nearAngle=0,farAngle=0,nearKnee=0,farKnee=0;
+ const swing=moving?Math.sin(phase)*.32*speed:0;
+ const knee=moving?Math.sin(phase+1)*.52*speed:0;
 
- if(moving){
-  nearAngle=Math.sin(phase)*.65*speed;
-  farAngle=Math.sin(phase+Math.PI)*.65*speed;
-  nearKnee=Math.max(0,Math.cos(phase))*-.95*speed;
-  farKnee=Math.max(0,Math.cos(phase+Math.PI))*-.95*speed;
- }
-
- if(airborne){
-  nearAngle=.25;
-  farAngle=-.25;
-  nearKnee=-.9;
-  farKnee=-.9;
- }
-
- if(player.action==="sofa"||player.action==="bed"){
-  nearAngle=.75;
-  farAngle=.65;
-  nearKnee=-1.1;
-  farKnee=-1.05;
- }
-
- const bodyBob=moving?Math.sin(phase*2)*.5:0;
- const landingBob=player.landing>0?Math.sin(player.landing*Math.PI)*1.5:0;
+ const jumpFold=airborne?clamp(-player.vy/500,0,.8):0;
+ const landingBob=player.landing>0?Math.sin(player.landing*22)*2:0;
+ const bodyBob=moving?Math.abs(Math.sin(phase*2))*1.2:0;
 
  ctx.save();
+
+ // Spiegelung beim Laufen in Gegenrichtung
  ctx.translate(player.x+24,player.y+player.height);
  ctx.scale(player.facing*.58,.58);
+
+ // Der Boden-Schatten wird separat gezeichnet.
+ // Stuhllehne und Sitz bleiben exakt in der Form des Originals.
+
  ctx.translate(0,-116+bodyBob+landingBob);
 
- // Cosmetics am Rücken liegen hinter dem Stuhl.
  drawBackCosmetic();
 
- // Zwei sichtbare, gegliederte Beine.
- const far=drawArticulatedLeg(-1, -43,farAngle,farKnee,false);
- const near=drawArticulatedLeg(27,-43,nearAngle,nearKnee,true);
+ // Hinteres Bein
+ drawAnimatedLeg(29,75,
+  airborne?-.12-jumpFold*.35:swing*.65,
+  airborne?-.25-jumpFold*.3:-knee*.8
+ );
 
- // Hosenlayer folgt den tatsächlichen Gelenken.
- drawPantsLeg(far,save.equipped.pants,false);
- drawPantsLeg(near,save.equipped.pants,true);
+ // Originale Rückenlehne
+ woodPart(23,5,13,70,2);
 
- // Sitzfläche in Seitenansicht
- const seat=ctx.createLinearGradient(-15,-48,45,-42);
- seat.addColorStop(0,"#70472b");
- seat.addColorStop(.35,"#bd8955");
- seat.addColorStop(1,"#684329");
- ctx.fillStyle=seat;
- ctx.beginPath();
- ctx.moveTo(-23,-54);
- ctx.lineTo(43,-54);
- ctx.lineTo(46,-46);
- ctx.lineTo(-20,-46);
- ctx.closePath();
- ctx.fill();
- ctx.strokeStyle="#563820";ctx.lineWidth=1.5;ctx.stroke();
- drawWoodGrain(-17,-52,39,-52);
+ // Originale Sitzfläche
+ woodPart(20,67,78,12,2);
 
- // Rückenlehne – links, klar in Seitenansicht
- const back=ctx.createLinearGradient(-32,-112,-12,-112);
- back.addColorStop(0,"#70472b");
- back.addColorStop(.35,"#b17a49");
- back.addColorStop(1,"#603d27");
- ctx.fillStyle=back;
- roundRect(ctx,-33,-116,15,66,4);
- ctx.fill();
- ctx.strokeStyle="#563820";ctx.stroke();
- drawWoodGrain(-30,-108,-21,-108);
- drawWoodGrain(-30,-91,-21,-91);
- drawWoodGrain(-30,-73,-21,-73);
+ // Vorderes Bein
+ drawAnimatedLeg(88,77,
+  airborne?.10+jumpFold*.35:-swing,
+  airborne?.25+jumpFold*.3:knee
+ );
 
- // Verbindung zwischen Rücken und Sitz
- ctx.fillStyle="#754b2e";
- ctx.fillRect(-24,-57,7,12);
+ // Helle Kanten wie beim Original
+ line(25,8,25,70,"#f1c18b99",1);
+ line(23,69,95,69,"#f3d0a0aa",1);
 
- // Oberteil-Layer
+ drawPants();
  drawClothing();
-
- // Oberkante Sitz und Holzdetails
- ctx.strokeStyle="#d8a777";
- ctx.lineWidth=1.5;
- ctx.beginPath();
- ctx.moveTo(-20,-53);
- ctx.lineTo(40,-53);
- ctx.stroke();
-
- // Kopf-Cosmetics und Ballons
  drawHeadCosmetic();
+ drawFaceCosmetic();
  drawBalloon(time);
+
+ ctx.fillStyle="#513a29";
+ ctx.globalAlpha=.25;
+ ctx.fillRect(25,116,69,1);
+ ctx.globalAlpha=1;
 
  ctx.restore();
 }
 
-/* =====================================================
+/* =========================================================
+   SPIELER-SCHATTEN
+========================================================= */
+
+function drawPlayerShadow(){
+ const heightAboveFloor=Math.max(0,(FLOOR-(player.y+player.height)));
+ const scale=clamp(1-heightAboveFloor/180,.45,1);
+
+ ctx.save();
+ ctx.globalAlpha=.22*scale;
+ ctx.fillStyle="#17130f";
+ ctx.beginPath();
+ ctx.ellipse(
+  player.x+24,
+  FLOOR+2,
+  30*scale,
+  4*scale,
+  0,0,Math.PI*2
+ );
+ ctx.fill();
+ ctx.restore();
+}
+
+/* =========================================================
    HINTERGRUND
-===================================================== */
+========================================================= */
+
 function drawBackground(){
  const wall=ctx.createLinearGradient(0,0,0,FLOOR);
- wall.addColorStop(0,"#d2c7b6");
- wall.addColorStop(1,"#b8a995");
+ wall.addColorStop(0,"#d9d0bf");
+ wall.addColorStop(1,"#b9ad99");
  ctx.fillStyle=wall;
- ctx.fillRect(0,0,W,H);
+ ctx.fillRect(0,0,W,FLOOR);
 
- ctx.globalAlpha=.08;
- for(let i=0;i<90;i++){
-  const x=(i*137-cameraX*.15)%W;
-  const y=(i*71)%FLOOR;
-  ctx.fillStyle=i%2?"#fff":"#5d5145";
-  ctx.fillRect(x,y,2,2);
+ // Wandstruktur
+ for(let i=0;i<45;i++){
+  const x=(i*127-cameraX*.12)%W;
+  ctx.strokeStyle="#ffffff16";
+  ctx.lineWidth=1;
+  line(x,0,x,FLOOR,"#ffffff12",1);
  }
- ctx.globalAlpha=1;
 
- ctx.fillStyle="#786b5b";
- ctx.fillRect(0,FLOOR-12,W,12);
- ctx.fillStyle="#e3d7c5";
- ctx.fillRect(0,FLOOR-12,W,3);
+ ctx.fillStyle="#897965";
+ ctx.fillRect(0,FLOOR-8,W,8);
 
  const floor=ctx.createLinearGradient(0,FLOOR,0,H);
- floor.addColorStop(0,"#80684f");
- floor.addColorStop(1,"#4b3c30");
+ floor.addColorStop(0,"#9b7858");
+ floor.addColorStop(1,"#634832");
  ctx.fillStyle=floor;
  ctx.fillRect(0,FLOOR,W,H-FLOOR);
 
- for(let x=-((cameraX*.95)%160);x<W+160;x+=160){
-  ctx.fillStyle="#a18464";
-  ctx.globalAlpha=.25;
-  ctx.fillRect(x,FLOOR+2,158,H-FLOOR);
-  ctx.globalAlpha=1;
-  ctx.strokeStyle="#493a2d";
+ // Parkett
+ for(let x=-80;x<W+100;x+=80){
+  const xx=x-(cameraX*.8%80);
+  ctx.strokeStyle="#3f2d20";
   ctx.lineWidth=1;
-  ctx.beginPath();ctx.moveTo(x,FLOOR+2);ctx.lineTo(x,H);ctx.stroke();
-  ctx.strokeStyle="#c1a17b";
-  ctx.globalAlpha=.3;
-  ctx.beginPath();ctx.moveTo(x+5,FLOOR+25);ctx.lineTo(x+145,FLOOR+25);ctx.stroke();
-  ctx.globalAlpha=1;
+  line(xx,FLOOR,xx,H,"#3e2b1d66",1);
+
+  for(let y=FLOOR+24;y<H;y+=38){
+   line(xx,y,xx+80,y,"#e1b88a22",1);
+  }
+ }
+
+ for(let i=0;i<100;i++){
+  const x=(i*83-cameraX*.8)%W;
+  const y=FLOOR+10+hash(i)*85;
+  ctx.fillStyle="#ffffff0a";
+  ctx.fillRect(x,y,2,1);
  }
 }
 
+/* =========================================================
+   FENSTER
+========================================================= */
+
 function drawWindow(x,y,w,h){
  ctx.save();
- ctx.fillStyle="#675849";ctx.fillRect(x-7,y-7,w+14,h+14);
- const glass=ctx.createLinearGradient(x,y,x+w,y+h);
- glass.addColorStop(0,"#9bb9c3");
- glass.addColorStop(.45,"#d5e1df");
- glass.addColorStop(1,"#7895a1");
- ctx.fillStyle=glass;ctx.fillRect(x,y,w,h);
- ctx.fillStyle="#ffffff55";
- ctx.beginPath();
- ctx.moveTo(x+8,y+8);ctx.lineTo(x+25,y+8);
- ctx.lineTo(x+w-10,y+h-8);ctx.lineTo(x+w-25,y+h-8);
- ctx.closePath();ctx.fill();
- ctx.fillStyle="#eee4d4";
- ctx.fillRect(x+w/2-5,y,10,h);
+
+ ctx.fillStyle="#594b3c";
+ ctx.fillRect(x-7,y-7,w+14,h+14);
+
+ const g=ctx.createLinearGradient(x,y,x+w,y+h);
+ g.addColorStop(0,"#a6c4d0");
+ g.addColorStop(1,"#d4e1dc");
+ ctx.fillStyle=g;
+ ctx.fillRect(x,y,w,h);
+
+ ctx.fillStyle="#e9e4d9";
+ ctx.fillRect(x+w/2-4,y,8,h);
  ctx.fillRect(x,y+h/2-4,w,8);
- ctx.strokeStyle="#594c3f";ctx.lineWidth=2;ctx.strokeRect(x,y,w,h);
- ctx.fillStyle="#eee4d4";ctx.fillRect(x-12,y+h,w+24,9);
- ctx.fillStyle="#9d8a75";ctx.fillRect(x-12,y+h+8,w+24,3);
+
+ ctx.strokeStyle="#f5f0e5";
+ ctx.lineWidth=4;
+ ctx.strokeRect(x,y,w,h);
+
+ // dezente Spiegelungen
+ ctx.fillStyle="#ffffff36";
+ ctx.beginPath();
+ ctx.moveTo(x+12,y+10);
+ ctx.lineTo(x+35,y+10);
+ ctx.lineTo(x+8,y+h-12);
+ ctx.lineTo(x+8,y+35);
+ ctx.closePath();
+ ctx.fill();
+
  ctx.restore();
 }
 
-/* =====================================================
+/* =========================================================
    MÖBEL
-===================================================== */
+========================================================= */
+
 function drawSofa(x,y){
  ctx.save();
- ctx.fillStyle="#201a16";ctx.globalAlpha=.3;
- ctx.beginPath();ctx.ellipse(x+115,y+83,125,13,0,0,Math.PI*2);ctx.fill();
- ctx.globalAlpha=1;
 
- ctx.fillStyle="#3c2b20";
- ctx.fillRect(x+28,y+65,9,18);
- ctx.fillRect(x+192,y+65,9,18);
+ // Schatten
+ ctx.fillStyle="#241c1640";
+ ctx.beginPath();
+ ctx.ellipse(x+110,y+5,120,9,0,0,Math.PI*2);
+ ctx.fill();
 
- const base=ctx.createLinearGradient(x,y+25,x,y+75);
- base.addColorStop(0,"#9b806e");base.addColorStop(.5,"#72594d");base.addColorStop(1,"#493a34");
- ctx.fillStyle=base;roundRect(ctx,x,y+27,225,49,12);ctx.fill();
+ // Füße
+ ctx.fillStyle="#4b3528";
+ ctx.fillRect(x+22,y-20,12,22);
+ ctx.fillRect(x+190,y-20,12,22);
 
- const back=ctx.createLinearGradient(x,y-30,x,y+35);
- back.addColorStop(0,"#b69b86");back.addColorStop(.6,"#927663");back.addColorStop(1,"#70594c");
- ctx.fillStyle=back;roundRect(ctx,x+12,y-26,201,62,13);ctx.fill();
+ // Grundkörper
+ rounded(x,y-76,225,65,12,"#6b7775","#3e4a48");
+ rounded(x+9,y-116,207,66,14,"#89918a","#505a55");
 
- ctx.fillStyle="#a58b78";roundRect(ctx,x+14,y+20,195,38,9);ctx.fill();
- ctx.strokeStyle="#d1b7a0";ctx.globalAlpha=.5;
- ctx.beginPath();ctx.moveTo(x+111,y+23);ctx.lineTo(x+111,y+54);ctx.stroke();
- ctx.globalAlpha=1;
+ // Armlehnen
+ rounded(x-7,y-105,32,75,9,"#697873","#45514d");
+ rounded(x+199,y-105,32,75,9,"#697873","#45514d");
 
- const arm=ctx.createLinearGradient(x,y,x+20,y);
- arm.addColorStop(0,"#665043");arm.addColorStop(.5,"#b49a84");arm.addColorStop(1,"#70594c");
- ctx.fillStyle=arm;roundRect(ctx,x-3,y+5,30,58,9);ctx.fill();
- roundRect(ctx,x+198,y+5,30,58,9);ctx.fill();
+ // Sitzkissen
+ rounded(x+29,y-76,80,34,8,"#a4a99c","#6a756b");
+ rounded(x+115,y-76,80,34,8,"#a4a99c","#6a756b");
 
- ctx.fillStyle="#d2c1a9";roundRect(ctx,x+40,y-9,42,38,7);ctx.fill();
- ctx.strokeStyle="#9f8b76";ctx.stroke();
+ // Rückenpolster
+ rounded(x+31,y-109,77,39,8,"#9ca59a","#657169");
+ rounded(x+116,y-109,77,39,8,"#9ca59a","#657169");
+
+ line(x+110,y-105,x+110,y-44,"#d0d0b966",1);
+
  ctx.restore();
 }
 
 function drawBed(x,y){
  ctx.save();
- ctx.fillStyle="#241d18";ctx.globalAlpha=.3;
- ctx.beginPath();ctx.ellipse(x+120,y+73,135,12,0,0,Math.PI*2);ctx.fill();
- ctx.globalAlpha=1;
 
- const wood=ctx.createLinearGradient(x,y,x,y+70);
- wood.addColorStop(0,"#98704d");wood.addColorStop(1,"#4e3828");
- ctx.fillStyle=wood;ctx.fillRect(x,y+24,245,42);
- ctx.fillRect(x-5,y+5,14,65);ctx.fillRect(x+235,y+15,14,55);
+ ctx.fillStyle="#35271d";
+ ctx.fillRect(x+10,y-20,12,20);
+ ctx.fillRect(x+220,y-20,12,20);
 
- ctx.fillStyle="#e4ded2";roundRect(ctx,x+9,y+8,225,43,8);ctx.fill();
- const blanket=ctx.createLinearGradient(x,y+22,x,y+60);
- blanket.addColorStop(0,"#8c9b9b");blanket.addColorStop(1,"#526b6b");
- ctx.fillStyle=blanket;roundRect(ctx,x+68,y+20,163,39,6);ctx.fill();
+ rounded(x,y-78,245,62,5,"#795c43","#4e3929");
+ rounded(x-5,y-103,255,32,6,"#ded7c8","#aaa18f");
 
- ctx.strokeStyle="#c1c9c2";ctx.globalAlpha=.45;
- for(let i=0;i<5;i++){
-  ctx.beginPath();ctx.moveTo(x+80+i*30,y+25);ctx.lineTo(x+80+i*30,y+55);ctx.stroke();
- }
- ctx.globalAlpha=1;
- ctx.fillStyle="#f5eee3";roundRect(ctx,x+17,y+13,48,26,7);ctx.fill();
- ctx.strokeStyle="#c7bbaa";ctx.stroke();
+ rounded(x+14,y-101,78,24,7,"#f0e8d8","#bcb3a3");
+ rounded(x+102,y-101,78,24,7,"#e9e1d2","#bcb3a3");
+
+ ctx.fillStyle="#7d91a1";
+ ctx.fillRect(x+8,y-75,229,7);
+
  ctx.restore();
 }
 
 function drawDesk(x,y){
  ctx.save();
- const leg=ctx.createLinearGradient(x,y,x+10,y);
- leg.addColorStop(0,"#4c3525");leg.addColorStop(.5,"#9a7048");leg.addColorStop(1,"#493322");
- ctx.fillStyle=leg;
- ctx.fillRect(x+12,y+18,9,75);ctx.fillRect(x+184,y+18,9,75);
- const top=ctx.createLinearGradient(x,y,x,y+18);
- top.addColorStop(0,"#c19767");top.addColorStop(.4,"#9a7048");top.addColorStop(1,"#65472e");
- ctx.fillStyle=top;roundRect(ctx,x,y,205,19,3);ctx.fill();
- ctx.strokeStyle="#d5ad7c";ctx.globalAlpha=.4;
- ctx.beginPath();ctx.moveTo(x+20,y+5);ctx.lineTo(x+180,y+5);ctx.stroke();
- ctx.globalAlpha=1;
+
+ ctx.fillStyle="#5b402b";
+ ctx.fillRect(x,y-72,200,12);
+ ctx.fillRect(x+8,y-60,10,60);
+ ctx.fillRect(x+181,y-60,10,60);
+
+ ctx.fillStyle="#a9784b";
+ ctx.fillRect(x,y-78,200,8);
+
+ // Schubladen
+ rounded(x+18,y-60,42,27,3,"#9c7049","#60432c");
+ rounded(x+66,y-60,42,27,3,"#9c7049","#60432c");
+ ctx.fillStyle="#d4b58b";
+ ctx.fillRect(x+36,y-48,8,2);
+ ctx.fillRect(x+84,y-48,8,2);
+
  ctx.restore();
 }
 
 function drawComputer(x,y){
  ctx.save();
- drawDesk(x,y+50);
- ctx.fillStyle="#222729";roundRect(ctx,x+70,y-30,95,70,5);ctx.fill();
- const screen=ctx.createLinearGradient(x+75,y-25,x+160,y+35);
- screen.addColorStop(0,computerOn?"#385c61":"#171c20");
- screen.addColorStop(1,computerOn?"#142c31":"#101416");
- ctx.fillStyle=screen;roundRect(ctx,x+76,y-24,83,57,2);ctx.fill();
+
+ // Bildschirm
+ rounded(x,y-151,100,68,5,"#22272b","#101315");
+
+ const screen=ctx.createLinearGradient(x,y-150,x+100,y-83);
+ screen.addColorStop(0,computerOn?"#182b36":"#25282a");
+ screen.addColorStop(1,computerOn?"#315064":"#111719");
+
+ rounded(x+5,y-146,90,57,2,screen);
 
  if(computerOn){
-  ctx.fillStyle="#8bb5a5";ctx.font="bold 9px Arial";
-  ctx.fillText("MEIN ZIMMER",x+84,y-9);
-  ctx.fillStyle="#d4c58e";ctx.fillRect(x+84,y+1,47,2);
-  ctx.fillStyle="#8bb5a5";
-  ctx.fillRect(x+84,y+10,60,2);ctx.fillRect(x+84,y+17,37,2);
-  const cursor=(time*22)%52;
-  ctx.fillRect(x+84+cursor,y+24,3,4);
- }else{
-  ctx.fillStyle="#222";ctx.fillRect(x+76,y-24,83,57);
-  ctx.fillStyle="#667";ctx.fillRect(x+110,y+37,15,3);
+  ctx.fillStyle="#9bc6d4";
+  ctx.font="8px Arial";
+  ctx.fillText("MEIN ZIMMER",x+13,y-132);
+  ctx.fillStyle="#8bc9a0";
+  ctx.fillRect(x+13,y-122,56,2);
+  ctx.fillRect(x+13,y-115,40,2);
+
+  const cursorX=x+16+(gameTime*20)%65;
+  ctx.fillStyle="#fff";
+  ctx.fillRect(cursorX,y-105,2,6);
  }
+
+ ctx.fillStyle="#555b5e";
+ ctx.fillRect(x+44,y-83,12,8);
+ ctx.fillRect(x+32,y-76,36,4);
+
+ // Tastatur
+ rounded(x+15,y-73,75,5,2,"#33383a","#17191a");
+
  ctx.restore();
 }
 
 function drawWardrobe(x,y){
  ctx.save();
- ctx.fillStyle="#201a15";ctx.globalAlpha=.3;
- ctx.beginPath();ctx.ellipse(x+62,y+174,70,9,0,0,Math.PI*2);ctx.fill();
- ctx.globalAlpha=1;
 
- const wood=ctx.createLinearGradient(x,y,x+130,y);
- wood.addColorStop(0,"#493323");wood.addColorStop(.2,"#986b45");
- wood.addColorStop(.5,"#b08458");wood.addColorStop(.8,"#805837");wood.addColorStop(1,"#402c20");
- ctx.fillStyle=wood;ctx.fillRect(x,y,125,170);
+ // Korpus
+ rounded(x,y-170,125,170,3,"#805c3d","#493422");
 
- ctx.fillStyle="#33251b";ctx.fillRect(x+8,y+8,53,154);ctx.fillRect(x+65,y+8,52,154);
- ctx.fillStyle="#a47a50";ctx.fillRect(x+11,y+11,47,148);ctx.fillRect(x+68,y+11,46,148);
+ ctx.fillStyle="#a47a51";
+ ctx.fillRect(x+6,y-164,113,158);
 
- // Bewegliche Türen mit Scharnier
+ // Türen
+ const open=wardrobeOpen;
  ctx.save();
- ctx.translate(x+61,y+8);
- ctx.rotate(-wardrobeOpen*.95);
- ctx.fillStyle="#a47a50";ctx.fillRect(-53,0,53,154);
- ctx.strokeStyle="#d1a678";ctx.lineWidth=2;ctx.strokeRect(-53,0,53,154);
- ctx.fillStyle="#d6c29e";ctx.beginPath();ctx.arc(-8,78,3,0,Math.PI*2);ctx.fill();
+ ctx.translate(x+62,y-164);
+ ctx.rotate(-open*.85);
+ ctx.fillStyle="#946b47";
+ ctx.fillRect(-56,0,56,158);
+ ctx.strokeStyle="#513a27";
+ ctx.strokeRect(-56,0,56,158);
+ ctx.fillStyle="#d4b183";
+ ctx.beginPath();
+ ctx.arc(-10,80,3,0,Math.PI*2);
+ ctx.fill();
  ctx.restore();
 
  ctx.save();
- ctx.translate(x+64,y+8);
- ctx.rotate(wardrobeOpen*.95);
- ctx.fillStyle="#a47a50";ctx.fillRect(0,0,53,154);
- ctx.strokeStyle="#d1a678";ctx.lineWidth=2;ctx.strokeRect(0,0,53,154);
- ctx.fillStyle="#d6c29e";ctx.beginPath();ctx.arc(8,78,3,0,Math.PI*2);ctx.fill();
+ ctx.translate(x+62,y-164);
+ ctx.rotate(open*.85);
+ ctx.fillStyle="#89613f";
+ ctx.fillRect(0,0,56,158);
+ ctx.strokeStyle="#513a27";
+ ctx.strokeRect(0,0,56,158);
+ ctx.fillStyle="#d4b183";
+ ctx.beginPath();
+ ctx.arc(10,80,3,0,Math.PI*2);
+ ctx.fill();
  ctx.restore();
+
+ // Innenraum
+ ctx.fillStyle="#30251d";
+ ctx.fillRect(x+8,y-156,109,142);
+
  ctx.restore();
 }
 
 function drawSink(x,y){
  ctx.save();
- const wood=ctx.createLinearGradient(x,y,x+100,y);
- wood.addColorStop(0,"#5a4535");wood.addColorStop(.5,"#9b7958");wood.addColorStop(1,"#49372a");
- ctx.fillStyle=wood;ctx.fillRect(x,y+25,100,95);
- ctx.strokeStyle="#d2b18a";ctx.strokeRect(x+8,y+38,84,70);
 
- ctx.fillStyle="#aeb8b8";ctx.beginPath();ctx.ellipse(x+50,y+24,58,15,0,0,Math.PI*2);ctx.fill();
- ctx.fillStyle="#697879";ctx.beginPath();ctx.ellipse(x+50,y+22,46,9,0,0,Math.PI*2);ctx.fill();
+ // Unterschrank
+ rounded(x+15,y-72,145,72,4,"#8b6748","#4f3928");
+ ctx.fillStyle="#b18a62";
+ ctx.fillRect(x+21,y-65,133,57);
 
- ctx.strokeStyle="#aab7b8";ctx.lineWidth=6;ctx.lineCap="round";
- ctx.beginPath();ctx.moveTo(x+72,y+19);ctx.lineTo(x+72,y-7);
- ctx.quadraticCurveTo(x+72,y-20,x+58,y-20);ctx.stroke();
+ // Waschbecken
+ ctx.fillStyle="#d4d4cb";
+ ctx.beginPath();
+ ctx.roundRect(x,y-91,185,24,8);
+ ctx.fill();
+ ctx.strokeStyle="#797e7b";
+ ctx.stroke();
+
+ ctx.fillStyle="#a8aaa4";
+ ctx.beginPath();
+ ctx.ellipse(x+90,y-82,44,8,0,0,Math.PI*2);
+ ctx.fill();
+
+ // Wasserhahn
+ ctx.strokeStyle="#858c8b";
+ ctx.lineWidth=5;
+ ctx.beginPath();
+ ctx.moveTo(x+93,y-91);
+ ctx.lineTo(x+93,y-112);
+ ctx.quadraticCurveTo(x+93,y-121,x+108,y-121);
+ ctx.lineTo(x+119,y-121);
+ ctx.stroke();
+
+ ctx.lineWidth=2;
+ ctx.strokeStyle="#c6d9dc";
+ ctx.beginPath();
+ ctx.moveTo(x+119,y-121);
+ ctx.lineTo(x+119,y-111);
+ ctx.stroke();
 
  if(save.faucetOn){
-  const flow=(time*45)%12;
-  ctx.strokeStyle="#8bd8e9";ctx.lineWidth=2;
-  ctx.beginPath();ctx.moveTo(x+58,y-1);ctx.lineTo(x+58,y+17);ctx.stroke();
-  ctx.fillStyle="#8bd8e9";
-  for(let i=0;i<3;i++){
-   const yy=y+2+((flow+i*4)%14);
-   ctx.beginPath();ctx.arc(x+58,yy,1.5,0,Math.PI*2);ctx.fill();
-  }
+  const waterHeight=18+Math.sin(gameTime*12)*3;
+  ctx.strokeStyle="#83c8df";
+  ctx.lineWidth=2;
+  line(x+119,y-110,x+119,y-110+waterHeight,"#83c8df",2);
  }
 
- const bx=x+135,by=y+75;
- ctx.fillStyle="#4e5d5c";ctx.beginPath();
- ctx.moveTo(bx,by);ctx.lineTo(bx+45,by);ctx.lineTo(bx+39,by+47);ctx.lineTo(bx+6,by+47);ctx.closePath();ctx.fill();
- ctx.strokeStyle="#aebbb7";ctx.lineWidth=3;
- ctx.beginPath();ctx.ellipse(bx+22,by,22,6,0,0,Math.PI*2);ctx.stroke();
+ // Eimer
+ rounded(x+133,y-39,31,36,4,"#71818a","#3f4c52");
 
  if(save.bucketWater>0){
-  ctx.fillStyle="#76b8c5";
-  ctx.beginPath();
-  ctx.ellipse(bx+22,by+8+Math.sin(time*3)*.5,17,4,0,0,Math.PI*2);
-  ctx.fill();
-  ctx.fillStyle="#a9e2e8";
-  ctx.fillRect(bx+12,by+10,2,4);
+  const fill=clamp(save.bucketWater,0,1);
+  ctx.fillStyle="#69b9d2";
+  ctx.fillRect(x+137,y-3-fill*29,23,fill*29);
  }
+
  ctx.restore();
 }
 
 function drawPlant(x,y){
  ctx.save();
- ctx.fillStyle="#79533a";
- ctx.beginPath();ctx.moveTo(x-18,y-28);ctx.lineTo(x+18,y-28);ctx.lineTo(x+14,y);ctx.lineTo(x-14,y);ctx.closePath();ctx.fill();
- ctx.strokeStyle="#426448";ctx.lineWidth=4;
- ctx.beginPath();ctx.moveTo(x,y-27);ctx.lineTo(x,y-88);ctx.stroke();
- const leaves=[[-18,-72,-.7],[18,-80,.7],[-23,-51,-.8],[24,-57,.8],[-11,-91,-.3],[13,-99,.4]];
- for(const [dx,dy,a] of leaves){
-  ctx.save();ctx.translate(x+dx,y+dy);ctx.rotate(a);
-  const g=ctx.createLinearGradient(-10,-4,10,4);
-  g.addColorStop(0,"#31533b");g.addColorStop(1,"#71916a");
-  ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(0,0,15,6,0,0,Math.PI*2);ctx.fill();ctx.restore();
+
+ // Topf
+ ctx.fillStyle="#9a6546";
+ ctx.beginPath();
+ ctx.moveTo(x-18,y-36);
+ ctx.lineTo(x+18,y-36);
+ ctx.lineTo(x+13,y);
+ ctx.lineTo(x-13,y);
+ ctx.closePath();
+ ctx.fill();
+ ctx.strokeStyle="#68432f";
+ ctx.stroke();
+
+ // Stängel
+ line(x,y-35,x,y-90,"#496c45",3);
+
+ for(let i=0;i<5;i++){
+  const side=i%2?1:-1;
+  const yy=y-48-i*9;
+  ctx.save();
+  ctx.translate(x,yy);
+  ctx.rotate(side*.5);
+  ctx.fillStyle=i%2?"#66855b":"#789369";
+  ctx.beginPath();
+  ctx.ellipse(side*12,-4,7,14,side*.3,0,Math.PI*2);
+  ctx.fill();
+  ctx.restore();
  }
+
  ctx.restore();
 }
 
 function drawShelf(x,y){
- ctx.fillStyle="#533b2a";ctx.fillRect(x,y,180,9);
- ctx.fillStyle="#b28a5f";ctx.fillRect(x,y,180,3);
- const colors=["#a76c4f","#647b7b","#c2a16d","#8b6658","#73866d"];
- for(let i=0;i<5;i++){
-  ctx.fillStyle=colors[i];ctx.fillRect(x+12+i*23,y-39+(i%2)*5,17,39-(i%2)*5);
-  ctx.fillStyle="#ffffff33";ctx.fillRect(x+15+i*23,y-35+(i%2)*5,2,30);
+ ctx.save();
+
+ ctx.fillStyle="#68472e";
+ ctx.fillRect(x,y-75,120,7);
+ ctx.fillRect(x+5,y-68,5,68);
+ ctx.fillRect(x+110,y-68,5,68);
+
+ ctx.fillStyle="#8e6744";
+ ctx.fillRect(x+8,y-112,104,5);
+
+ // Bücher
+ const colors=["#9b574a","#607a83","#c09a5d","#6e795c"];
+ for(let i=0;i<4;i++){
+  ctx.fillStyle=colors[i];
+  ctx.fillRect(x+12+i*18,y-108,14,32);
+  ctx.fillStyle="#ffffff44";
+  ctx.fillRect(x+15+i*18,y-104,2,24);
  }
+
+ ctx.restore();
 }
 
-/* =====================================================
+/* =========================================================
    WELT
-===================================================== */
+========================================================= */
+
 const objects={
  sofa:{x:420,w:225,label:"Sofa"},
  wardrobe:{x:520,w:125,label:"Kleiderschrank"},
@@ -947,119 +942,133 @@ const objects={
  city:{x:2880,w:90,label:"Ausgang zur Stadt"}
 };
 
-function nearObject(obj){
- return Math.abs((player.x+player.width/2)-(obj.x+obj.w/2))<115;
+function worldObject(draw,x){
+ ctx.save();
+ ctx.translate(x-cameraX,0);
+ draw();
+ ctx.restore();
 }
 
 function drawWorld(){
- drawWindow(170,65,210,160);
- drawWindow(930,80,190,145);
- drawWindow(1730,65,210,160);
- drawWindow(2470,80,190,145);
+ drawBackground();
 
- ctx.fillStyle="#604b39";ctx.fillRect(650,80,120,95);
- ctx.fillStyle="#e5d6bd";ctx.fillRect(657,87,106,81);
- ctx.fillStyle="#83938b";ctx.fillRect(670,100,80,55);
- ctx.fillStyle="#d7c8a9";ctx.fillRect(676,106,68,43);
+ worldObject(()=>drawWindow(170,75,190,170),170);
+ worldObject(()=>drawWindow(930,75,190,170),930);
+ worldObject(()=>drawWindow(1730,75,190,170),1730);
+ worldObject(()=>drawWindow(2470,75,190,170),2470);
 
- drawPlant(90,FLOOR);
- drawSofa(420,FLOOR-78);
- drawWardrobe(520,FLOOR-170);
- drawShelf(780,190);
- drawDesk(1160,FLOOR-90);
- drawComputer(1160,FLOOR-140);
- drawBed(1510,FLOOR-75);
- drawPlant(1810,FLOOR);
- drawSink(1960,FLOOR-120);
- drawShelf(2250,190);
- drawSofa(2500,FLOOR-78);
+ worldObject(()=>drawPlant(110,FLOOR),110);
 
- // Ausgangstür
- ctx.fillStyle="#49382b";ctx.fillRect(2870,FLOOR-205,100,205);
- const door=ctx.createLinearGradient(2870,0,2970,0);
- door.addColorStop(0,"#674b35");door.addColorStop(.5,"#9b754e");door.addColorStop(1,"#4f3828");
- ctx.fillStyle=door;ctx.fillRect(2878,FLOOR-198,84,198);
- ctx.strokeStyle="#c29b6c";ctx.lineWidth=3;ctx.strokeRect(2884,FLOOR-192,72,184);
- ctx.fillStyle="#d4b477";ctx.beginPath();ctx.arc(2945,FLOOR-95,4,0,Math.PI*2);ctx.fill();
- ctx.fillStyle="#eee2cf";ctx.font="bold 12px Arial";ctx.textAlign="center";
- ctx.fillText("STADT",2920,FLOOR-218);ctx.textAlign="left";
+ worldObject(()=>drawSofa(420,FLOOR),420);
+ worldObject(()=>drawWardrobe(520,FLOOR),520);
 
- // Markierungen
- for(const o of Object.values(objects)){
-  if(nearObject(o)){
-   ctx.fillStyle="#202323dd";roundRect(ctx,o.x+o.w/2-13,FLOOR-225,26,25,5);ctx.fill();
-   ctx.fillStyle="#f3e4c8";ctx.font="bold 14px Arial";ctx.textAlign="center";
-   ctx.fillText("E",o.x+o.w/2,FLOOR-208);ctx.textAlign="left";
-  }
- }
+ worldObject(()=>drawShelf(780,FLOOR),780);
+
+ worldObject(()=>{
+  drawDesk(1160,FLOOR);
+  drawComputer(1210,FLOOR);
+ },1160);
+
+ worldObject(()=>drawBed(1510,FLOOR),1510);
+ worldObject(()=>drawPlant(1810,FLOOR),1810);
+ worldObject(()=>drawSink(1960,FLOOR),1960);
+ worldObject(()=>drawShelf(2250,FLOOR),2250);
+ worldObject(()=>drawSofa(2500,FLOOR),2500);
+
+ worldObject(()=>{
+  ctx.fillStyle="#5b4030";
+  ctx.fillRect(0,FLOOR-170,80,170);
+  ctx.fillStyle="#b58a5b";
+  ctx.fillRect(7,FLOOR-163,66,156);
+  ctx.fillStyle="#30271f";
+  ctx.fillRect(15,FLOOR-151,50,140);
+  ctx.fillStyle="#d4b183";
+  ctx.beginPath();
+  ctx.arc(61,FLOOR-83,3,0,Math.PI*2);
+  ctx.fill();
+  ctx.fillStyle="#fff";
+  ctx.font="12px Arial";
+  ctx.fillText("STADT",17,FLOOR-180);
+ },2870);
 }
 
-/* =====================================================
+/* =========================================================
    INTERAKTIONEN
-===================================================== */
+========================================================= */
+
+function nearObject(obj){
+ return Math.abs((player.x+24)-(obj.x+obj.w/2))<obj.w/2+42;
+}
+
+function setMessage(text){
+ message=text;
+ messageTimer=2.5;
+ document.getElementById("hint").textContent=text;
+}
+
 function beginFurnitureAction(type,targetX){
- furnitureAction={
-  type,
-  startX:player.x,
-  targetX,
-  elapsed:0,
-  duration:.45
- };
  player.action=type;
+ player.actionProgress=0;
+ player.actionStartX=player.x;
+ player.actionStartY=player.y;
+ player.targetX=targetX;
  player.vx=0;
  player.vy=0;
+ player.grounded=true;
 }
 
 function interact(){
+ if(player.action!=="normal")return;
+
  if(nearObject(objects.wardrobe)){
   wardrobeOpen=1;
-  say("Der Kleiderschrank öffnet sich …");
+  setMessage("Kleiderschrank wird geöffnet ...");
+  save.playerX=player.x;
+  writeSave();
   setTimeout(()=>{
-   save.playerX=player.x;
-   writeSave();
-   location.href="Schrank.html";
+   window.location.href="Schrank.html";
   },260);
   return;
  }
 
  if(nearObject(objects.sofa)){
+  sofaOccupied=!sofaOccupied;
+  bedOccupied=false;
+
   if(sofaOccupied){
-   sofaOccupied=false;
-   player.action="normal";
-   say("Du stehst wieder auf.");
-  }else{
-   sofaOccupied=true;
-   bedOccupied=false;
    beginFurnitureAction("sofa",objects.sofa.x+80);
-   say("Du setzt dich auf das Sofa.");
+   setMessage("Du setzt dich auf das Sofa.");
+  }else{
+   player.action="normal";
+   setMessage("Du stehst wieder auf.");
   }
   return;
  }
 
  if(nearObject(objects.computer)){
   computerOn=!computerOn;
-  say(computerOn?"Computer eingeschaltet.":"Computer ausgeschaltet.");
+  setMessage(computerOn?"Computer eingeschaltet.":"Computer ausgeschaltet.");
   return;
  }
 
  if(nearObject(objects.bed)){
+  bedOccupied=!bedOccupied;
+  sofaOccupied=false;
+
   if(bedOccupied){
-   bedOccupied=false;
-   player.action="normal";
-   say("Du stehst vom Bett auf.");
-  }else{
-   bedOccupied=true;
-   sofaOccupied=false;
    beginFurnitureAction("bed",objects.bed.x+105);
-   say("Du legst dich hin. Gute Erholung!");
+   setMessage("Du legst dich ins Bett.");
+  }else{
+   player.action="normal";
+   setMessage("Du stehst wieder auf.");
   }
   return;
  }
 
  if(nearObject(objects.sink)){
   save.faucetOn=!save.faucetOn;
-  say(save.faucetOn?"Wasserhahn geöffnet.":"Wasserhahn geschlossen.");
   writeSave();
+  setMessage(save.faucetOn?"Wasserhahn geöffnet.":"Wasserhahn geschlossen.");
   return;
  }
 
@@ -1068,238 +1077,294 @@ function interact(){
   return;
  }
 
- say("Hier gibt es gerade nichts zu tun.");
+ setMessage("Hier gibt es gerade nichts zu tun.");
 }
+
+function dropItem(){
+ if(!save.inventory.length){
+  setMessage("Du hast gerade nichts im Inventar.");
+  return;
+ }
+
+ const item=save.inventory.pop();
+ writeSave();
+ setMessage(item+" wurde abgelegt.");
+}
+
+/* =========================================================
+   ÜBERGANG
+========================================================= */
 
 function transition(url){
- document.getElementById("fade").style.opacity="1";
  save.playerX=player.x;
  writeSave();
- setTimeout(()=>location.href=url,300);
+
+ const fade=document.getElementById("fade");
+ fade.style.opacity="1";
+
+ setTimeout(()=>{
+  window.location.href=url;
+ },350);
 }
 
-/* =====================================================
-   SCHATTEN UND SPIELFIGUR
-===================================================== */
-function drawPlayerShadow(){
- ctx.save();
- ctx.fillStyle="#17120e";ctx.globalAlpha=.3;
- ctx.beginPath();
- ctx.ellipse(player.x+24,FLOOR-2,24,5,0,0,Math.PI*2);
- ctx.fill();
- ctx.restore();
-}
+/* =========================================================
+   PHYSIK UND UPDATE
+========================================================= */
 
-function drawOtherPlayers(){
- for(const [id,p] of Object.entries(otherPlayers)){
-  if(!p||id==="self")continue;
-  const x=Number(p.x);
-  if(!Number.isFinite(x))continue;
-  ctx.save();ctx.globalAlpha=.65;
-  ctx.fillStyle="#a77b50";
-  ctx.fillRect(x+10,FLOOR-67,29,9);
-  ctx.fillRect(x+13,FLOOR-58,5,55);
-  ctx.fillRect(x+33,FLOOR-58,5,55);
-  ctx.fillRect(x+13,FLOOR-105,25,43);
-  ctx.restore();
- }
-}
-
-/* =====================================================
-   PHYSIK UND ANIMATIONEN
-===================================================== */
 function update(dt){
- if(furnitureAction){
-  furnitureAction.elapsed+=dt;
-  const p=clamp(furnitureAction.elapsed/furnitureAction.duration,0,1);
-  player.x=lerp(furnitureAction.startX,furnitureAction.targetX,smooth(0,1,p));
+ gameTime+=dt;
+
+ if(messageTimer>0){
+  messageTimer-=dt;
+  if(messageTimer<=0){
+   document.getElementById("hint").textContent=
+    "A / D oder ← / → bewegen · Leertaste springen · E interagieren";
+  }
+ }
+
+ if(player.action==="sofa"||player.action==="bed"){
+  player.actionProgress=clamp(player.actionProgress+dt*3,0,1);
+
+  player.x=lerp(
+   player.actionStartX,
+   player.targetX,
+   player.actionProgress
+  );
+
   player.vx=0;
   player.vy=0;
   player.grounded=true;
-  if(p>=1){
-   player.action=furnitureAction.type;
-   furnitureAction=null;
+
+  if(player.actionProgress>=1){
+   player.action="seated";
   }
- }else if(player.action==="normal"){
-  const left=keys["a"]||keys["arrowleft"];
-  const right=keys["d"]||keys["arrowright"];
+ }else if(player.action==="seated"){
+  player.vx=0;
+  player.vy=0;
+  player.grounded=true;
+ }else{
+  let direction=0;
+  if(keys["a"]||keys["arrowleft"])direction--;
+  if(keys["d"]||keys["arrowright"])direction++;
+
   const speed=230;
 
-  if(left){player.vx=-speed;player.facing=-1}
-  else if(right){player.vx=speed;player.facing=1}
-  else{
-   player.vx*=Math.pow(.001,dt);
-   if(Math.abs(player.vx)<2)player.vx=0;
+  player.vx=direction*speed;
+
+  if(direction!==0){
+   player.facing=direction;
   }
 
   player.x+=player.vx*dt;
-  player.x=clamp(player.x,20,WORLD-player.width-20);
+  player.x=clamp(player.x,40,WORLD-80);
 
-  player.vy+=1100*dt;
+  // Schwerkraft
+  const gravity=1100;
+  player.vy+=gravity*dt;
   player.y+=player.vy*dt;
 
-  if(player.y+player.height>=FLOOR){
-   if(!player.grounded&&player.vy>100)player.landing=1;
-   player.y=FLOOR-player.height;
+  const groundY=FLOOR-player.height;
+
+  if(player.y>=groundY){
+   if(!player.grounded&&player.vy>120){
+    player.landing=.25;
+   }
+
+   player.y=groundY;
    player.vy=0;
    player.grounded=true;
-  }else player.grounded=false;
- }else{
-  player.vx=0;
-  player.vy=0;
-  player.grounded=true;
- }
-
- if(player.action==="sofa"){
-  player.y=FLOOR-68+8;
- }
- if(player.action==="bed"){
-  player.y=FLOOR-68+12;
- }
-
- if(player.grounded&&Math.abs(player.vx)>5&&player.action==="normal"){
-  player.walk+=dt*(8+Math.abs(player.vx)*.025);
- }
- player.landing=Math.max(0,player.landing-dt*3);
-
- wardrobeOpen=lerp(wardrobeOpen,0,dt*1.5);
- if(save.faucetOn){
-  tapAnimation+=dt;
-  save.bucketWater=clamp((save.bucketWater||0)+dt*.12,0,100);
-  if(Math.floor(time*2)!==Math.floor((time-dt)*2))writeSave();
- }
-
- cameraX=clamp(player.x-W*.42,0,WORLD-W);
- save.playerX=player.x;
-}
-
-/* =====================================================
-   ZEICHNEN
-===================================================== */
-function draw(){
- ctx.setTransform(sx,0,0,sy,0,0);
- ctx.clearRect(0,0,W,H);
- drawBackground();
-
- ctx.save();
- ctx.translate(-cameraX,0);
- drawWorld();
- drawOtherPlayers();
- drawPlayerShadow();
- drawChair();
- ctx.restore();
-
- const light=ctx.createRadialGradient(W*.5,H*.35,20,W*.5,H*.35,570);
- light.addColorStop(0,"#fff7e500");
- light.addColorStop(1,"#241b171c");
- ctx.fillStyle=light;ctx.fillRect(0,0,W,H);
-
- const nearby=Object.values(objects).some(nearObject);
- if(nearby){
-  const target=Object.values(objects).find(nearObject);
-  document.getElementById("hint").textContent="E – "+target.label;
- }else if(performance.now()>messageUntil){
-  document.getElementById("hint").textContent=
-   "A / D – Bewegen · LEERTASTE – Springen · E – Interagieren";
- }else{
-  document.getElementById("hint").textContent=message;
- }
-}
-
-/* =====================================================
-   TASTENSTEUERUNG
-===================================================== */
-window.addEventListener("keydown",e=>{
- const k=e.key.toLowerCase();
- if([" ","arrowup","arrowleft","arrowright"].includes(k))e.preventDefault();
-
- if(!keys[k]){
-  if((k===" "||k==="w"||k==="arrowup")&&player.grounded&&player.action==="normal"){
-   player.vy=-440;
+  }else{
    player.grounded=false;
   }
-  if(k==="e"){
-   if(player.action==="sofa"){
-    sofaOccupied=false;player.action="normal";say("Du stehst auf.");
-   }else if(player.action==="bed"){
-    bedOccupied=false;player.action="normal";say("Du stehst auf.");
-   }else interact();
-  }
-  if(k==="q"){
-   player.held=null;say("Gegenstand abgelegt.");
+
+  if(player.grounded&&direction!==0){
+   player.walk+=dt*10;
   }
  }
- keys[k]=true;
-});
 
-window.addEventListener("keyup",e=>{keys[e.key.toLowerCase()]=false});
-window.addEventListener("blur",()=>keys={});
+ if(player.action==="seated"){
+  if(player.actionProgress>=1){
+   if(sofaOccupied){
+    player.y=FLOOR-player.height+8;
+   }else if(bedOccupied){
+    player.y=FLOOR-player.height+12;
+   }
+  }
+ }else if(player.action==="normal"){
+  // Kein künstliches Schweben: Füße stehen auf dem Boden.
+ }
 
-/* =====================================================
-   MULTIPLAYER – OPTIONAL
-===================================================== */
-async function initOnline(){
- const status=document.getElementById("status");
- try{
-  const room=JSON.parse(sessionStorage.getItem("mein-zimmer-active-room")||"null");
-  if(!room||!window.GameOnline){
-   status.textContent="Offline – Einzelspieler";
-   return;
+ if(player.landing>0){
+  player.landing=Math.max(0,player.landing-dt);
+ }
+
+ wardrobeOpen=lerp(wardrobeOpen,0,dt*2.5);
+
+ if(save.faucetOn){
+  save.bucketWater=clamp(save.bucketWater+dt*.12,0,1);
+  saveTimer+=dt;
+
+  if(saveTimer>.5){
+   saveTimer=0;
+   writeSave();
   }
-  onlineRoom=room;
-  if(typeof GameOnline.login==="function")await GameOnline.login("Spieler");
-  const client=typeof GameOnline.getClient==="function"?GameOnline.getClient():null;
-  if(client&&typeof GameOnline.watchPlayers==="function"){
-   GameOnline.watchPlayers(room.id||room.room_id,players=>{
-    otherPlayers=players||{};
-   });
+ }
+
+ cameraX=clamp(player.x-W/2,0,WORLD-W);
+
+ save.playerX=player.x;
+
+ if(messageTimer<=0){
+  const obj=getNearbyObject();
+  if(obj){
+   document.getElementById("hint").textContent=
+    "E – "+obj.label+" benutzen";
+  }else{
+   document.getElementById("hint").textContent=
+    "A / D oder ← / → bewegen · Leertaste springen · E interagieren";
   }
-  onlineReady=true;
-  status.textContent="Online – Raum aktiv";
- }catch(e){
-  console.warn("Multiplayer nicht verfügbar:",e);
-  status.textContent="Offline – Einzelspieler";
  }
 }
 
-let networkTimer=0;
-async function sendOnline(dt){
- if(!onlineReady||!onlineRoom||!window.GameOnline)return;
- networkTimer+=dt;
- if(networkTimer<.15)return;
- networkTimer=0;
+function getNearbyObject(){
+ const order=[
+  objects.wardrobe,
+  objects.sofa,
+  objects.computer,
+  objects.bed,
+  objects.sink,
+  objects.city
+ ];
+
+ for(const obj of order){
+  if(nearObject(obj))return obj;
+ }
+ return null;
+}
+
+/* =========================================================
+   SPIELER ZEICHNEN
+========================================================= */
+
+function drawPlayer(){
+ ctx.save();
+ ctx.translate(-cameraX,0);
+
+ drawPlayerShadow();
+
+ if(player.action==="seated"){
+  // Der Stuhl bleibt bei Möbelaktionen in einer ruhigen Sitzpose.
+  ctx.save();
+  ctx.translate(0,0);
+  drawChair(gameTime);
+  ctx.restore();
+ }else{
+  drawChair(gameTime);
+ }
+
+ ctx.restore();
+}
+
+/* =========================================================
+   HUD UND RENDERING
+========================================================= */
+
+function draw(){
+ ctx.clearRect(0,0,W,H);
+
+ drawWorld();
+ drawPlayer();
+
+ // kleine Positionsanzeige
+ document.getElementById("position").textContent=
+  "Zimmer · "+Math.round(player.x)+" m";
+}
+
+/* =========================================================
+   MULTIPLAYER – OPTIONAL
+========================================================= */
+
+let onlineRoom=null;
+let onlineReady=false;
+
+async function initOnline(){
  try{
-  if(typeof GameOnline.updatePosition==="function"){
-   await GameOnline.updatePosition(
-    onlineRoom.id||onlineRoom.room_id,
+  const roomId=sessionStorage.getItem("mein-zimmer-active-room");
+  if(!roomId||!window.GameOnline)return;
+
+  const game=window.GameOnline;
+
+  if(typeof game.login==="function"){
+   await game.login("Spieler");
+  }
+
+  const client=typeof game.getClient==="function"
+   ?game.getClient()
+   :null;
+
+  if(!client)return;
+
+  onlineRoom={id:roomId,game};
+  onlineReady=true;
+
+  if(typeof game.watchPlayers==="function"){
+   game.watchPlayers(roomId,players=>{
+    // Andere Spieler können hier bei Bedarf dargestellt werden.
+   });
+  }
+
+  document.getElementById("status").textContent="Online";
+ }catch(e){
+  onlineReady=false;
+  document.getElementById("status").textContent="Offline";
+ }
+}
+
+async function sendOnline(dt){
+ if(!onlineReady||!onlineRoom)return;
+
+ onlineTimer+=dt;
+ if(onlineTimer<.15)return;
+ onlineTimer=0;
+
+ try{
+  const game=onlineRoom.game;
+  if(typeof game.updatePosition==="function"){
+   await game.updatePosition(
+    onlineRoom.id,
     "zimmer",
     player.x,
     player.y
    );
   }
- }catch(e){console.warn("Position konnte nicht gesendet werden:",e)}
+ }catch(e){}
 }
 
-/* =====================================================
+/* =========================================================
    SPIELSCHLEIFE
-===================================================== */
-function loop(now){
- const dt=Math.min((now-last)/1000||0,.033);
- last=now;
- time+=dt;
+========================================================= */
+
+function loop(timestamp){
+ if(!lastTime)lastTime=timestamp;
+
+ const dt=Math.min((timestamp-lastTime)/1000,.033);
+ lastTime=timestamp;
+
  update(dt);
  draw();
  sendOnline(dt);
+
  requestAnimationFrame(loop);
 }
-
-initOnline();
-requestAnimationFrame(loop);
 
 window.addEventListener("beforeunload",()=>{
  save.playerX=player.x;
  writeSave();
 });
+
+initOnline();
+requestAnimationFrame(loop);
+
 </script>
 </body>
 </html>
