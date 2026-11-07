@@ -273,7 +273,6 @@ function dropItem(){
  if(item){
   item.x=clamp(player.x+(player.facing>0?player.width+8:-item.w-8),0,WORLD-item.w);
   const center=item.x+item.w/2;
-  /* Auf niedrigen Ablagen und Tischplatten abstellen, sonst auf dem Boden. */
   const surfaces=[
    {x:645,w:92,y:FLOOR-57},
    {x:1160,w:190,y:FLOOR-90},
@@ -408,7 +407,6 @@ function drawOriginalLeg(x,y,angle){
  ctx.restore();
 }
 
-/* Gelenkige Laufanimation, Holzform bleibt erhalten. */
 function drawAnimatedLeg(x,y,phase){
  const swing=Math.sin(phase)*.25;
  const knee=Math.sin(phase+1)*.12;
@@ -445,7 +443,6 @@ function drawAnimatedLeg(x,y,phase){
  ctx.restore();
 }
 
-/* Der ursprüngliche Stuhl bleibt in Form und Proportionen unverändert. */
 function drawChair(time){
  const back=save.equipped.back;
  ctx.save();
@@ -457,13 +454,9 @@ function drawChair(time){
  ctx.restore();
  if(back)drawBackItem();
 
- /* KORREKTUR: drawOriginalLeg statt der nicht vorhandenen drawLeg-Funktion */
  drawOriginalLeg(29,75,0);
-
  woodPart(23,5,13,70,2);
  woodPart(20,67,78,12,2);
-
- /* KORREKTUR: drawOriginalLeg statt der nicht vorhandenen drawLeg-Funktion */
  drawOriginalLeg(88,77,0);
 
  drawPants();
@@ -575,19 +568,16 @@ function drawBackground(){
  wall.addColorStop(1,"#a99988");
  rect(0,0,W,H,wall);
 
- /* Dezente Wandstruktur */
  for(let i=0;i<90;i++){
   const x=hash(i*4)*W;
   const y=hash(i*7)*FLOOR;
   rect(x,y,hash(i+20)*30+4,1,"#ffffff0b");
  }
 
- /* Sockelleiste */
  rect(0,FLOOR-15,W,15,"#765b48");
  rect(0,FLOOR-15,W,3,"#b69b7d");
  rect(0,FLOOR-4,W,4,"#4c3b30");
 
- /* Holzboden */
  const floor=ctx.createLinearGradient(0,FLOOR,0,H);
  floor.addColorStop(0,"#8c684d");
  floor.addColorStop(1,"#4f3a2d");
@@ -606,7 +596,6 @@ function drawBackground(){
   line(x,y,x+hash(i+1000)*28,y,"#e3bd941c",1);
  }
 
- /* Licht von links */
  const glow=ctx.createRadialGradient(170,90,10,170,90,430);
  glow.addColorStop(0,"#fff0c52c");
  glow.addColorStop(1,"#fff0c500");
@@ -614,7 +603,6 @@ function drawBackground(){
 }
 
 function drawWallDecor(){
- /* Fenster */
  ctx.save();
  ctx.shadowColor="#0005";ctx.shadowBlur=13;ctx.shadowOffsetY=4;
  rounded(75,70,210,190,3,"#594638","#3c3028");
@@ -624,7 +612,6 @@ function drawWallDecor(){
  sky.addColorStop(0,"#9ec4d0");sky.addColorStop(1,"#e2d6bd");
  rect(87,82,186,166,sky);
 
- /* Landschaft vor dem Fenster */
  ellipse(230,125,23,23,"#f2dba1");
  rect(87,188,186,60,"#82977c");
  for(let i=0;i<9;i++){
@@ -634,7 +621,6 @@ function drawWallDecor(){
  rect(178,82,5,166,"#e7d8c1");
  rect(87,162,186,5,"#e7d8c1");
 
- /* Vorhänge */
  ctx.fillStyle="#806b68";
  ctx.beginPath();ctx.moveTo(65,62);ctx.quadraticCurveTo(90,155,75,270);
  ctx.lineTo(103,270);ctx.quadraticCurveTo(110,155,91,62);ctx.fill();
@@ -642,7 +628,6 @@ function drawWallDecor(){
  ctx.lineTo(292,270);ctx.quadraticCurveTo(291,155,290,62);ctx.fill();
  line(64,65,294,65,"#5a493f",4);
 
- /* Bilderrahmen */
  rounded(360,83,95,75,2,"#5a4130","#382a21");
  rect(367,90,81,61,"#d6c6aa");
  rect(371,94,73,53,"#b5c2ad");
@@ -655,7 +640,6 @@ function drawWallDecor(){
  ellipse(545,122,18,18,"#a9b5a0");
  line(535,136,556,106,"#667c66",2);
 
- /* Wanduhr */
  ellipse(825,104,29,29,"#634a37");
  ellipse(825,104,24,24,"#eee2c9");
  ellipse(825,104,2,2,"#3d3026");
@@ -687,7 +671,6 @@ function drawSofa(x){
  ctx.save();
  ctx.translate(x,0);
  ctx.shadowColor="#0005";ctx.shadowBlur=9;ctx.shadowOffsetY=4;
-
  rounded(0,FLOOR-90,220,82,10,"#66504a","#40332f");
  ctx.restore();
 
@@ -696,7 +679,6 @@ function drawSofa(x){
  rounded(x+116,FLOOR-132,91,59,12,"#92766e","#5e4943");
  rounded(x+7,FLOOR-82,207,20,5,"#5b4640","#3c302b");
 
- /* Nähte und Polsterdetails */
  line(x+108,FLOOR-126,x+108,FLOOR-80,"#d5b4a366",1);
  line(x+20,FLOOR-65,x+200,FLOOR-65,"#d4b4a244",1);
  for(let i=0;i<4;i++){
@@ -743,7 +725,6 @@ function drawDesk(x){
  rect(x+169,FLOOR-81,9,81,"#65482f");
  rect(x+23,FLOOR-12,145,6,"#543b2a");
 
- /* PC-Gehäuse und Monitor */
  rounded(x+56,FLOOR-180,89,78,4,"#33383a","#1d2426");
  rounded(x+62,FLOOR-174,77,60,2,"#151e20","#667173");
  const screen=ctx.createLinearGradient(0,FLOOR-174,0,FLOOR-114);
@@ -794,13 +775,11 @@ function drawPlant(x){
 }
 
 function drawSink(x){
- /* Waschbecken */
  rounded(x,FLOOR-72,170,15,6,"#e5e1d6","#9e9b91");
  rounded(x+8,FLOOR-65,154,11,4,"#c9c7bd","#99958b");
  ellipse(x+85,FLOOR-63,23,5,"#a8b1ad");
  ellipse(x+85,FLOOR-65,8,2,"#6c7775");
 
- /* Unterschrank */
  rect(x+18,FLOOR-50,134,50,"#806247");
  rect(x+24,FLOOR-45,58,40,"#9b7958");
  rect(x+88,FLOOR-45,58,40,"#967454");
@@ -808,7 +787,6 @@ function drawSink(x){
  ellipse(x+76,FLOOR-26,2,2,"#d5bd8b");
  ellipse(x+94,FLOOR-26,2,2,"#d5bd8b");
 
- /* Wasserhahn mit beweglichem Griff */
  ctx.save();
  ctx.strokeStyle="#aeb8b5";ctx.lineWidth=6;ctx.lineCap="round";
  ctx.beginPath();
@@ -949,10 +927,25 @@ function drawWaterStream(){
  const playerNear=Math.abs(player.x+player.width/2-2165)<105;
  const bucketNear=bucket&&Math.abs(bucket.x+bucket.w/2-2165)<65;
  if(!((playerHasBucket&&playerNear)||(!player.held&&bucketNear)))return;
- const pulse=Math.sin(time*18)*2;ctx.save();ctx.globalAlpha=.82;ctx.strokeStyle="#8bd5eb";ctx.lineWidth=3;
- ctx.beginPath();ctx.moveTo(2165,FLOOR-101);ctx.bezierCurveTo(2164+pulse,FLOOR-82,2167-pulse,FLOOR-58,2165,FLOOR-37);ctx.stroke();
- ctx.strokeStyle="#d5f7ff";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(2164,FLOOR-96);ctx.lineTo(2164,FLOOR-42);ctx.stroke();
- for(let i=0;i<4;i++){const yy=FLOOR-35+((time*95+i*13)%28);ellipse(2165+Math.sin(time*9+i)*2,yy,1.5,2.5,"#a9e9fa");}
+ const pulse=Math.sin(time*18)*2;
+ ctx.save();
+ ctx.globalAlpha=.82;
+ ctx.strokeStyle="#8bd5eb";
+ ctx.lineWidth=3;
+ ctx.beginPath();
+ ctx.moveTo(2165,FLOOR-101);
+ ctx.bezierCurveTo(2164+pulse,FLOOR-82,2167-pulse,FLOOR-58,2165,FLOOR-37);
+ ctx.stroke();
+ ctx.strokeStyle="#d5f7ff";
+ ctx.lineWidth=1;
+ ctx.beginPath();
+ ctx.moveTo(2164,FLOOR-96);
+ ctx.lineTo(2164,FLOOR-42);
+ ctx.stroke();
+ for(let i=0;i<4;i++){
+  const yy=FLOOR-35+((time*95+i*13)%28);
+  ellipse(2165+Math.sin(time*9+i)*2,yy,1.5,2.5,"#a9e9fa");
+ }
  ctx.restore();
 }
 
@@ -962,7 +955,9 @@ function drawWaterStream(){
 
 function drawWorld(){
  drawBackground();
- ctx.save();ctx.translate(-cameraX,0);
+ ctx.save();
+ ctx.translate(-cameraX,0);
+
  drawWallDecor();
  drawSofa(410);
  drawSideTable(645);
@@ -976,39 +971,52 @@ function drawWorld(){
  drawRug(920,FLOOR-10,390,28);
  drawRug(1510,FLOOR-8,250,24);
  drawSideTable(1770);
+
  rounded(1780,FLOOR-70,40,8,3,"#d5c5a8","#8d7960");
  ellipse(1800,FLOOR-72,7,3,"#7e9d89");
 
- /* Tastatur und Maus auf dem Schreibtisch */
  rounded(1215,FLOOR-100,48,5,2,"#333b3b","#1d2526");
  for(let i=0;i<8;i++)rect(1219+i*5,FLOOR-98,3,1,"#d4d4c7");
  ellipse(1276,FLOOR-97,4,2,"#d5d2c7");
  rect(1320,FLOOR-133,3,43,"#51402f");
  rounded(1307,FLOOR-143,29,13,5,"#d7c49e","#79634b");
+
  const lampGlow=ctx.createRadialGradient(1321,FLOOR-136,2,1321,FLOOR-136,100);
- lampGlow.addColorStop(0,"#ffe9a044");lampGlow.addColorStop(1,"#ffe9a000");
+ lampGlow.addColorStop(0,"#ffe9a044");
+ lampGlow.addColorStop(1,"#ffe9a000");
  rect(1220,FLOOR-220,200,150,lampGlow);
 
- for(const item of save.worldItems){if(item.id!==player.held)drawWorldItem(item);}
+ for(const item of save.worldItems){
+  if(item.id!==player.held)drawWorldItem(item);
+ }
  drawWaterStream();
 
- /* Tür zur Stadt */
- ctx.save();ctx.shadowColor="#0006";ctx.shadowBlur=12;ctx.shadowOffsetY=4;
- rect(2870,FLOOR-218,105,218,"#493326");ctx.restore();
- rect(2878,FLOOR-210,89,210,"#8b6546");rect(2887,FLOOR-200,71,200,"#6e4e36");
- rect(2893,FLOOR-193,59,185,"#886346");rect(2901,FLOOR-183,43,78,"#9e7956");
- rect(2901,FLOOR-96,43,79,"#79583e");ellipse(2940,FLOOR-96,4,4,"#d4b47e");
- rect(2863,FLOOR-5,120,5,"#443326");line(2878,FLOOR-210,2967,FLOOR-210,"#c9a77f",2);
+ ctx.save();
+ ctx.shadowColor="#0006";
+ ctx.shadowBlur=12;
+ ctx.shadowOffsetY=4;
+ rect(2870,FLOOR-218,105,218,"#493326");
+ ctx.restore();
+
+ rect(2878,FLOOR-210,89,210,"#8b6546");
+ rect(2887,FLOOR-200,71,200,"#6e4e36");
+ rect(2893,FLOOR-193,59,185,"#886346");
+ rect(2901,FLOOR-183,43,78,"#9e7956");
+ rect(2901,FLOOR-96,43,79,"#79583e");
+ ellipse(2940,FLOOR-96,4,4,"#d4b47e");
+ rect(2863,FLOOR-5,120,5,"#443326");
+ line(2878,FLOOR-210,2967,FLOOR-210,"#c9a77f",2);
 
  drawPlayerShadow();
 
- /* Stuhl an der tatsächlichen Spielerposition zeichnen.
-    Die Stuhlzeichnung selbst bleibt vollständig unverändert. */
+ /* Originalstuhl: verkleinert und mittig am Spieler ausgerichtet */
  ctx.save();
  ctx.translate(
-  player.x,
-  player.y+player.height-119
+  player.x + player.width/2,
+  player.y + player.height
  );
+ ctx.scale(.58,.58);
+ ctx.translate(-60,-119);
  drawChair(time);
  ctx.restore();
 
@@ -1107,34 +1115,55 @@ const interactables=[
 let nearby=null;
 
 function getNearby(){
- const px=player.x+player.width/2;let best=null,distance=Infinity;
+ const px=player.x+player.width/2;
+ let best=null,distance=Infinity;
+
  for(const item of save.worldItems){
   if(item.id===player.held)continue;
   const d=Math.abs(px-(item.x+item.w/2));
-  if(d<92&&d<distance){best={id:"item",item,label:item.name+" aufnehmen"};distance=d;}
+  if(d<92&&d<distance){
+   best={id:"item",item,label:item.name+" aufnehmen"};
+   distance=d;
+  }
  }
+
  for(const obj of interactables){
   const d=Math.abs(px-(obj.x+obj.w/2));
-  if(d<100&&d<distance){best=obj;distance=d;}
+  if(d<100&&d<distance){
+   best=obj;
+   distance=d;
+  }
  }
  return best;
 }
 
 function interact(){
  const obj=getNearby();
+
  if(!obj){
   if(player.held==="bucket"&&Math.abs(player.x+player.width/2-2165)<115){
    save.faucetOn=!save.faucetOn;
    showNotice(save.faucetOn?"Wasserhahn geöffnet – der Eimer füllt sich.":"Wasserhahn geschlossen.");
-   persist();return;
+   persist();
+   return;
   }
-  showNotice(player.held?"Du trägst bereits einen Gegenstand.":"Hier gibt es gerade nichts zu tun.");return;
+  showNotice(player.held?"Du trägst bereits einen Gegenstand.":"Hier gibt es gerade nichts zu tun.");
+  return;
  }
+
  playTone(540,.07,"triangle");
+
  if(obj.id==="item"){
-  if(player.held){showNotice("Deine Hände sind schon voll.");return;}
-  player.held=obj.item.id;showNotice(obj.item.name+" aufgenommen.");persist();return;
+  if(player.held){
+   showNotice("Deine Hände sind schon voll.");
+   return;
+  }
+  player.held=obj.item.id;
+  showNotice(obj.item.name+" aufgenommen.");
+  persist();
+  return;
  }
+
  switch(obj.id){
   case "wardrobe":goTo("Schrank.html");break;
   case "city":goTo("Stadt.html");break;
@@ -1142,10 +1171,19 @@ function interact(){
   case "sink":
    save.faucetOn=!save.faucetOn;
    showNotice(save.faucetOn?"Wasserhahn geöffnet.":"Wasserhahn geschlossen.");
-   persist();break;
-  case "sofa":player.vx=0;showNotice("Du entspannst dich kurz auf dem Sofa.");break;
-  case "bed":player.vx=0;showNotice("Zeit für eine kleine Pause.");break;
-  case "plant":showNotice("Deine Pflanze sieht ziemlich gut aus.");break;
+   persist();
+   break;
+  case "sofa":
+   player.vx=0;
+   showNotice("Du entspannst dich kurz auf dem Sofa.");
+   break;
+  case "bed":
+   player.vx=0;
+   showNotice("Zeit für eine kleine Pause.");
+   break;
+  case "plant":
+   showNotice("Deine Pflanze sieht ziemlich gut aus.");
+   break;
  }
 }
 
@@ -1173,7 +1211,6 @@ function openComputer(){
 
 function updateHUD(){
  $("money").textContent=save.money;
-
  nearby=getNearby();
 
  if(nearby){
