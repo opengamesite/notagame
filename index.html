@@ -1,147 +1,8 @@
 
-<!DOCTYPE html>
-<html lang="de">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MEIN ZIMMER</title>
-<style>
-*{box-sizing:border-box}
-html,body{
- margin:0;width:100%;height:100%;overflow:hidden;
- background:#17191b;font-family:Arial,sans-serif
-}
-canvas{display:block;width:100%;height:100%}
-#hud,#status{
- position:fixed;z-index:5;color:#fff;
- background:#202326df;border:1px solid #ffffff24;
- border-radius:9px;backdrop-filter:blur(7px)
-}
-#hud{top:16px;left:16px;padding:12px 16px;font-size:14px;line-height:1.7}
-#status{top:16px;right:16px;padding:10px 14px;font-size:13px}
-#hint{
- position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
- color:#fff;background:#202326e8;padding:11px 18px;
- border-radius:8px;font-size:14px;z-index:5;
- text-align:center;white-space:nowrap;max-width:95vw
-}
-#fade{
- position:fixed;inset:0;background:#111;opacity:0;
- pointer-events:none;z-index:10;transition:opacity .35s
-}
-</style>
-</head>
-<body>
-<div id="hud">
- <strong>MEIN ZIMMER</strong><br>
- <span id="money">120 Münzen</span><br>
- <span id="position">Zimmer</span>
-</div>
-<div id="status">Offline</div>
-<div id="hint">A / D oder ← / → bewegen · Leertaste springen · E interagieren</div>
-<div id="fade"></div>
-<canvas id="game"></canvas>
-
-<script src="supabase.js"></script>
-<script>
-"use strict";
-
 /* =========================================================
-   GRUNDLAGEN
+   ORIGINALER STUHL AUS SCHRANK.HTML
 ========================================================= */
-const canvas=document.getElementById("game");
-const ctx=canvas.getContext("2d");
-const W=960,H=540,WORLD=3400,FLOOR=440;
-const SAVE_KEY="mein-zimmer-save-v1";
-let dpr=1,cameraX=0,gameTime=0,lastTime=0,saveTimer=0;
-let computerOn=false,wardrobeOpen=0,messageTimer=0;
-let sofaOccupied=false,bedOccupied=false;
-let message="Bereit";
 
-function resize(){
- dpr=Math.min(devicePixelRatio||1,2);
- canvas.width=W*dpr;
- canvas.height=H*dpr;
- ctx.setTransform(dpr,0,0,dpr,0,0);
-}
-addEventListener("resize",resize);resize();
-
-const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-const lerp=(a,b,t)=>a+(b-a)*t;
-const hash=n=>{
- const x=Math.sin(n*127.1+311.7)*43758.5453;
- return x-Math.floor(x);
-};
-
-/* =========================================================
-   SPEICHER – KOMPATIBEL MIT DEN ANDEREN SPIELSEITEN
-========================================================= */
-const defaults={
- money:120,inventory:[],unlocked:[],
- equipped:{head:null,face:null,clothes:null,back:null,pants:null},
- faucetOn:false,bucketWater:0,orders:[],received:[],playerX:180
-};
-
-function readSave(){
- try{
-  const old=JSON.parse(localStorage.getItem(SAVE_KEY)||"{}");
-  return {...defaults,...old,
-   equipped:{...defaults.equipped,...(old.equipped||{})}
-  };
- }catch(e){
-  return JSON.parse(JSON.stringify(defaults));
- }
-}
-let save=readSave();
-
-function writeSave(){
- try{localStorage.setItem(SAVE_KEY,JSON.stringify(save));}catch(e){}
- document.getElementById("money").textContent=save.money+" Münzen";
-}
-writeSave();
-
-/* =========================================================
-   SPIELER
-========================================================= */
-const player={
- x:clamp(Number(save.playerX)||180,40,WORLD-80),
- y:FLOOR-68,vx:0,vy:0,
- width:48,height:68,grounded:true,
- facing:1,walk:0,landing:0,
- action:"normal",actionProgress:0,
- actionStartX:0,targetX:0
-};
-
-const keys={};
-addEventListener("keydown",e=>{
- const k=e.key.toLowerCase();
- keys[k]=true;
- if([" ","arrowup","arrowdown","arrowleft","arrowright"].includes(k))e.preventDefault();
- if((k===" "||k==="w"||k==="arrowup")&&!e.repeat)jump();
- if(k==="e"&&!e.repeat)interact();
- if(k==="q"&&!e.repeat)dropItem();
-});
-addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
-
-function jump(){
- if(!player.grounded||player.action!=="normal")return;
- player.vy=-455;
- player.grounded=false;
- player.landing=0;
-}
-
-/* =========================================================
-   ZEICHEN-HILFSFUNKTIONEN
-========================================================= */
-function line(x1,y1,x2,y2,color,width=1){
- ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);
- ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke();
-}
-function rounded(x,y,w,h,r,color,stroke){
- ctx.beginPath();ctx.roundRect(x,y,w,h,r);
- ctx.fillStyle=color;ctx.fill();
- if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1;ctx.stroke();}
-}
 function woodGradient(x,y,w,h){
  const g=ctx.createLinearGradient(x,y,x+w,y+h);
  g.addColorStop(0,"#d4a16b");
@@ -149,658 +10,182 @@ function woodGradient(x,y,w,h){
  g.addColorStop(1,"#75482b");
  return g;
 }
+
 function woodPart(x,y,w,h,r=1){
  ctx.save();
- ctx.fillStyle="#35271d55";ctx.fillRect(x+2,y+2,w,h);
- ctx.beginPath();ctx.roundRect(x,y,w,h,r);
- ctx.fillStyle=woodGradient(x,y,w,h);ctx.fill();
- ctx.strokeStyle="#604027";ctx.lineWidth=1.1;ctx.stroke();
+ ctx.fillStyle="#35271d33";
+ ctx.fillRect(x+2,y+2,w,h);
+
+ ctx.beginPath();
+ ctx.roundRect(x,y,w,h,r);
+ ctx.fillStyle=woodGradient(x,y,w,h);
+ ctx.fill();
+ ctx.strokeStyle="#604027";
+ ctx.lineWidth=1.1;
+ ctx.stroke();
+
  ctx.save();
- ctx.beginPath();ctx.roundRect(x+1,y+1,w-2,h-2,r);ctx.clip();
+ ctx.beginPath();
+ ctx.roundRect(x+1,y+1,w-2,h-2,r);
+ ctx.clip();
+
  for(let i=0;i<Math.max(3,Math.floor(h/3));i++){
   const yy=y+hash(i+x*.7)*h;
-  ctx.beginPath();ctx.moveTo(x+2,yy);
+  ctx.beginPath();
+  ctx.moveTo(x+2,yy);
   ctx.bezierCurveTo(x+w*.3,yy-1,x+w*.7,yy+1,x+w-2,yy);
   ctx.strokeStyle=i%2?"#513820":"#f5d7ae";
-  ctx.globalAlpha=i%2?.12:.18;ctx.lineWidth=.7;ctx.stroke();
+  ctx.globalAlpha=i%2?.12:.18;
+  ctx.lineWidth=.7;
+  ctx.stroke();
  }
+
  ctx.restore();
- ctx.globalAlpha=1;ctx.strokeStyle="#f1c18b99";ctx.lineWidth=.8;
- line(x+2,y+1,x+w-2,y+1,"#f1c18b99",.8);
+ ctx.globalAlpha=1;
+ ctx.strokeStyle="#f1c18b99";
+ ctx.lineWidth=.8;
+ ctx.beginPath();
+ ctx.moveTo(x+2,y+1);
+ ctx.lineTo(x+w-2,y+1);
+ ctx.stroke();
  ctx.restore();
 }
 
-/* =========================================================
-   STUHL – ORIGINALER HOLZLOOK MIT ANIMIERTEN BEINEN
-========================================================= */
-function drawAnimatedLeg(x,y,angle,kneeAngle){
- ctx.save();ctx.translate(x,y);ctx.rotate(angle);
- const upper=21,lower=20;
+function drawLeg(x,y,angle){
+ ctx.save();
+ ctx.translate(x,y);
+ ctx.rotate(angle);
+
  ctx.beginPath();
- ctx.moveTo(-2.8,0);ctx.lineTo(-2.2,upper);
- ctx.lineTo(2.2,upper);ctx.lineTo(2.8,0);ctx.closePath();
+ ctx.moveTo(-3,0);
+ ctx.lineTo(-2.5,39);
+ ctx.quadraticCurveTo(0,42,2.5,39);
+ ctx.lineTo(3,0);
+ ctx.closePath();
+
+ ctx.fillStyle=woodGradient(-3,0,7,42);
+ ctx.fill();
+ ctx.strokeStyle="#634127";
+ ctx.lineWidth=1;
+ ctx.stroke();
+
+ ctx.strokeStyle="#f1c28b88";
+ ctx.lineWidth=.8;
+ ctx.beginPath();
+ ctx.moveTo(-1.5,3);
+ ctx.lineTo(-1,36);
+ ctx.stroke();
+
+ ctx.restore();
+}
+
+function fabric(x,y,w,h,color){
+ ctx.save();
+ ctx.beginPath();
+ ctx.roundRect(x,y,w,h,2);
+ ctx.fillStyle=color;
+ ctx.fill();
+ ctx.strokeStyle="#45382d";
+ ctx.lineWidth=.8;
+ ctx.stroke();
+ ctx.restore();
+}
+
+/*
+  HIER drawCosmetics() aus deiner originalen
+  Schrank.html verwenden.
+  Diese Funktion zeichnet alle Original-Kosmetiken:
+  Rücken, Hose, Oberteil, Gesicht und Kopf.
+*/
+
+/* Animierte Beine – die Holzform bleibt original. */
+function drawAnimatedOriginalLeg(x,y,angle,kneeAngle){
+ ctx.save();
+ ctx.translate(x,y);
+ ctx.rotate(angle);
+
+ const upper=21;
+ const lower=20;
+
+ ctx.beginPath();
+ ctx.moveTo(-2.8,0);
+ ctx.lineTo(-2.2,upper);
+ ctx.lineTo(2.2,upper);
+ ctx.lineTo(2.8,0);
+ ctx.closePath();
  ctx.fillStyle=woodGradient(-3,0,6,upper);
- ctx.fill();ctx.strokeStyle="#634127";ctx.lineWidth=1;ctx.stroke();
+ ctx.fill();
+ ctx.strokeStyle="#634127";
+ ctx.lineWidth=1;
+ ctx.stroke();
 
- ctx.translate(0,upper);ctx.rotate(kneeAngle);
- ctx.beginPath();ctx.arc(0,0,2.5,0,Math.PI*2);
- ctx.fillStyle="#70482b";ctx.fill();
- ctx.strokeStyle="#3d2b1c";ctx.stroke();
+ ctx.translate(0,upper);
+ ctx.rotate(kneeAngle);
 
  ctx.beginPath();
- ctx.moveTo(-2.1,0);ctx.lineTo(-2.5,lower-2);
+ ctx.arc(0,0,2.5,0,Math.PI*2);
+ ctx.fillStyle="#70482b";
+ ctx.fill();
+ ctx.strokeStyle="#3d2b1c";
+ ctx.stroke();
+
+ ctx.beginPath();
+ ctx.moveTo(-2.1,0);
+ ctx.lineTo(-2.5,lower-2);
  ctx.quadraticCurveTo(0,lower+1,2.5,lower-2);
- ctx.lineTo(2.1,0);ctx.closePath();
+ ctx.lineTo(2.1,0);
+ ctx.closePath();
  ctx.fillStyle=woodGradient(-2.5,0,5,lower);
- ctx.fill();ctx.strokeStyle="#634127";ctx.stroke();
+ ctx.fill();
+ ctx.strokeStyle="#634127";
+ ctx.stroke();
+
  line(-1,3,-1,lower-3,"#f1c28b88",.8);
  ctx.restore();
 }
 
-/* Kosmetik: Werte werden direkt aus dem gemeinsamen Spielstand gelesen. */
-function drawBackCosmetic(){
- const item=save.equipped.back;
- if(!item)return;
- const n=String(item).toLowerCase();
- if(n.includes("rucksack")){
-  rounded(-39,-60,18,32,5,"#567b9b","#283d50");
-  line(-36,-55,-25,-55,"#b5c6d2",1);
- }
-}
-function drawClothing(){
- const item=save.equipped.clothes;if(!item)return;
- const n=String(item).toLowerCase();
- let color="#4f7795";
- if(n.includes("rot"))color="#a94d46";
- if(n.includes("grün")||n.includes("gruen"))color="#527b58";
- if(n.includes("schwarz"))color="#343638";
- if(n.includes("gelb"))color="#d1aa48";
- if(n.includes("weiß")||n.includes("weiss"))color="#e4dfd2";
- ctx.save();ctx.fillStyle=color;ctx.strokeStyle="#35271d";
- ctx.beginPath();ctx.moveTo(-20,-53);ctx.lineTo(58,-53);
- ctx.lineTo(55,-38);ctx.lineTo(-18,-38);ctx.closePath();
- ctx.fill();ctx.stroke();ctx.restore();
-}
-function drawPants(){
- const item=save.equipped.pants;if(!item)return;
- const n=String(item).toLowerCase();
- let color="#3d526d";
- if(n.includes("schwarz"))color="#303034";
- if(n.includes("hell"))color="#b7a78d";
- ctx.fillStyle=color;
- ctx.fillRect(27,-3,7,19);ctx.fillRect(84,-3,7,19);
-}
-function drawHeadCosmetic(){
- const item=save.equipped.head;if(!item)return;
- const n=String(item).toLowerCase();
- if(n.includes("hut")){
-  ctx.fillStyle="#46362b";
-  ctx.beginPath();ctx.ellipse(28,-118,19,4,0,0,Math.PI*2);ctx.fill();
-  ctx.fillRect(15,-133,26,16);ctx.fillStyle="#b18b56";ctx.fillRect(15,-123,26,3);
- }else if(n.includes("krone")){
-  ctx.fillStyle="#e6bb4b";ctx.beginPath();
-  ctx.moveTo(12,-119);ctx.lineTo(13,-134);ctx.lineTo(22,-126);
-  ctx.lineTo(29,-138);ctx.lineTo(36,-126);ctx.lineTo(45,-134);
-  ctx.lineTo(46,-119);ctx.closePath();ctx.fill();
- }else{
-  rounded(13,-130,30,10,3,"#4a5869","#252b32");
- }
-}
-function drawFaceCosmetic(){
- const item=save.equipped.face;if(!item)return;
- if(String(item).toLowerCase().includes("brille")){
-  ctx.strokeStyle="#292929";ctx.lineWidth=2;ctx.beginPath();
-  ctx.arc(21,-101,6,0,Math.PI*2);ctx.arc(36,-101,6,0,Math.PI*2);
-  ctx.moveTo(27,-101);ctx.lineTo(30,-101);ctx.stroke();
- }
-}
-function drawBalloon(time){
- if(!save.equipped.back||!String(save.equipped.back).toLowerCase().includes("ballon"))return;
- ctx.save();ctx.translate(-18,-90);
- ctx.rotate(Math.sin(time*2)*.075);
- line(0,0,0,-28,"#777",1);
- ctx.beginPath();ctx.ellipse(0,-39,8,11,0,0,Math.PI*2);
- ctx.fillStyle="#e65a62";ctx.fill();ctx.strokeStyle="#a33b45";ctx.stroke();
- ctx.restore();
-}
+/* Echter Stuhl, mit Animationen an den Beinen. */
 function drawChair(time){
- const moving=Math.abs(player.vx)>5&&player.grounded&&player.action==="normal";
+ const moving=Math.abs(player.vx)>5&&
+  player.grounded&&player.action==="normal";
+
  const airborne=!player.grounded;
  const speed=clamp(Math.abs(player.vx)/230,0,1);
  const swing=moving?Math.sin(player.walk)*.32*speed:0;
  const knee=moving?Math.sin(player.walk+1)*.52*speed:0;
- const jumpFold=airborne?clamp(-player.vy/500,0,.8):0;
- const landingBob=player.landing>0?Math.sin(player.landing*22)*2:0;
- const bodyBob=moving?Math.abs(Math.sin(player.walk*2))*1.2:0;
+ const fold=airborne?clamp(-player.vy/500,0,.8):0;
+ const bob=moving?Math.abs(Math.sin(player.walk*2))*1.2:0;
+ const landing=player.landing>0?
+  Math.sin(player.landing*22)*2:0;
 
  ctx.save();
+
  ctx.translate(player.x+24,player.y+player.height);
  ctx.scale(player.facing*.58,.58);
- ctx.translate(0,-116+bodyBob+landingBob);
+ ctx.translate(0,-116+bob+landing);
 
- drawBackCosmetic();
+ // Originale Rückenlehne und Sitzfläche.
+ drawAnimatedOriginalLeg(
+  29,75,
+  airborne?-.12-fold*.35:swing*.65,
+  airborne?-.25-fold*.3:-knee*.8
+ );
 
- // Hinteres Bein
- drawAnimatedLeg(29,75,
-  airborne?-.12-jumpFold*.35:swing*.65,
-  airborne?-.25-jumpFold*.3:-knee*.8);
-
- // Originale Rückenlehne und Sitzfläche
  woodPart(23,5,13,70,2);
  woodPart(20,67,78,12,2);
 
- // Vorderes Bein
- drawAnimatedLeg(88,77,
-  airborne?.10+jumpFold*.35:-swing,
-  airborne?.25+jumpFold*.3:knee);
+ drawAnimatedOriginalLeg(
+  88,77,
+  airborne?.10+fold*.35:-swing,
+  airborne?.25+fold*.3:knee
+ );
 
  line(25,8,25,70,"#f1c18b99",1);
  line(23,69,95,69,"#f3d0a0aa",1);
- drawPants();drawClothing();drawHeadCosmetic();drawFaceCosmetic();drawBalloon(time);
+
+ // Hier die originale drawCosmetics()-Funktion
+ // aus Schrank.html aufrufen.
+ drawCosmetics();
+
  ctx.restore();
 }
-function drawPlayerShadow(){
- const h=Math.max(0,FLOOR-(player.y+player.height));
- const s=clamp(1-h/180,.45,1);
- ctx.save();ctx.globalAlpha=.22*s;ctx.fillStyle="#17130f";
- ctx.beginPath();ctx.ellipse(player.x+24,FLOOR+2,30*s,4*s,0,0,Math.PI*2);
- ctx.fill();ctx.restore();
-}
-
-/* =========================================================
-   RAUM – WAND, LICHT UND PARKETT
-========================================================= */
-function drawBackground(){
- const wall=ctx.createLinearGradient(0,0,0,FLOOR);
- wall.addColorStop(0,"#e4ddcf");wall.addColorStop(1,"#b9ad99");
- ctx.fillStyle=wall;ctx.fillRect(0,0,W,FLOOR);
-
- // dezente Wandpaneele
- for(let i=0;i<50;i++){
-  const x=(i*127-cameraX*.12)%W;
-  line(x,0,x,FLOOR,"#ffffff17",1);
- }
- ctx.fillStyle="#88735e";ctx.fillRect(0,FLOOR-10,W,10);
- ctx.fillStyle="#d0b99b";ctx.fillRect(0,FLOOR-10,W,2);
-
- const floor=ctx.createLinearGradient(0,FLOOR,0,H);
- floor.addColorStop(0,"#a98562");floor.addColorStop(1,"#634832");
- ctx.fillStyle=floor;ctx.fillRect(0,FLOOR,W,H-FLOOR);
-
- for(let x=-100;x<W+120;x+=80){
-  const xx=x-(cameraX*.8%80);
-  line(xx,FLOOR,xx,H,"#3e2b1d66",1);
-  for(let y=FLOOR+24;y<H;y+=38)line(xx,y,xx+80,y,"#e1b88a28",1);
- }
- // Lichtflecken
- const glow=ctx.createRadialGradient(500,210,10,500,210,370);
- glow.addColorStop(0,"#fff8df25");glow.addColorStop(1,"#fff8df00");
- ctx.fillStyle=glow;ctx.fillRect(0,0,W,FLOOR);
-}
-
-/* =========================================================
-   FENSTER UND DEKORATION
-========================================================= */
-function drawWindow(x,y,w,h){
- ctx.save();
- ctx.fillStyle="#574b40";ctx.fillRect(x-8,y-8,w+16,h+16);
- const g=ctx.createLinearGradient(x,y,x+w,y+h);
- g.addColorStop(0,"#91b8ca");g.addColorStop(1,"#dce6df");
- ctx.fillStyle=g;ctx.fillRect(x,y,w,h);
- // Außenansicht: sanfte Silhouetten
- ctx.fillStyle="#829b87";
- for(let i=0;i<5;i++){
-  const bx=x+i*w/5;
-  ctx.beginPath();ctx.moveTo(bx,y+h);
-  ctx.lineTo(bx+18,y+h-55-hash(i)*35);
-  ctx.lineTo(bx+39,y+h);ctx.fill();
- }
- ctx.fillStyle="#e9e4d9";
- ctx.fillRect(x+w/2-4,y,8,h);ctx.fillRect(x,y+h/2-4,w,8);
- ctx.strokeStyle="#f5f0e5";ctx.lineWidth=4;ctx.strokeRect(x,y,w,h);
- ctx.fillStyle="#ffffff36";ctx.beginPath();
- ctx.moveTo(x+12,y+10);ctx.lineTo(x+35,y+10);
- ctx.lineTo(x+8,y+h-12);ctx.lineTo(x+8,y+35);ctx.closePath();ctx.fill();
- ctx.restore();
-}
-function drawPlant(x,y){
- ctx.save();
- ctx.fillStyle="#8e5d40";ctx.beginPath();
- ctx.moveTo(x-19,y-37);ctx.lineTo(x+19,y-37);
- ctx.lineTo(x+14,y);ctx.lineTo(x-14,y);ctx.closePath();ctx.fill();
- ctx.strokeStyle="#563c2c";ctx.stroke();
- line(x,y-35,x,y-90,"#496c45",3);
- for(let i=0;i<6;i++){
-  const side=i%2?1:-1,yy=y-47-i*8;
-  ctx.save();ctx.translate(x,yy);ctx.rotate(side*.5+Math.sin(gameTime+i)*.025);
-  ctx.fillStyle=i%2?"#66855b":"#789369";
-  ctx.beginPath();ctx.ellipse(side*12,-4,7,14,side*.3,0,Math.PI*2);ctx.fill();
-  ctx.restore();
- }
- ctx.restore();
-}
-
-/* =========================================================
-   MÖBEL – DETAILLIERTE EINRICHTUNG
-========================================================= */
-function drawSofa(x,y){
- ctx.save();
- ctx.fillStyle="#241c1640";ctx.beginPath();ctx.ellipse(x+112,y+4,120,8,0,0,Math.PI*2);ctx.fill();
- ctx.fillStyle="#49372a";ctx.fillRect(x+22,y-20,12,22);ctx.fillRect(x+190,y-20,12,22);
- rounded(x,y-76,225,65,12,"#596c68","#35433f");
- rounded(x+9,y-116,207,66,14,"#78877c","#46534c");
- rounded(x-7,y-105,32,75,9,"#52665f","#35443e");
- rounded(x+199,y-105,32,75,9,"#52665f","#35443e");
- rounded(x+29,y-76,80,34,8,"#9aa697","#637064");
- rounded(x+115,y-76,80,34,8,"#929f90","#637064");
- rounded(x+31,y-109,77,39,8,"#87988b","#5b6c60");
- rounded(x+116,y-109,77,39,8,"#829285","#5b6c60");
- line(x+110,y-105,x+110,y-44,"#d0d0b966",1);
- line(x+34,y-72,x+102,y-72,"#ffffff35",1);
- ctx.restore();
-}
-function drawBed(x,y){
- ctx.save();
- ctx.fillStyle="#4a3526";ctx.fillRect(x+10,y-20,12,20);ctx.fillRect(x+220,y-20,12,20);
- rounded(x,y-78,245,62,5,"#795c43","#4e3929");
- rounded(x-5,y-103,255,32,6,"#ded7c8","#aaa18f");
- rounded(x+14,y-101,78,24,7,"#f0e8d8","#bcb3a3");
- rounded(x+102,y-101,78,24,7,"#e9e1d2","#bcb3a3");
- ctx.fillStyle="#7d91a1";ctx.fillRect(x+8,y-75,229,7);
- ctx.fillStyle="#a9b8c0";ctx.fillRect(x+8,y-67,229,4);
- ctx.restore();
-}
-function drawDesk(x,y){
- ctx.save();
- woodPart(x,y-78,200,9,2);
- ctx.fillStyle="#68482f";ctx.fillRect(x+8,y-69,10,69);ctx.fillRect(x+181,y-69,10,69);
- rounded(x+18,y-60,42,27,3,"#9c7049","#60432c");
- rounded(x+66,y-60,42,27,3,"#9c7049","#60432c");
- ctx.fillStyle="#d4b58b";ctx.fillRect(x+36,y-48,8,2);ctx.fillRect(x+84,y-48,8,2);
- ctx.restore();
-}
-function drawComputer(x,y){
- ctx.save();
- rounded(x,y-151,100,68,5,"#22272b","#101315");
- const s=ctx.createLinearGradient(x,y-150,x+100,y-83);
- s.addColorStop(0,computerOn?"#182b36":"#25282a");
- s.addColorStop(1,computerOn?"#315064":"#111719");
- rounded(x+5,y-146,90,57,2,s);
- if(computerOn){
-  ctx.fillStyle="#9bc6d4";ctx.font="8px Arial";
-  ctx.fillText("MEIN ZIMMER",x+13,y-132);
-  ctx.fillStyle="#8bc9a0";ctx.fillRect(x+13,y-122,56,2);
-  ctx.fillRect(x+13,y-115,40,2);
-  ctx.fillStyle="#fff";ctx.fillRect(x+16+(gameTime*20)%65,y-105,2,6);
- }
- ctx.fillStyle="#555b5e";ctx.fillRect(x+44,y-83,12,8);ctx.fillRect(x+32,y-76,36,4);
- rounded(x+15,y-73,75,5,2,"#33383a","#17191a");
- ctx.restore();
-}
-function drawWardrobe(x,y){
- ctx.save();
- rounded(x,y-170,125,170,3,"#805c3d","#493422");
- ctx.fillStyle="#a47a51";ctx.fillRect(x+6,y-164,113,158);
- ctx.fillStyle="#30251d";ctx.fillRect(x+8,y-156,109,142);
- ctx.save();ctx.translate(x+62,y-164);ctx.rotate(-wardrobeOpen*.85);
- ctx.fillStyle="#946b47";ctx.fillRect(-56,0,56,158);
- ctx.strokeStyle="#513a27";ctx.strokeRect(-56,0,56,158);
- ctx.fillStyle="#d4b183";ctx.beginPath();ctx.arc(-10,80,3,0,Math.PI*2);ctx.fill();ctx.restore();
- ctx.save();ctx.translate(x+62,y-164);ctx.rotate(wardrobeOpen*.85);
- ctx.fillStyle="#89613f";ctx.fillRect(0,0,56,158);
- ctx.strokeStyle="#513a27";ctx.strokeRect(0,0,56,158);
- ctx.fillStyle="#d4b183";ctx.beginPath();ctx.arc(10,80,3,0,Math.PI*2);ctx.fill();ctx.restore();
- ctx.restore();
-}
-function drawSink(x,y){
- ctx.save();
- rounded(x+15,y-72,145,72,4,"#8b6748","#4f3928");
- ctx.fillStyle="#b18a62";ctx.fillRect(x+21,y-65,133,57);
- ctx.fillStyle="#d4d4cb";ctx.beginPath();ctx.roundRect(x,y-91,185,24,8);ctx.fill();
- ctx.strokeStyle="#797e7b";ctx.stroke();
- ctx.fillStyle="#a8aaa4";ctx.beginPath();ctx.ellipse(x+90,y-82,44,8,0,0,Math.PI*2);ctx.fill();
- ctx.strokeStyle="#858c8b";ctx.lineWidth=5;ctx.beginPath();
- ctx.moveTo(x+93,y-91);ctx.lineTo(x+93,y-112);
- ctx.quadraticCurveTo(x+93,y-121,x+108,y-121);ctx.lineTo(x+119,y-121);ctx.stroke();
- ctx.lineWidth=2;ctx.strokeStyle="#c6d9dc";
- ctx.beginPath();ctx.moveTo(x+119,y-121);ctx.lineTo(x+119,y-111);ctx.stroke();
- if(save.faucetOn){
-  const wh=18+Math.sin(gameTime*12)*3;
-  line(x+119,y-110,x+119,y-110+wh,"#83c8df",2);
-  for(let i=0;i<3;i++){
-   const yy=y-91+(gameTime*45+i*8)%24;
-   ctx.fillStyle="#8ed5eb";ctx.beginPath();ctx.arc(x+119+(i%2)*3,yy,1.4,0,Math.PI*2);ctx.fill();
-  }
- }
- rounded(x+133,y-39,31,36,4,"#71818a","#3f4c52");
- if(save.bucketWater>0){
-  const f=clamp(save.bucketWater,0,1);
-  ctx.fillStyle="#69b9d2";ctx.fillRect(x+137,y-3-f*29,23,f*29);
- }
- ctx.restore();
-}
-function drawShelf(x,y){
- ctx.save();
- ctx.fillStyle="#68472e";ctx.fillRect(x,y-75,120,7);
- ctx.fillRect(x+5,y-68,5,68);ctx.fillRect(x+110,y-68,5,68);
- ctx.fillStyle="#8e6744";ctx.fillRect(x+8,y-112,104,5);
- const colors=["#9b574a","#607a83","#c09a5d","#6e795c","#8d6c83"];
- for(let i=0;i<5;i++){
-  ctx.fillStyle=colors[i];ctx.fillRect(x+12+i*18,y-108,14,32);
-  ctx.fillStyle="#ffffff44";ctx.fillRect(x+15+i*18,y-104,2,24);
- }
- ctx.restore();
-}
-function drawRug(x,y,w){
- ctx.save();
- ctx.fillStyle="#4d393044";ctx.fillRect(x,y-3,w,8);
- rounded(x,y-10,w,12,3,"#788477","#596657");
- for(let i=0;i<Math.floor(w/14);i++)line(x+i*14,y-8,x+i*14,y-1,"#c5c0a4",1);
- ctx.restore();
-}
-function drawLamp(x,y){
- ctx.save();
- ctx.fillStyle="#57432f";ctx.fillRect(x-3,y-85,6,85);
- ctx.fillStyle="#a17d52";ctx.beginPath();
- ctx.moveTo(x-23,y-85);ctx.lineTo(x-15,y-116);
- ctx.lineTo(x+15,y-116);ctx.lineTo(x+23,y-85);ctx.closePath();ctx.fill();
- ctx.strokeStyle="#6a5038";ctx.stroke();
- const g=ctx.createRadialGradient(x,y-92,3,x,y-92,55);
- g.addColorStop(0,"#ffe9a955");g.addColorStop(1,"#ffe9a900");
- ctx.fillStyle=g;ctx.fillRect(x-55,y-145,110,145);
- ctx.restore();
-}
-
-/* =========================================================
-   WELT UND POSITIONEN
-========================================================= */
-const objects={
- sofa:{x:420,w:225,label:"Sofa"},
- wardrobe:{x:520,w:125,label:"Kleiderschrank"},
- computer:{x:1230,w:205,label:"Computer"},
- bed:{x:1510,w:245,label:"Bett"},
- sink:{x:1960,w:185,label:"Waschbecken"},
- city:{x:2870,w:90,label:"Ausgang zur Stadt"}
-};
-function worldObject(draw,x){
- ctx.save();ctx.translate(x-cameraX,0);draw();ctx.restore();
-}
-function drawCityDoor(){
- ctx.save();
- rounded(0,FLOOR-174,82,174,3,"#5b4030","#35271e");
- rounded(7,FLOOR-166,68,159,2,"#b58a5b","#493524");
- ctx.fillStyle="#30271f";ctx.fillRect(15,FLOOR-154,52,140);
- ctx.fillStyle="#d4b183";ctx.beginPath();ctx.arc(61,FLOOR-83,3,0,Math.PI*2);ctx.fill();
- ctx.fillStyle="#fff";ctx.font="bold 12px Arial";ctx.fillText("STADT",17,FLOOR-184);
- ctx.restore();
-}
-function drawWorld(){
- drawBackground();
- worldObject(()=>drawWindow(170,75,190,170),170);
- worldObject(()=>drawWindow(930,75,190,170),930);
- worldObject(()=>drawWindow(1730,75,190,170),1730);
- worldObject(()=>drawWindow(2470,75,190,170),2470);
-
- worldObject(()=>drawPlant(110,FLOOR),110);
- worldObject(()=>drawRug(390,FLOOR-1,290),390);
- worldObject(()=>drawSofa(420,FLOOR),420);
- worldObject(()=>drawWardrobe(520,FLOOR),520);
- worldObject(()=>drawShelf(780,FLOOR),780);
- worldObject(()=>drawLamp(1040,FLOOR),1040);
-
- worldObject(()=>{drawDesk(1160,FLOOR);drawComputer(1210,FLOOR);},1160);
- worldObject(()=>drawRug(1480,FLOOR-1,290),1480);
- worldObject(()=>drawBed(1510,FLOOR),1510);
- worldObject(()=>drawPlant(1810,FLOOR),1810);
- worldObject(()=>drawSink(1960,FLOOR),1960);
- worldObject(()=>drawShelf(2250,FLOOR),2250);
- worldObject(()=>drawSofa(2500,FLOOR),2500);
- worldObject(()=>drawCityDoor(),2870);
-
- // Wandbilder und kleine Details
- worldObject(()=>{
-  rounded(0,0,74,52,2,"#8b765d","#554637");
-  ctx.fillStyle="#c4d1c1";ctx.fillRect(6,6,62,40);
-  ctx.fillStyle="#829b87";ctx.beginPath();
-  ctx.moveTo(6,46);ctx.lineTo(28,18);ctx.lineTo(44,46);ctx.fill();
- },680);
- worldObject(()=>{
-  rounded(0,0,74,52,2,"#8b765d","#554637");
-  ctx.fillStyle="#d9c8a4";ctx.fillRect(6,6,62,40);
-  ctx.fillStyle="#a47d58";ctx.beginPath();ctx.arc(37,26,13,0,Math.PI*2);ctx.fill();
- },2160);
-}
-
-/* =========================================================
-   INTERAKTIONEN
-========================================================= */
-function nearObject(obj){
- return Math.abs((player.x+24)-(obj.x+obj.w/2))<obj.w/2+42;
-}
-function setMessage(t){
- message=t;messageTimer=2.5;
- document.getElementById("hint").textContent=t;
-}
-function beginFurnitureAction(type,targetX){
- player.action=type;player.actionProgress=0;
- player.actionStartX=player.x;player.targetX=targetX;
- player.vx=0;player.vy=0;player.grounded=true;
-}
-function interact(){
- if(player.action!=="normal"&&player.action!=="seated")return;
-
- if(player.action==="seated"){
-  player.action="normal";sofaOccupied=false;bedOccupied=false;
-  player.y=FLOOR-player.height;setMessage("Du stehst wieder auf.");return;
- }
- if(nearObject(objects.wardrobe)){
-  wardrobeOpen=1;setMessage("Kleiderschrank wird geöffnet ...");
-  save.playerX=player.x;writeSave();
-  setTimeout(()=>location.href="Schrank.html",300);return;
- }
- if(nearObject(objects.sofa)){
-  sofaOccupied=true;bedOccupied=false;
-  beginFurnitureAction("sofa",objects.sofa.x+80);
-  setMessage("Du setzt dich auf das Sofa.");return;
- }
- if(nearObject(objects.computer)){
-  computerOn=!computerOn;
-  setMessage(computerOn?"Computer eingeschaltet.":"Computer ausgeschaltet.");return;
- }
- if(nearObject(objects.bed)){
-  bedOccupied=true;sofaOccupied=false;
-  beginFurnitureAction("bed",objects.bed.x+105);
-  setMessage("Du legst dich ins Bett.");return;
- }
- if(nearObject(objects.sink)){
-  save.faucetOn=!save.faucetOn;writeSave();
-  setMessage(save.faucetOn?"Wasserhahn geöffnet.":"Wasserhahn geschlossen.");return;
- }
- if(nearObject(objects.city)){transition("Stadt.html");return;}
- setMessage("Hier gibt es gerade nichts zu tun.");
-}
-function dropItem(){
- if(!save.inventory.length){setMessage("Du hast gerade nichts im Inventar.");return;}
- const item=save.inventory.pop();writeSave();setMessage(item+" wurde abgelegt.");
-}
-function transition(url){
- save.playerX=player.x;writeSave();
- document.getElementById("fade").style.opacity="1";
- setTimeout(()=>location.href=url,350);
-}
-function getNearbyObject(){
- for(const obj of [objects.wardrobe,objects.sofa,objects.computer,objects.bed,objects.sink,objects.city]){
-  if(nearObject(obj))return obj;
- }
- return null;
-}
-
-/* =========================================================
-   MULTIPLAYER
-   Nutzt die vorhandene GameOnline-Schnittstelle aus supabase.js.
-========================================================= */
-let onlineRoom=null,onlineReady=false,onlineTimer=0;
-let remotePlayers=[];
-
-function normalizePlayers(data){
- if(Array.isArray(data))return data;
- if(data&&typeof data==="object")return Object.values(data);
- return [];
-}
-function initOnline(){
- try{
-  const roomId=sessionStorage.getItem("mein-zimmer-active-room");
-  if(!roomId||!window.GameOnline)return;
-  const game=window.GameOnline;
-  onlineRoom={id:roomId,game};
-
-  const ready=typeof game.login==="function"?game.login("Spieler"):Promise.resolve();
-  Promise.resolve(ready).then(()=>{
-   const client=typeof game.getClient==="function"?game.getClient():null;
-   if(!client)return;
-   onlineReady=true;
-   document.getElementById("status").textContent="Online";
-   if(typeof game.watchPlayers==="function"){
-    game.watchPlayers(roomId,data=>{
-     remotePlayers=normalizePlayers(data).filter(p=>p&&typeof p==="object");
-    });
-   }
-  }).catch(()=>setOffline());
- }catch(e){setOffline();}
-}
-function setOffline(){
- onlineReady=false;
- document.getElementById("status").textContent="Offline";
-}
-async function sendOnline(dt){
- if(!onlineReady||!onlineRoom)return;
- onlineTimer+=dt;if(onlineTimer<.15)return;onlineTimer=0;
- try{
-  const g=onlineRoom.game;
-  if(typeof g.updatePosition==="function"){
-   await g.updatePosition(onlineRoom.id,"zimmer",player.x,player.y);
-  }
- }catch(e){setOffline();}
-}
-function getRemotePosition(p){
- const x=Number(p.x??p.position?.x);
- const y=Number(p.y??p.position?.y);
- if(!Number.isFinite(x)||!Number.isFinite(y))return null;
- return {x,y,name:String(p.name||p.username||"Spieler").slice(0,18)};
-}
-function drawRemotePlayers(){
- for(const p of remotePlayers){
-  const pos=getRemotePosition(p);if(!pos)continue;
-  if(Math.abs(pos.x-cameraX)>W+100)continue;
-  ctx.save();
-  ctx.globalAlpha=.85;
-  ctx.fillStyle="#17130f33";
-  ctx.beginPath();ctx.ellipse(pos.x+24-cameraX,FLOOR+2,28,4,0,0,Math.PI*2);ctx.fill();
-  ctx.translate(pos.x+24-cameraX,pos.y+68);
-  ctx.scale(.58,.58);ctx.translate(0,-116);
-  // Andere Spieler werden mit derselben Stuhl-Grundform dargestellt.
-  drawRemoteChair();
-  ctx.restore();
-  ctx.save();ctx.fillStyle="#fff";ctx.font="11px Arial";
-  ctx.textAlign="center";ctx.fillText(pos.name,pos.x+24-cameraX,pos.y-12);
-  ctx.restore();
- }
-}
-function drawRemoteChair(){
- woodPart(23,5,13,70,2);woodPart(20,67,78,12,2);
- drawAnimatedLeg(29,75,0,0);drawAnimatedLeg(88,77,0,0);
-}
-
-/* =========================================================
-   UPDATE – PHYSIK, BEWEGUNG, KAMERA
-========================================================= */
-function update(dt){
- gameTime+=dt;
-
- if(messageTimer>0){
-  messageTimer-=dt;
-  if(messageTimer<=0)message="";
- }
-
- if(player.action==="sofa"||player.action==="bed"){
-  player.actionProgress=clamp(player.actionProgress+dt*3,0,1);
-  player.x=lerp(player.actionStartX,player.targetX,player.actionProgress);
-  player.vx=0;player.vy=0;player.grounded=true;
-  if(player.actionProgress>=1){
-   player.action="seated";
-   player.y=FLOOR-player.height+(sofaOccupied?8:12);
-  }
- }else if(player.action==="seated"){
-  player.vx=0;player.vy=0;player.grounded=true;
- }else{
-  let direction=0;
-  if(keys.a||keys.arrowleft)direction--;
-  if(keys.d||keys.arrowright)direction++;
-  player.vx=direction*230;
-  if(direction)player.facing=direction;
-  player.x=clamp(player.x+player.vx*dt,40,WORLD-80);
-
-  player.vy+=1100*dt;
-  player.y+=player.vy*dt;
-  const groundY=FLOOR-player.height;
-  if(player.y>=groundY){
-   if(!player.grounded&&player.vy>120)player.landing=.25;
-   player.y=groundY;player.vy=0;player.grounded=true;
-  }else player.grounded=false;
-
-  if(player.grounded&&direction)player.walk+=dt*10;
- }
- if(player.landing>0)player.landing=Math.max(0,player.landing-dt);
- wardrobeOpen=lerp(wardrobeOpen,0,dt*2.5);
-
- if(save.faucetOn){
-  save.bucketWater=clamp(save.bucketWater+dt*.12,0,1);
-  saveTimer+=dt;
-  if(saveTimer>.5){saveTimer=0;writeSave();}
- }
- cameraX=clamp(player.x-W/2,0,WORLD-W);
- save.playerX=player.x;
-
- const hint=document.getElementById("hint");
- if(messageTimer<=0){
-  const obj=getNearbyObject();
-  hint.textContent=obj?"E – "+obj.label+" benutzen":
-   "A / D oder ← / → bewegen · Leertaste springen · E interagieren";
- }
-}
-
-/* =========================================================
-   SPIELER UND RENDERING
-========================================================= */
-function drawPlayer(){
- ctx.save();ctx.translate(-cameraX,0);
- drawPlayerShadow();drawChair(gameTime);
- ctx.restore();
-}
-function draw(){
- ctx.clearRect(0,0,W,H);
- drawWorld();
- drawRemotePlayers();
- drawPlayer();
- document.getElementById("position").textContent=
-  "Zimmer · "+Math.round(player.x)+" m";
-}
-
-/* =========================================================
-   SPIELSCHLEIFE
-========================================================= */
-function loop(timestamp){
- if(!lastTime)lastTime=timestamp;
- const dt=Math.min((timestamp-lastTime)/1000,.033);
- lastTime=timestamp;
- update(dt);draw();sendOnline(dt);
- requestAnimationFrame(loop);
-}
-addEventListener("beforeunload",()=>{
- save.playerX=player.x;writeSave();
-});
-initOnline();
-requestAnimationFrame(loop);
-</script>
-</body>
-</html>
