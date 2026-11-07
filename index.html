@@ -1,6 +1,297 @@
 
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MEIN ZIMMER</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#17191b;font-family:Arial,sans-serif}
+canvas{display:block;width:100%;height:100%}
+#hud{
+ position:fixed;top:14px;left:14px;z-index:5;
+ padding:13px 17px;background:#17191be8;color:#f4eadb;
+ border:1px solid #ffffff25;border-radius:10px;
+ font-size:12px;line-height:1.8;pointer-events:none;
+ box-shadow:0 5px 20px #0004
+}
+#hud b{letter-spacing:2px}
+#hint{
+ position:fixed;bottom:14px;left:50%;transform:translateX(-50%);
+ z-index:5;padding:10px 16px;background:#17191be8;
+ color:#fff;border:1px solid #ffffff20;border-radius:8px;
+ font-size:11px;white-space:nowrap;pointer-events:none
+}
+#prompt{
+ position:fixed;bottom:62px;left:50%;transform:translateX(-50%);
+ z-index:6;padding:11px 17px;background:#252a30ed;
+ color:white;border:1px solid #ffffff30;border-radius:8px;
+ font-size:13px;display:none;white-space:nowrap
+}
+#fade{
+ position:fixed;inset:0;background:#17191b;opacity:0;
+ pointer-events:none;z-index:10;transition:opacity .25s
+}
+#fade.active{opacity:1;pointer-events:all}
+#notice{
+ position:fixed;right:16px;top:16px;z-index:7;
+ color:white;background:#252a30e8;border:1px solid #ffffff25;
+ padding:9px 13px;border-radius:7px;font-size:11px;
+ opacity:0;transition:opacity .2s;pointer-events:none
+}
+#notice.show{opacity:1}
+@media(max-width:650px){
+ #hint{font-size:9px;max-width:95%;white-space:normal;text-align:center}
+ #hud{font-size:10px}
+}
+</style>
+</head>
+<body>
+
+<canvas id="world"></canvas>
+
+<div id="hud">
+ <b>▦ MEIN ZIMMER</b><br>
+ <span id="status">Willkommen zu Hause</span><br>
+ <span id="held">Hände frei</span><br>
+ <span>¢ <b id="money">120</b></span>
+</div>
+
+<div id="prompt"></div>
+<div id="notice"></div>
+<div id="hint">
+ A / D · Laufen &nbsp; | &nbsp; W / LEERTASTE · Springen
+ &nbsp; | &nbsp; E · Interagieren &nbsp; | &nbsp; Q · Ablegen
+</div>
+<div id="fade"></div>
+
+<script src="supabase.js"></script>
+<script>
+"use strict";
+
 /* =========================================================
-   ORIGINALER STUHL AUS SCHRANK.HTML
+   GRUNDLAGEN
+========================================================= */
+
+const canvas=document.getElementById("world");
+const ctx=canvas.getContext("2d");
+
+const W=960;
+const H=540;
+const FLOOR=440;
+const WORLD=3100;
+const SAVE_KEY="mein-zimmer-save-v1";
+
+let scaleX=1;
+let scaleY=1;
+let cameraX=0;
+let time=0;
+let last=performance.now();
+let noticeTimer=0;
+
+const $=id=>document.getElementById(id);
+
+function resize(){
+ const d=Math.min(window.devicePixelRatio||1,2);
+ canvas.width=Math.round(innerWidth*d);
+ canvas.height=Math.round(innerHeight*d);
+ scaleX=canvas.width/W;
+ scaleY=canvas.height/H;
+}
+window.addEventListener("resize",resize);
+resize();
+
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function lerp(a,b,t){return a+(b-a)*t}
+function hash(n){
+ const v=Math.sin(n*127.1+311.7)*43758.5453;
+ return v-Math.floor(v);
+}
+
+function rect(x,y,w,h,color){
+ ctx.fillStyle=color;
+ ctx.fillRect(x,y,w,h);
+}
+function line(x,y,x2,y2,color,width=1){
+ ctx.beginPath();
+ ctx.moveTo(x,y);
+ ctx.lineTo(x2,y2);
+ ctx.strokeStyle=color;
+ ctx.lineWidth=width;
+ ctx.stroke();
+}
+function ellipse(x,y,rx,ry,color){
+ ctx.beginPath();
+ ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);
+ ctx.fillStyle=color;
+ ctx.fill();
+}
+function rounded(x,y,w,h,r,color,stroke){
+ ctx.beginPath();
+ ctx.roundRect(x,y,w,h,r);
+ ctx.fillStyle=color;
+ ctx.fill();
+ if(stroke){
+  ctx.strokeStyle=stroke;
+  ctx.lineWidth=1;
+  ctx.stroke();
+ }
+}
+
+/* =========================================================
+   SPEICHERN
+========================================================= */
+
+const defaults={
+ money:120,
+ unlocked:[],
+ equipped:{
+  head:null,face:null,clothes:null,back:null,pants:null
+ },
+ inventory:[],
+ placed:[],
+ orders:[],
+ received:[],
+ faucetOn:false,
+ bucketWater:0,
+ playerX:180
+};
+
+function loadSave(){
+ try{
+  const s=JSON.parse(localStorage.getItem(SAVE_KEY)||"null");
+  if(!s)return structuredClone(defaults);
+  return {
+   ...structuredClone(defaults),
+   ...s,
+   equipped:{
+    ...defaults.equipped,
+    ...(s.equipped||{})
+   },
+   unlocked:Array.isArray(s.unlocked)?s.unlocked:[],
+   inventory:Array.isArray(s.inventory)?s.inventory:[],
+   orders:Array.isArray(s.orders)?s.orders:[],
+   received:Array.isArray(s.received)?s.received:[]
+  };
+ }catch{
+  return structuredClone(defaults);
+ }
+}
+
+let save=loadSave();
+
+function persist(){
+ try{
+  localStorage.setItem(SAVE_KEY,JSON.stringify(save));
+  $("money").textContent=save.money;
+ }catch(e){
+  console.warn("Speichern fehlgeschlagen",e);
+ }
+}
+persist();
+
+window.addEventListener("storage",e=>{
+ if(e.key!==SAVE_KEY||!e.newValue)return;
+ try{
+  const s=JSON.parse(e.newValue);
+  save={...save,...s,equipped:{...save.equipped,...(s.equipped||{})}};
+  $("money").textContent=save.money;
+ }catch{}
+});
+
+/* =========================================================
+   SPIELER UND STEUERUNG
+========================================================= */
+
+const keys={};
+
+const player={
+ x:save.playerX||180,
+ y:FLOOR-75,
+ vx:0,
+ vy:0,
+ width:78,
+ height:75,
+ grounded:true,
+ facing:1,
+ walk:0,
+ held:null,
+ landing:0,
+ action:"normal",
+ jumpTime:0
+};
+
+window.addEventListener("keydown",e=>{
+ const k=e.key.toLowerCase();
+ keys[k]=true;
+
+ if([" ","arrowup","arrowleft","arrowright"].includes(k)){
+  e.preventDefault();
+ }
+
+ if(e.repeat)return;
+
+ if(k===" "||k==="w"||k==="arrowup")jump();
+ if(k==="e")interact();
+ if(k==="q")dropItem();
+ if(k==="escape")closePrompt();
+});
+
+window.addEventListener("keyup",e=>{
+ keys[e.key.toLowerCase()]=false;
+});
+
+function jump(){
+ if(!player.grounded)return;
+ player.vy=-570;
+ player.grounded=false;
+ player.jumpTime=0;
+ playTone(260,.07,"triangle");
+}
+
+function dropItem(){
+ if(!player.held)return;
+ player.held=null;
+ $("held").textContent="Hände frei";
+ showNotice("Gegenstand abgelegt");
+}
+
+/* =========================================================
+   AUDIO
+========================================================= */
+
+let audio=null;
+
+function playTone(f=440,d=.08,type="sine"){
+ try{
+  audio=audio||new(window.AudioContext||window.webkitAudioContext)();
+  if(audio.state==="suspended")audio.resume();
+
+  const o=audio.createOscillator();
+  const g=audio.createGain();
+  o.type=type;
+  o.frequency.value=f;
+  o.connect(g);
+  g.connect(audio.destination);
+
+  const now=audio.currentTime;
+  g.gain.setValueAtTime(.035,now);
+  g.gain.exponentialRampToValueAtTime(.001,now+d);
+  o.start(now);
+  o.stop(now+d);
+ }catch{}
+}
+
+function showNotice(text){
+ $("notice").textContent=text;
+ $("notice").classList.add("show");
+ clearTimeout(noticeTimer);
+ noticeTimer=setTimeout(()=>$("notice").classList.remove("show"),2200);
+}
+
+/* =========================================================
+   ORIGINALER HOLZSTUHL
 ========================================================= */
 
 function woodGradient(x,y,w,h){
@@ -13,6 +304,7 @@ function woodGradient(x,y,w,h){
 
 function woodPart(x,y,w,h,r=1){
  ctx.save();
+
  ctx.fillStyle="#35271d33";
  ctx.fillRect(x+2,y+2,w,h);
 
@@ -33,7 +325,11 @@ function woodPart(x,y,w,h,r=1){
   const yy=y+hash(i+x*.7)*h;
   ctx.beginPath();
   ctx.moveTo(x+2,yy);
-  ctx.bezierCurveTo(x+w*.3,yy-1,x+w*.7,yy+1,x+w-2,yy);
+  ctx.bezierCurveTo(
+   x+w*.3,yy-1,
+   x+w*.7,yy+1,
+   x+w-2,yy
+  );
   ctx.strokeStyle=i%2?"#513820":"#f5d7ae";
   ctx.globalAlpha=i%2?.12:.18;
   ctx.lineWidth=.7;
@@ -51,7 +347,7 @@ function woodPart(x,y,w,h,r=1){
  ctx.restore();
 }
 
-function drawLeg(x,y,angle){
+function drawOriginalLeg(x,y,angle){
  ctx.save();
  ctx.translate(x,y);
  ctx.rotate(angle);
@@ -79,6 +375,46 @@ function drawLeg(x,y,angle){
  ctx.restore();
 }
 
+/* Gelenkige Laufanimation, Holzform bleibt erhalten. */
+function drawAnimatedLeg(x,y,angle,knee){
+ ctx.save();
+ ctx.translate(x,y);
+ ctx.rotate(angle);
+
+ const upper=21;
+ const lower=20;
+
+ ctx.beginPath();
+ ctx.moveTo(-3,0);
+ ctx.lineTo(-2.5,upper);
+ ctx.lineTo(2.5,upper);
+ ctx.lineTo(3,0);
+ ctx.closePath();
+ ctx.fillStyle=woodGradient(-3,0,6,upper);
+ ctx.fill();
+ ctx.strokeStyle="#634127";
+ ctx.stroke();
+
+ ctx.translate(0,upper);
+ ctx.rotate(knee);
+
+ ellipse(0,0,2.5,2.5,"#70482b");
+
+ ctx.beginPath();
+ ctx.moveTo(-2.2,0);
+ ctx.lineTo(-2.5,lower-2);
+ ctx.quadraticCurveTo(0,lower+1,2.5,lower-2);
+ ctx.lineTo(2.2,0);
+ ctx.closePath();
+ ctx.fillStyle=woodGradient(-2.5,0,5,lower);
+ ctx.fill();
+ ctx.strokeStyle="#634127";
+ ctx.stroke();
+
+ line(-1,3,-1,lower-3,"#f1c28b88",.8);
+ ctx.restore();
+}
+
 function fabric(x,y,w,h,color){
  ctx.save();
  ctx.beginPath();
@@ -91,101 +427,925 @@ function fabric(x,y,w,h,color){
  ctx.restore();
 }
 
-/*
-  HIER drawCosmetics() aus deiner originalen
-  Schrank.html verwenden.
-  Diese Funktion zeichnet alle Original-Kosmetiken:
-  Rücken, Hose, Oberteil, Gesicht und Kopf.
-*/
+/* =========================================================
+   KOSMETIK – ORIGINAL-SLOTS UND ORIGINAL-ITEM-ID'S
+========================================================= */
 
-/* Animierte Beine – die Holzform bleibt original. */
-function drawAnimatedOriginalLeg(x,y,angle,kneeAngle){
- ctx.save();
- ctx.translate(x,y);
- ctx.rotate(angle);
+function drawCosmetics(){
+ const c=save.equipped;
 
- const upper=21;
- const lower=20;
+ /* RÜCKEN */
+ if(c.back){
+  if(c.back==="wings"){
+   ctx.fillStyle="#eee9dc";
+   ctx.strokeStyle="#a99c88";
 
- ctx.beginPath();
- ctx.moveTo(-2.8,0);
- ctx.lineTo(-2.2,upper);
- ctx.lineTo(2.2,upper);
- ctx.lineTo(2.8,0);
- ctx.closePath();
- ctx.fillStyle=woodGradient(-3,0,6,upper);
- ctx.fill();
- ctx.strokeStyle="#634127";
- ctx.lineWidth=1;
- ctx.stroke();
+   ctx.beginPath();
+   ctx.moveTo(29,30);
+   ctx.quadraticCurveTo(-8,5,5,57);
+   ctx.quadraticCurveTo(17,63,30,49);
+   ctx.closePath();
+   ctx.fill();
+   ctx.stroke();
 
- ctx.translate(0,upper);
- ctx.rotate(kneeAngle);
+   ctx.beginPath();
+   ctx.moveTo(35,30);
+   ctx.quadraticCurveTo(72,5,59,57);
+   ctx.quadraticCurveTo(47,63,34,49);
+   ctx.closePath();
+   ctx.fill();
+   ctx.stroke();
+  }else{
+   const colors={
+    backpack:"#a66b3c",schoolbag:"#d45c45",
+    hikingbag:"#547d57",jetpack:"#87999c",
+    guitarbag:"#553b31",parachute:"#d95b4b",
+    toolbox:"#b37a38"
+   };
+   fabric(7,35,17,35,colors[c.back]||"#986b49");
 
- ctx.beginPath();
- ctx.arc(0,0,2.5,0,Math.PI*2);
- ctx.fillStyle="#70482b";
- ctx.fill();
- ctx.strokeStyle="#3d2b1c";
- ctx.stroke();
+   if(c.back==="jetpack"){
+    fabric(5,42,8,25,"#aebdc2");
+    fabric(18,42,8,25,"#aebdc2");
+   }
+   if(c.back==="toolbox"){
+    fabric(8,31,17,6,"#d7a34e");
+   }
+  }
+ }
 
- ctx.beginPath();
- ctx.moveTo(-2.1,0);
- ctx.lineTo(-2.5,lower-2);
- ctx.quadraticCurveTo(0,lower+1,2.5,lower-2);
- ctx.lineTo(2.1,0);
- ctx.closePath();
- ctx.fillStyle=woodGradient(-2.5,0,5,lower);
- ctx.fill();
- ctx.strokeStyle="#634127";
- ctx.stroke();
+ /* HOSE */
+ if(c.pants){
+  const col={
+   jeans:"#426e9a",joggers:"#686b76",cargo:"#78805a",
+   shorts:"#bd704c",sleep_pants:"#7f76a8",
+   baggy:"#42658b",knight_pants:"#929ca4",
+   rain_pants:"#4d7e87",camo:"#65734c",
+   gold_pants:"#c5a13c",ski_pants:"#e4e9ef",
+   overalls:"#487e9a"
+  }[c.pants]||"#426e9a";
 
- line(-1,3,-1,lower-3,"#f1c28b88",.8);
- ctx.restore();
+  fabric(26,85,6,27,col);
+  fabric(85,87,6,25,col);
+
+  if(c.pants==="shorts"){
+   fabric(24,82,11,13,col);
+   fabric(83,84,11,13,col);
+  }
+ }
+
+ /* OBERTEIL */
+ if(c.clothes){
+  const col={
+   scarf:"#4d995f",shirt:"#c64c48",hoodie:"#3977bd",
+   leather:"#513a31",raincoat:"#e3b83c",
+   football:"#eee7dc",suit:"#293c55",
+   pajamas:"#8c83b4",vest:"#e9bd37",
+   astronaut:"#d9e0e4",armor:"#89969e",
+   hawaii:"#d96b5b",wintercoat:"#587f9d"
+  }[c.clothes]||"#b98552";
+
+  fabric(25,9,9,53,col);
+  fabric(21,68,76,7,col);
+
+  if(c.clothes==="suit"){
+   fabric(28,12,3,45,"#eee");
+   fabric(27,12,5,8,"#a84747");
+  }
+  if(c.clothes==="armor"){
+   fabric(25,10,9,51,"#aeb9c0");
+   fabric(28,30,3,12,"#d6b85e");
+  }
+ }
+
+ /* GESICHT */
+ if(c.face){
+  const x=29,y=36;
+  ctx.save();
+
+  if(c.face==="glasses"||c.face==="sunglasses"){
+   ctx.strokeStyle="#29323c";
+   ctx.lineWidth=1.5;
+
+   if(c.face==="sunglasses"){
+    ctx.fillStyle="#17232c";
+    ctx.fillRect(x-4,y-4,4,5);
+    ctx.fillRect(x+1,y-4,4,5);
+   }else{
+    ctx.strokeRect(x-4,y-4,4,5);
+    ctx.strokeRect(x+1,y-4,4,5);
+   }
+
+   line(x,y-2,x+1,y-2,"#29323c",1.5);
+  }else if(c.face==="heart_glasses"||c.face==="star_glasses"){
+   ctx.fillStyle=c.face==="heart_glasses"?"#d94d6c":"#e9bd46";
+   ctx.font="10px Arial";
+   ctx.fillText(c.face==="heart_glasses"?"♥":"★",x-5,y+3);
+  }else if(c.face==="monocle"){
+   ctx.strokeStyle="#d6a94d";
+   ctx.beginPath();
+   ctx.arc(x,y,4,0,Math.PI*2);
+   ctx.stroke();
+  }else if(c.face==="mustache"){
+   fabric(x-4,y,8,2,"#493328");
+  }else if(c.face==="big_nose"){
+   ctx.fillStyle="#e6a77c";
+   ctx.beginPath();
+   ctx.moveTo(x,y-4);
+   ctx.lineTo(x-3,y+3);
+   ctx.lineTo(x+3,y+3);
+   ctx.fill();
+  }else if(c.face==="eyepatch"){
+   fabric(x-3,y-4,6,7,"#25252a");
+  }else if(c.face==="diving"){
+   ctx.strokeStyle="#6ba9bd";
+   ctx.lineWidth=2;
+   ctx.strokeRect(x-5,y-5,10,9);
+   fabric(x-3,y-3,6,5,"#a9dbe0");
+  }
+
+  ctx.restore();
+ }
+
+ /* KOPF */
+ if(c.head){
+  ctx.save();
+
+  if(c.head==="cap"){
+   fabric(21,0,22,6,"#3977bd");
+   fabric(22,-4,18,6,"#3977bd");
+   fabric(39,2,12,3,"#285a91");
+  }else if(["crown","gold_helmet","paper_crown"].includes(c.head)){
+   ctx.fillStyle=c.head==="paper_crown"?"#c7a76e":"#f4c64e";
+   ctx.strokeStyle="#805d29";
+   ctx.beginPath();
+   ctx.moveTo(18,3);
+   ctx.lineTo(18,-9);
+   ctx.lineTo(26,-3);
+   ctx.lineTo(32,-15);
+   ctx.lineTo(38,-3);
+   ctx.lineTo(47,-10);
+   ctx.lineTo(47,3);
+   ctx.closePath();
+   ctx.fill();
+   ctx.stroke();
+   fabric(19,1,27,4,c.head==="paper_crown"?"#c7a76e":"#f4c64e");
+  }else if(c.head==="tp_hat"){
+   fabric(22,-13,20,16,"#fffaf1");
+   ctx.strokeStyle="#c9c1b4";
+   ctx.strokeRect(22,-13,20,16);
+  }else if(c.head==="traffic_hat"||c.head==="party_hat"){
+   ctx.fillStyle=c.head==="traffic_hat"?"#ef8e23":"#e95e70";
+   ctx.beginPath();
+   ctx.moveTo(32,-17);
+   ctx.lineTo(20,3);
+   ctx.lineTo(44,3);
+   ctx.closePath();
+   ctx.fill();
+   fabric(17,2,30,4,"#f3e4c8");
+  }else if(c.head==="cowboy"){
+   fabric(14,0,36,5,"#8a542d");
+   fabric(22,-10,21,12,"#9d6336");
+   fabric(24,-3,17,3,"#e2bd70");
+  }else if(c.head==="viking"){
+   fabric(18,-1,28,6,"#999b9c");
+   ctx.strokeStyle="#e8e1d0";
+   ctx.lineWidth=4;
+   ctx.beginPath();
+   ctx.moveTo(21,-3);
+   ctx.lineTo(13,-16);
+   ctx.moveTo(43,-3);
+   ctx.lineTo(51,-16);
+   ctx.stroke();
+  }else if(c.head==="chef"){
+   fabric(20,-1,25,5,"#fff");
+   ctx.fillStyle="#fff";
+   ctx.beginPath();
+   ctx.arc(32,-9,11,Math.PI,0);
+   ctx.fill();
+  }else if(c.head==="frog_hat"){
+   fabric(18,-1,28,7,"#4b9d56");
+   ctx.fillStyle="#5cbf65";
+   ctx.beginPath();
+   ctx.arc(23,-9,7,0,Math.PI*2);
+   ctx.arc(41,-9,7,0,Math.PI*2);
+   ctx.fill();
+   ctx.fillStyle="#111";
+   ctx.fillRect(22,-10,2,2);
+   ctx.fillRect(40,-10,2,2);
+  }else if(c.head==="wizard"){
+   ctx.fillStyle="#51468c";
+   ctx.beginPath();
+   ctx.moveTo(16,2);
+   ctx.lineTo(32,-22);
+   ctx.lineTo(48,2);
+   ctx.closePath();
+   ctx.fill();
+   fabric(14,0,36,5,"#483e75");
+  }else if(c.head==="bucket_hat"){
+   fabric(18,-10,29,14,"#8b969a");
+   fabric(14,2,37,5,"#657277");
+  }
+
+  ctx.restore();
+ }
 }
 
-/* Echter Stuhl, mit Animationen an den Beinen. */
-function drawChair(time){
- const moving=Math.abs(player.vx)>5&&
-  player.grounded&&player.action==="normal";
+/* =========================================================
+   STUHL ZEICHNEN
+========================================================= */
 
+function drawChair(){
+ const moving=Math.abs(player.vx)>5&&player.grounded;
  const airborne=!player.grounded;
  const speed=clamp(Math.abs(player.vx)/230,0,1);
- const swing=moving?Math.sin(player.walk)*.32*speed:0;
- const knee=moving?Math.sin(player.walk+1)*.52*speed:0;
- const fold=airborne?clamp(-player.vy/500,0,.8):0;
- const bob=moving?Math.abs(Math.sin(player.walk*2))*1.2:0;
- const landing=player.landing>0?
-  Math.sin(player.landing*22)*2:0;
+
+ const swing=moving?Math.sin(player.walk)*.28*speed:0;
+ const knee=moving?Math.sin(player.walk+1)*.4*speed:0;
+ const fold=airborne?clamp(-player.vy/650,0,.55):0;
+ const bob=moving?Math.abs(Math.sin(player.walk*2))*1.1:0;
 
  ctx.save();
 
- ctx.translate(player.x+24,player.y+player.height);
- ctx.scale(player.facing*.58,.58);
- ctx.translate(0,-116+bob+landing);
+ ctx.translate(
+  player.x+player.width/2,
+  player.y+player.height
+ );
 
- // Originale Rückenlehne und Sitzfläche.
- drawAnimatedOriginalLeg(
+ ctx.scale(player.facing*.58,.58);
+ ctx.translate(-42,-116+bob);
+
+ /* Bodenschatten bleibt unabhängig von der Sprunghöhe am Boden. */
+ ctx.save();
+ ctx.globalAlpha=.19;
+ ellipse(60,119,45,4,"#17130f");
+ ctx.restore();
+
+ /* Originale Rückenlehne und Sitzfläche. */
+ drawAnimatedLeg(
   29,75,
-  airborne?-.12-fold*.35:swing*.65,
-  airborne?-.25-fold*.3:-knee*.8
+  airborne?-.10-fold*.25:swing*.65,
+  airborne?-.18-fold*.25:-knee*.8
  );
 
  woodPart(23,5,13,70,2);
  woodPart(20,67,78,12,2);
 
- drawAnimatedOriginalLeg(
+ drawAnimatedLeg(
   88,77,
-  airborne?.10+fold*.35:-swing,
-  airborne?.25+fold*.3:knee
+  airborne?.08+fold*.25:-swing,
+  airborne?.18+fold*.25:knee
  );
 
  line(25,8,25,70,"#f1c18b99",1);
  line(23,69,95,69,"#f3d0a0aa",1);
 
- // Hier die originale drawCosmetics()-Funktion
- // aus Schrank.html aufrufen.
  drawCosmetics();
 
  ctx.restore();
 }
+
+/* =========================================================
+   WELT UND HINTERGRUND
+========================================================= */
+
+function drawBackground(){
+ const sky=ctx.createLinearGradient(0,0,0,FLOOR);
+ sky.addColorStop(0,"#a8b5b5");
+ sky.addColorStop(.65,"#d5c9b5");
+ sky.addColorStop(1,"#c2ad91");
+ rect(0,0,W,FLOOR,sky);
+
+ /* Licht */
+ const glow=ctx.createRadialGradient(680,80,10,680,80,430);
+ glow.addColorStop(0,"#fff4d866");
+ glow.addColorStop(1,"#fff4d800");
+ rect(0,0,W,FLOOR,glow);
+
+ /* Wandpaneele */
+ for(let x=-cameraX%180;x<W;x+=180){
+  rect(x,0,1,FLOOR,"#74695818");
+  line(x+1,0,x+1,FLOOR,"#ffffff12",1);
+ }
+
+ /* Fenster */
+ for(let x=100;x<W+150;x+=650){
+  const wx=x-cameraX*.18;
+  if(wx<-180||wx>W+100)continue;
+
+  ctx.save();
+  ctx.shadowColor="#29231b55";
+  ctx.shadowBlur=18;
+  rect(wx,65,190,175,"#5b5147");
+  ctx.restore();
+
+  rect(wx+7,72,176,161,"#91aeb4");
+  rect(wx+7,150,176,83,"#d6c9ad");
+
+  for(let i=0;i<5;i++){
+   const bx=wx+12+i*37;
+   rect(bx,112,22,39,"#687f7c");
+   rect(bx+3,115,16,33,"#8b9d94");
+  }
+
+  rect(wx+91,72,3,161,"#eee3d0");
+  rect(wx+7,151,176,3,"#eee3d0");
+  rect(wx-5,232,200,9,"#79634d");
+ }
+
+ /* Fußboden */
+ const floorGrad=ctx.createLinearGradient(0,FLOOR,0,H);
+ floorGrad.addColorStop(0,"#a98762");
+ floorGrad.addColorStop(1,"#6f5744");
+ rect(0,FLOOR,W,H-FLOOR,floorGrad);
+
+ for(let y=FLOOR+8;y<H;y+=35){
+  line(0,y,W,y,"#4b382a35",1);
+ }
+ for(let x=-cameraX%120;x<W;x+=120){
+  line(x,FLOOR,x,H,"#4b382a2c",1);
+ }
+
+ /* Sockelleiste */
+ rect(0,FLOOR-9,W,10,"#755b45");
+ line(0,FLOOR-9,W,FLOOR-9,"#dfc09a",1);
+}
+
+/* =========================================================
+   MÖBEL – REALISTISCHERE MATERIALIEN
+========================================================= */
+
+function drawSofa(x){
+ ctx.save();
+
+ ctx.shadowColor="#0005";
+ ctx.shadowBlur=12;
+ ctx.shadowOffsetY=5;
+
+ rounded(x,FLOOR-83,220,78,13,"#65716e","#394642");
+ rounded(x+8,FLOOR-117,204,61,15,"#788782","#46534f");
+
+ ctx.restore();
+
+ rounded(x+14,FLOOR-107,87,45,10,"#899690","#53635e");
+ rounded(x+112,FLOOR-107,94,45,10,"#899690","#53635e");
+
+ rounded(x+5,FLOOR-70,213,48,8,"#596a65","#394642");
+
+ line(x+28,FLOOR-48,x+190,FLOOR-48,"#c2c7b455",1);
+ rect(x+20,FLOOR-5,12,9,"#49372b");
+ rect(x+192,FLOOR-5,12,9,"#49372b");
+}
+
+function drawBed(x){
+ ctx.save();
+ ctx.shadowColor="#0005";
+ ctx.shadowBlur=12;
+ ctx.shadowOffsetY=5;
+
+ rounded(x,FLOOR-100,240,96,5,"#694c37","#3b2d23");
+ rounded(x-8,FLOOR-117,255,26,5,"#89664a","#483729");
+
+ ctx.restore();
+
+ rounded(x+10,FLOOR-115,220,22,5,"#e7dfd0","#a99d8b");
+ rounded(x+17,FLOOR-137,74,29,7,"#f0e8da","#b7ad9c");
+ rounded(x+105,FLOOR-137,94,29,7,"#ddd5c7","#a99d8b");
+
+ for(let i=0;i<5;i++){
+  line(x+20+i*43,FLOOR-92,x+20+i*43,FLOOR-17,"#ffffff18",1);
+ }
+
+ rect(x+18,FLOOR-5,12,10,"#4a3526");
+ rect(x+210,FLOOR-5,12,10,"#4a3526");
+}
+
+function drawDesk(x){
+ rect(x,FLOOR-90,190,13,"#805b3d");
+ rect(x+8,FLOOR-77,10,77,"#5d402c");
+ rect(x+172,FLOOR-77,10,77,"#5d402c");
+
+ rect(x+28,FLOOR-77,135,5,"#a87b51");
+ rect(x+28,FLOOR-40,135,2,"#49372b");
+ rect(x+28,FLOOR-38,135,28,"#76543a");
+ rect(x+33,FLOOR-34,125,20,"#856347");
+
+ /* Schublade */
+ rect(x+55,FLOOR-34,78,16,"#9c7652");
+ rect(x+88,FLOOR-27,12,3,"#d7bd92");
+
+ /* Computer */
+ rounded(x+62,FLOOR-164,78,61,3,"#31383b","#171d20");
+ rect(x+67,FLOOR-159,68,49,"#7c9b9c");
+ rect(x+71,FLOOR-155,60,41,"#b3c6bc");
+ line(x+101,FLOOR-103,x+101,FLOOR-90,"#343a3b",4);
+ rect(x+88,FLOOR-91,27,3,"#343a3b");
+ rect(x+72,FLOOR-86,58,3,"#282e30");
+}
+
+function drawWardrobe(x){
+ ctx.save();
+ ctx.shadowColor="#0005";
+ ctx.shadowBlur=10;
+ ctx.shadowOffsetY=4;
+ rounded(x,FLOOR-195,125,195,3,"#765238","#392b20");
+ ctx.restore();
+
+ rect(x+7,FLOOR-188,53,180,"#946c49");
+ rect(x+65,FLOOR-188,53,180,"#89603f");
+ line(x+62,FLOOR-188,x+62,FLOOR,"#4c3626",3);
+
+ for(let y=FLOOR-175;y<FLOOR-10;y+=25){
+  line(x+10,y,x+55,y,"#d2a77a22",1);
+  line(x+69,y,x+114,y,"#d2a77a22",1);
+ }
+
+ ellipse(x+53,FLOOR-96,2,5,"#d6bd91");
+ ellipse(x+72,FLOOR-96,2,5,"#d6bd91");
+ rect(x+4,FLOOR-4,117,5,"#493528");
+}
+
+function drawSink(x){
+ rect(x+15,FLOOR-87,155,12,"#d2d0c8");
+ rect(x+20,FLOOR-75,145,75,"#8c8d88");
+ rect(x+29,FLOOR-70,127,60,"#a2a29a");
+
+ rounded(x+27,FLOOR-105,132,22,8,"#c4c7c1","#6f7773");
+ rounded(x+40,FLOOR-103,106,15,7,"#777e7a","#555d5a");
+
+ /* Hahn */
+ ctx.strokeStyle="#8e9996";
+ ctx.lineWidth=5;
+ ctx.beginPath();
+ ctx.moveTo(x+87,FLOOR-105);
+ ctx.lineTo(x+87,FLOOR-133);
+ ctx.quadraticCurveTo(x+87,FLOOR-145,x+101,FLOOR-145);
+ ctx.lineTo(x+115,FLOOR-145);
+ ctx.stroke();
+
+ ctx.strokeStyle="#d9e2df";
+ ctx.lineWidth=1;
+ line(x+89,FLOOR-133,x+89,FLOOR-108,"#e6eeeb",1);
+}
+
+function drawPlant(x){
+ rect(x+10,FLOOR-37,43,37,"#a35e3d");
+ rect(x+7,FLOOR-40,49,6,"#c07a4d");
+
+ for(let i=0;i<7;i++){
+  const a=-Math.PI/2+(i-3)*.35;
+  const ex=x+31+Math.cos(a)*35;
+  const ey=FLOOR-42+Math.sin(a)*35;
+  ctx.beginPath();
+  ctx.moveTo(x+31,FLOOR-40);
+  ctx.quadraticCurveTo(x+31+Math.cos(a)*14,FLOOR-68,ex,ey);
+  ctx.strokeStyle="#355c43";
+  ctx.lineWidth=3;
+  ctx.stroke();
+  ellipse(ex,ey,5,10,"#527d58");
+ }
+}
+
+function drawShelf(x){
+ rect(x,FLOOR-155,125,155,"#765238");
+ rect(x+7,FLOOR-148,111,5,"#b18a60");
+ rect(x+7,FLOOR-98,111,5,"#b18a60");
+ rect(x+7,FLOOR-48,111,5,"#b18a60");
+
+ const colors=["#9c5949","#476b7c","#c3a46c","#58745b"];
+ for(let row=0;row<3;row++){
+  for(let i=0;i<4;i++){
+   const bx=x+14+i*25;
+   rect(bx,FLOOR-145+row*50,15,40,colors[(i+row)%4]);
+   line(bx+3,FLOOR-141+row*50,bx+3,FLOOR-110+row*50,"#ffffff55",1);
+  }
+ }
+}
+
+function drawLamp(x){
+ rect(x+29,FLOOR-115,7,115,"#58412d");
+ rounded(x+4,FLOOR-156,57,45,9,"#d5c49f","#80694d");
+ ellipse(x+32,FLOOR-110,31,5,"#4a3828");
+}
+
+/* =========================================================
+   WELT-RENDERING
+========================================================= */
+
+function drawWorld(){
+ drawBackground();
+
+ ctx.save();
+ ctx.translate(-cameraX,0);
+
+ /* Hintergrund-Dekoration */
+ for(let x=80;x<WORLD;x+=370){
+  rect(x,FLOOR-2,2,2,"#49382a55");
+ }
+
+ drawSofa(410);
+ drawWardrobe(690);
+ drawDesk(1160);
+ drawBed(1510);
+ drawPlant(1850);
+ drawSink(2050);
+ drawShelf(2380);
+ drawLamp(2630);
+
+ /* Teppich */
+ rounded(940,FLOOR-8,360,10,5,"#9b765b");
+ line(950,FLOOR-4,1290,FLOOR-4,"#d9b99a55",1);
+
+ /* Eimer */
+ const bucketX=2160;
+ const bucketY=FLOOR-39;
+ ctx.beginPath();
+ ctx.moveTo(bucketX,bucketY);
+ ctx.lineTo(bucketX+36,bucketY);
+ ctx.lineTo(bucketX+31,FLOOR);
+ ctx.lineTo(bucketX+5,FLOOR);
+ ctx.closePath();
+ ctx.fillStyle="#87999b";
+ ctx.fill();
+ ctx.strokeStyle="#495b5d";
+ ctx.stroke();
+
+ if(save.bucketWater>0){
+  rect(bucketX+5,FLOOR-12,26,8,"#7db9cb");
+ }
+
+ /* Wasser */
+ if(save.faucetOn){
+  ctx.globalAlpha=.7;
+  rect(2168,FLOOR-100,3,60,"#85c9e3");
+  ctx.globalAlpha=1;
+ }
+
+ /* Tür zur Stadt */
+ rect(2870,FLOOR-210,105,210,"#5b402e");
+ rect(2880,FLOOR-200,85,200,"#8b6546");
+ rect(2890,FLOOR-190,65,190,"#6e4e36");
+ ellipse(2940,FLOOR-95,4,4,"#d4b47e");
+
+ rect(2870,FLOOR-218,105,8,"#d2b18b");
+ rect(2860,FLOOR-5,125,5,"#443326");
+
+ /* Spieler */
+ drawPlayerShadow();
+ drawChair();
+
+ /* Gehaltene Gegenstände */
+ if(player.held==="bucket"){
+  ctx.save();
+  ctx.translate(player.x+player.width/2-cameraX,player.y+25);
+  rect(18,0,23,27,"#84999b");
+  rect(17,0,25,4,"#b4c5c3");
+  ctx.restore();
+ }
+
+ ctx.restore();
+}
+
+function drawPlayerShadow(){
+ const groundY=FLOOR;
+ const heightAbove=clamp((groundY-player.y-player.height)/150,0,1);
+ ctx.save();
+ ctx.globalAlpha=.2-heightAbove*.08;
+ ellipse(
+  player.x+player.width/2-cameraX,
+  groundY-1,
+  27-heightAbove*7,
+  4-heightAbove,
+  "#15120f"
+ );
+ ctx.restore();
+}
+
+/* =========================================================
+   SPIELER UND PHYSIK
+========================================================= */
+
+function update(dt){
+ const left=keys.a||keys.arrowleft;
+ const right=keys.d||keys.arrowright;
+
+ let direction=0;
+ if(left)direction--;
+ if(right)direction++;
+
+ const acceleration=direction?1500:1900;
+ const maxSpeed=235;
+
+ if(direction){
+  player.vx+=direction*acceleration*dt;
+  player.vx=clamp(player.vx,-maxSpeed,maxSpeed);
+  player.facing=direction;
+ }else{
+  player.vx*=Math.exp(-9*dt);
+  if(Math.abs(player.vx)<2)player.vx=0;
+ }
+
+ player.x+=player.vx*dt;
+ player.x=clamp(player.x,0,WORLD-player.width);
+
+ if(Math.abs(player.vx)>5&&player.grounded){
+  player.walk+=dt*10;
+ }
+
+ const wasGrounded=player.grounded;
+ player.vy+=1450*dt;
+ player.y+=player.vy*dt;
+ player.grounded=false;
+
+ if(player.y+player.height>=FLOOR){
+  player.y=FLOOR-player.height;
+  player.vy=0;
+  player.grounded=true;
+
+  if(!wasGrounded){
+   player.landing=.22;
+   playTone(100,.04,"triangle");
+  }
+ }
+
+ player.landing=Math.max(0,player.landing-dt);
+ player.jumpTime+=dt;
+
+ cameraX=lerp(
+  cameraX,
+  clamp(player.x+player.width/2-W*.43,0,WORLD-W),
+  1-Math.pow(.001,dt)
+ );
+
+ save.playerX=player.x;
+}
+
+/* =========================================================
+   INTERAKTIONEN
+========================================================= */
+
+const interactables=[
+ {id:"sofa",x:410,w:220,label:"Auf dem Sofa entspannen"},
+ {id:"wardrobe",x:690,w:125,label:"Kleiderschrank öffnen"},
+ {id:"computer",x:1160,w:190,label:"Computer benutzen"},
+ {id:"bed",x:1510,w:240,label:"Ins Bett legen"},
+ {id:"plant",x:1850,w:65,label:"Pflanze ansehen"},
+ {id:"sink",x:2050,w:170,label:"Wasserhahn benutzen"},
+ {id:"bucket",x:2160,w:36,label:"Wassereimer nehmen"},
+ {id:"job",x:2440,w:150,label:"Pizzajob öffnen"},
+ {id:"city",x:2870,w:110,label:"In die Stadt gehen"}
+];
+
+let nearby=null;
+
+function getNearby(){
+ const px=player.x+player.width/2;
+ let best=null;
+ let distance=Infinity;
+
+ for(const obj of interactables){
+  const d=Math.abs(px-(obj.x+obj.w/2));
+  if(d<100&&d<distance){
+   best=obj;
+   distance=d;
+  }
+ }
+ return best;
+}
+
+function interact(){
+ const obj=getNearby();
+ if(!obj){
+  showNotice("Hier gibt es gerade nichts zu tun.");
+  return;
+ }
+
+ playTone(540,.07,"triangle");
+
+ switch(obj.id){
+  case "wardrobe":
+   goTo("Schrank.html");
+   break;
+
+  case "city":
+   goTo("Stadt.html");
+   break;
+
+  case "job":
+   goTo("pizzajob.html");
+   break;
+
+  case "computer":
+   openComputer();
+   break;
+
+  case "sink":
+   save.faucetOn=!save.faucetOn;
+   if(save.faucetOn){
+    save.bucketWater=Math.min(100,save.bucketWater+10);
+    showNotice("Der Wasserhahn läuft.");
+   }else{
+    showNotice("Der Wasserhahn ist aus.");
+   }
+   persist();
+   break;
+
+  case "bucket":
+   if(player.held==="bucket"){
+    player.held=null;
+    $("held").textContent="Hände frei";
+    showNotice("Eimer abgestellt.");
+   }else if(!player.held){
+    player.held="bucket";
+    $("held").textContent="Eimer wird getragen";
+    showNotice("Eimer aufgenommen.");
+   }
+   break;
+
+  case "sofa":
+   player.vx=0;
+   showNotice("Du entspannst dich kurz auf dem Sofa.");
+   break;
+
+  case "bed":
+   player.vx=0;
+   showNotice("Zeit für eine kleine Pause.");
+   break;
+
+  case "plant":
+   showNotice("Deine Pflanze sieht ziemlich gut aus.");
+   break;
+ }
+}
+
+function goTo(url){
+ $("fade").classList.add("active");
+ persist();
+ setTimeout(()=>location.href=url,250);
+}
+
+function closePrompt(){
+ $("prompt").style.display="none";
+}
+
+/* =========================================================
+   COMPUTER
+========================================================= */
+
+function openComputer(){
+ const choice=confirm(
+  "COMPUTER\n\nOK: Pizzajob öffnen\nAbbrechen: Computer schließen"
+ );
+ if(choice)goTo("pizzajob.html");
+}
+
+/* =========================================================
+   HUD UND PROMPTS
+========================================================= */
+
+function updateHUD(){
+ $("money").textContent=save.money;
+
+ nearby=getNearby();
+
+ if(nearby){
+  $("prompt").style.display="block";
+  $("prompt").textContent="E · "+nearby.label;
+ }else{
+  $("prompt").style.display="none";
+ }
+
+ if(player.held==="bucket"){
+  $("held").textContent="Eimer wird getragen";
+ }else{
+  $("held").textContent="Hände frei";
+ }
+
+ $("status").textContent=
+  player.x<1000?"Dein Zuhause":
+  player.x<1900?"Wohnbereich":
+  player.x<2500?"Bad & Alltag":
+  "Ausgangsbereich";
+}
+
+/* =========================================================
+   MULTIPLAYER – VORHANDENE GAMEONLINE-SCHNITTSTELLE
+========================================================= */
+
+let onlineReady=false;
+let onlineClient=null;
+let onlineRoom=sessionStorage.getItem("mein-zimmer-active-room")||"zimmer";
+let remotePlayers={};
+let onlineLastSend=0;
+
+async function initOnline(){
+ if(!window.GameOnline)return;
+
+ try{
+  await GameOnline.login("Spieler");
+  onlineClient=GameOnline.getClient();
+
+  if(!onlineClient)return;
+
+  onlineReady=true;
+
+  if(typeof GameOnline.watchPlayers==="function"){
+   GameOnline.watchPlayers(onlineRoom,players=>{
+    if(!players)return;
+    remotePlayers=players;
+   });
+  }
+
+  showNotice("Multiplayer-Verbindung bereit");
+ }catch(err){
+  console.warn("Multiplayer nicht verbunden:",err);
+ }
+}
+
+function sendOnline(now){
+ if(!onlineReady||!GameOnline)return;
+ if(now-onlineLastSend<100)return;
+
+ onlineLastSend=now;
+
+ try{
+  GameOnline.updatePosition(
+   onlineRoom,
+   "zimmer",
+   Math.round(player.x),
+   Math.round(player.y)
+  );
+ }catch(err){
+  console.warn("Position konnte nicht gesendet werden:",err);
+ }
+}
+
+function drawRemotePlayers(){
+ if(!remotePlayers)return;
+
+ const list=Array.isArray(remotePlayers)
+  ?remotePlayers
+  :Object.values(remotePlayers);
+
+ for(const other of list){
+  if(!other)continue;
+
+  const x=Number(other.x);
+  const y=Number(other.y);
+
+  if(!Number.isFinite(x)||!Number.isFinite(y))continue;
+  if(Math.abs(x-player.x)>1100)continue;
+
+  ctx.save();
+  ctx.translate(x-cameraX,y+75);
+  ctx.scale(.58,.58);
+  ctx.translate(-42,-116);
+
+  ctx.globalAlpha=.85;
+  ellipse(60,119,45,4,"#17130f");
+
+  drawOriginalLeg(29,75,0);
+  woodPart(23,5,13,70,2);
+  woodPart(20,67,78,12,2);
+  drawOriginalLeg(88,77,0);
+
+  ctx.restore();
+ }
+}
+
+/* =========================================================
+   RENDER-LOOP
+========================================================= */
+
+function render(){
+ ctx.setTransform(scaleX,0,0,scaleY,0,0);
+ ctx.clearRect(0,0,W,H);
+
+ drawWorld();
+
+ ctx.save();
+ ctx.translate(-cameraX,0);
+ drawRemotePlayers();
+ ctx.restore();
+}
+
+function frame(now){
+ const dt=Math.min((now-last)/1000,.033);
+ last=now;
+ time+=dt;
+
+ update(dt);
+ updateHUD();
+ render();
+ sendOnline(now);
+
+ requestAnimationFrame(frame);
+}
+
+initOnline();
+requestAnimationFrame(frame);
+
+window.addEventListener("beforeunload",persist);
+</script>
+</body>
+</html>
